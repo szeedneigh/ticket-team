@@ -24,7 +24,7 @@
 The architecture is built upon a carefully selected stack of modern technologies, chosen to maximize development velocity while ensuring the platform is robust, scalable, and intelligent.
 
 ### Presentation Layer (Front-End)
-The user interface will be developed using Next.js, a production-grade React framework. This choice is driven by its SSR capabilities for fast, responsive experiences and its component-based architecture for maintainability.
+The user interface will be developed using Next.js, a production-grade React framework. This choice is driven by its SSR capabilities for fast, responsive experiences and its component-based architecture for maintainability. UI components are built with shadcn/ui, a collection of accessible, customizable primitives built on Radix UI and styled with Tailwind CSS.
 
 ### Backend Layer (BaaS)
 The project leverages Supabase as its primary backend, built on PostgreSQL. Supabase accelerates development by providing a database API, authentication, and real-time features. It includes the `pgvector` extension for storing and querying vector embeddings—essential for semantic search and RAG.
