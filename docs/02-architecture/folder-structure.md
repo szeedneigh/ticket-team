@@ -1,6 +1,6 @@
 # Folder Structure
 
-> Explanation of the project’s directory layout and conventions. <!-- Add content here -->
+> Explanation of the project's directory layout and conventions.
 
 ## Table of Contents
 - [Root Layout](#root-layout)
@@ -22,10 +22,29 @@
 ```
 
 ## Key Directories
-<!-- Add content here -->
+
+- **src/app/**: Next.js App Router pages and layouts
+  - `layout.tsx`: Root layout with providers
+  - `page.tsx`: Home/landing page
+  - `globals.css`: Global styles and Tailwind directives
+- **docs/**: Comprehensive project documentation (see README.md)
+- **public/**: Static assets
+  - `assets/`: General static files
+  - `images/`: Image assets
+- **Configuration files** (root):
+  - `next.config.ts`: Next.js configuration
+  - `tsconfig.json`: TypeScript compiler options
+  - `eslint.config.mjs`: ESLint rules
+  - `postcss.config.mjs`: PostCSS (Tailwind v4) configuration
 
 ## Naming Conventions
-<!-- Add content here -->
+
+- **Components**: PascalCase (e.g., `TicketList.tsx`)
+- **Hooks**: camelCase with `use` prefix (e.g., `useTickets.ts`)
+- **Utilities**: camelCase (e.g., `formatDate.ts`)
+- **Types**: PascalCase with descriptive names (e.g., `TicketStatus`)
+- **Constants**: SCREAMING_SNAKE_CASE (e.g., `MAX_FILE_SIZE`)
+- **Files**: Match the default export name
 
 ## References
 - See also: [Coding Standards](../06-development/coding-standards.md)
