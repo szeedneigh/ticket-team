@@ -13,11 +13,17 @@
 / (repo root)
 ├─ src/
 │  ├─ app/
+│  │  ├─ layout.tsx
+│  │  ├─ page.tsx
+│  │  └─ globals.css
+│  ├─ components/
+│  │  └─ ui/           # shadcn/ui primitives
 │  └─ ...
 ├─ docs/
 │  ├─ 01-overview/
 │  ├─ 02-architecture/
 │  └─ ...
+├─ public/
 └─ package.json
 ```
 
@@ -27,6 +33,9 @@
   - `layout.tsx`: Root layout with providers
   - `page.tsx`: Home/landing page
   - `globals.css`: Global styles and Tailwind directives
+- **src/components/**: React components
+  - `ui/`: shadcn/ui primitive components (Button, Dialog, Input, etc.)
+  - Domain-specific feature components
 - **docs/**: Comprehensive project documentation (see README.md)
 - **public/**: Static assets
   - `assets/`: General static files
