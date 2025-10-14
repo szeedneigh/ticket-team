@@ -1,6 +1,6 @@
 # Project Overview
 
-> High-level description of the Ticket Team project and objectives. <!-- Add content here -->
+> Ticket Team is an intelligent helpdesk platform designed to transform support operations at La Verdad Christian College. By combining a centralized ticketing system with AI-powered assistance through Retrieval-Augmented Generation (RAG), the system reduces resolution times, improves knowledge retention, and delivers transparent, data-driven service management.
 
 ## Table of Contents
 - [1-B Technical Background](#1-b-technical-background)
