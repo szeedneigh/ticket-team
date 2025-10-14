@@ -15,7 +15,13 @@
 - [References](#references)
 
 ## Overview
-Shared, composable components built with React (Next.js). Follow [Styling Guide](./styling-guide.md) and [Coding Standards](../06-development/coding-standards.md).
+Shared, composable components built with React (Next.js) and shadcn/ui primitives. UI components are based on accessible Radix UI primitives, customized with Tailwind CSS, and composed into domain-specific features. Follow [Styling Guide](./styling-guide.md) and [Coding Standards](../06-development/coding-standards.md).
+
+### shadcn/ui Foundation
+- **Primitive components** live in `src/components/ui/` (generated via shadcn CLI)
+- **Feature components** compose primitives into domain-specific functionality
+- **Customization** via Tailwind classes and CSS variables defined in `globals.css`
+- **Accessibility** baked in through Radix UI foundation (ARIA, keyboard navigation, focus management)
 
 ## Components
 

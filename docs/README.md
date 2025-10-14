@@ -1,6 +1,6 @@
 # Ticket Team Documentation
 
-A centralized, AI-powered helpdesk ticketing system for La Verdad Christian College's MIS department, featuring intelligent RAG-based support and comprehensive ticket lifecycle management.
+A centralized, AI-powered helpdesk ticketing system for La Verdad Christian College's MIS department, featuring intelligent RAG-based support and comprehensive ticket lifecycle management. Built with Next.js, Supabase, Gemini API, and shadcn/ui components.
 
 **Last updated:** 2025-10-13
 
