@@ -36,7 +36,7 @@
 3. System assembles an augmented prompt (system rules + retrieved docs + question) and queries Gemini to generate a grounded answer.
 4. If insufficient, the Employee chooses to "Escalate to a Ticket".
 5. As the Employee refines the description, the AI Assistant suggests relevant articles for self-service.
-6. Employee fills required fields (Title, Category, Urgency) and optionally attaches files.
+6. Employee fills required fields (Title, Category, Priority) and optionally attaches files.
 7. Employee submits the form; the system validates input and creates a new Open ticket, displaying a confirmation with the ticket ID.
 
 ### Alternative Flows
