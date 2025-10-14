@@ -54,6 +54,39 @@ h2 { font-size: 1.5rem; }
 - Co-locate styles with components (CSS Modules) or use utility classes (Tailwind)
 - Keep variants explicit (`variant="primary" | "secondary"`)
 
+### shadcn/ui Theming
+shadcn components use CSS variables for theming, defined in `src/app/globals.css`:
+
+```css
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    /* ... other variables */
+  }
+  
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    /* ... dark mode overrides */
+  }
+}
+```
+
+**Customizing shadcn components:**
+```tsx
+import { Button } from '@/components/ui/button'
+
+// Use built-in variants
+<Button variant="default">Submit</Button>
+<Button variant="outline">Cancel</Button>
+
+// Extend with Tailwind classes
+<Button className="w-full">Full Width</Button>
+```
+
 ## Dark Mode
 - Use class-based toggle on `html.dark` and override tokens
 
