@@ -174,6 +174,8 @@ Supabase Auth handles user authentication. Passwords are hashed with a modern al
 ### Authorization (RLS)
 Role-Based Access Control enforced with PostgreSQL Row-Level Security (RLS). Example policy concept: users can view a ticket if they are the submitter or hold a `staff` role.
 
+> **Note**: The RLS policy examples below use conceptual field names for illustration. In actual implementation, use `user_id` (not `submitter_id`) per the database schema, and refer to the `users.role` field directly rather than a separate `user_roles` table.
+
 ```sql
 -- Example conceptual policy (adjust to your schema)
 create policy "read_own_or_staff"

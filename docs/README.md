@@ -1,6 +1,6 @@
 # Ticket Team Documentation
 
-A concise description of the project and its objectives. <!-- Add content here -->
+A centralized, AI-powered helpdesk ticketing system for La Verdad Christian College's MIS department, featuring intelligent RAG-based support and comprehensive ticket lifecycle management.
 
 **Last updated:** 2025-10-13
 
@@ -41,10 +41,10 @@ A concise description of the project and its objectives. <!-- Add content here -
   - [Common Issues](./07-troubleshooting/common-issues.md)
   - [Debugging](./07-troubleshooting/debugging.md)
 - ADRs
-  - [ADR 0001: Choose Next.js](./adr/0001-choose-nextjs.md)
-  - [ADR 0002: Choose Supabase](./adr/0002-choose-supabase.md)
-  - [ADR 0003: Choose Gemini API](./adr/0003-choose-gemini-api.md)
-  - [ADR 0004: Adopt RAG Architecture](./adr/0004-adopt-rag-architecture.md)
+  - [ADR 0001: Choose Next.js](./adr/0001-nextjs.md)
+  - [ADR 0002: Choose Supabase](./adr/0002-supabase.md)
+  - [ADR 0003: Choose Gemini API](./adr/0003-gemini-api.md)
+  - [ADR 0004: Adopt RAG Architecture](./adr/0004-RAG-architecture.md)
 
 ## Assets
 You can embed Mermaid diagrams directly in markdown:
