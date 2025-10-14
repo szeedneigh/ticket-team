@@ -13,6 +13,7 @@
 - [ADR](#adr)
 - [KPI](#kpi)
 - [KB (Knowledge Base)](#kb-knowledge-base)
+- [Priority](#priority)
 
 ## RAG
 Retrieval-Augmented Generation. Retrieve relevant documents to augment a prompt sent to an LLM to produce grounded, context-aware responses.
@@ -43,3 +44,6 @@ Key Performance Indicator. Quantifiable measure of performance (e.g., resolution
 
 ## KB (Knowledge Base)
 A repository of institutional articles and solutions used by users and the AI for self-service and grounding.
+
+## Priority
+Urgency classification for tickets. Three levels: low (minor issues), medium (standard workflow disruption), high (critical business impact). Maps to the `ticket_priority` enum in the database.
