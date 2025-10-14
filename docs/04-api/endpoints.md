@@ -33,7 +33,7 @@ POST /api/v1/tickets
 Authorization: Bearer <jwt>
 Content-Type: application/json
 
-{ "title": "Printer not working", "category": "Hardware", "urgency": "High", "description": "..." }
+{ "title": "Printer not working", "category": "Hardware", "priority": "high", "description": "..." }
 ```
 ```json
 { "id": "6e8b2b2a-...", "status": "Open" }
@@ -183,7 +183,6 @@ Details:
 
 ### Enums
 - TicketStatus: `"Open" | "In Progress" | "On Hold" | "Resolved" | "Closed" | "Canceled"`
-- Urgency: `"Low" | "Medium" | "High"`
 - Priority: `"Low" | "Medium" | "High"`
 
 ### Resource Schemas
@@ -198,14 +197,13 @@ Ticket
     "title": { "type": "string", "minLength": 3 },
     "description": { "type": "string" },
     "status": { "type": "string", "enum": ["Open", "In Progress", "On Hold", "Resolved", "Closed", "Canceled"] },
-    "urgency": { "type": "string", "enum": ["Low", "Medium", "High"] },
     "priority": { "type": "string", "enum": ["Low", "Medium", "High"] },
     "submitter_id": { "type": "string", "format": "uuid" },
     "assigned_to": { "type": "string", "format": "uuid" },
     "category": { "type": "string" },
     "created_at": { "type": "string", "format": "date-time" }
   },
-  "required": ["title", "status", "urgency", "submitter_id"],
+  "required": ["title", "status", "priority", "submitter_id"],
   "additionalProperties": false
 }
 ```
