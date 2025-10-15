@@ -159,13 +159,26 @@ CREATE TRIGGER update_article_votes_on_delete
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  role_value TEXT;
+  user_role_val user_role;
 BEGIN
+  -- Safely extract and validate role from metadata
+  role_value := NEW.raw_user_meta_data->>'role';
+  
+  -- Validate against enum values, default to 'employee' if invalid
+  IF role_value IN ('employee', 'staff', 'admin', 'super_admin') THEN
+    user_role_val := role_value::user_role;
+  ELSE
+    user_role_val := 'employee';
+  END IF;
+
   INSERT INTO public.users (id, email, full_name, role)
   VALUES (
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
-    COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'employee')
+    user_role_val
   );
   RETURN NEW;
 END;
