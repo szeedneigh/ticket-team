@@ -25,7 +25,7 @@ CREATE TABLE users (
   deactivated_at TIMESTAMPTZ,
   deactivated_by UUID REFERENCES users(id) ON DELETE SET NULL,
   
-  CONSTRAINT email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$')
+  CONSTRAINT email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
 -- 2. CATEGORIES TABLE
