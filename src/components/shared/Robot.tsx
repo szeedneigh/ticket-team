@@ -7,14 +7,6 @@ import { motion, useReducedMotion } from 'framer-motion'
 export function Robot(): ReactElement {
   const reduce = useReducedMotion()
 
-  const floatAnim = reduce
-    ? {}
-    : {
-        y: [8, -20, 8],
-        rotate: [-2, 2, -2],
-        transition: { duration: 6, repeat: Infinity, ease: 'easeInOut' },
-      }
-
   return (
     <div
       aria-hidden
@@ -23,16 +15,43 @@ export function Robot(): ReactElement {
       <motion.div
         className="relative h-full w-full will-change-transform"
         style={{ transformOrigin: '55% 55%' }}
-        animate={floatAnim}
-        whileHover={{ scale: 1.03 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={
+          reduce
+            ? { opacity: 1, y: 0 }
+            : {
+                opacity: 1,
+                y: 0,
+              }
+        }
+        transition={{ duration: 0.8, ease: 'easeOut' }}
       >
-        <Image
-          src="/assets/timi-bot1.svg"
-          alt="Timi Assistant"
-          fill
-          priority
-          className="object-contain drop-shadow-2xl"
-        />
+        <motion.div
+          animate={
+            reduce
+              ? {}
+              : {
+                  y: [0, -20, 0],
+                  rotate: [-2, 2, -2],
+                }
+          }
+          transition={{
+            delay: 0.8,
+            duration: 6,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          style={{ transformOrigin: '55% 55%' }}
+          className="relative h-full w-full"
+        >
+          <Image
+            src="/assets/timi-bot1.svg"
+            alt="Timi Assistant"
+            fill
+            priority
+            className="object-contain drop-shadow-2xl"
+          />
+        </motion.div>
       </motion.div>
     </div>
   )
