@@ -128,7 +128,7 @@ export default function Home() {
               href="/login"
               className="w-full inline-flex items-center justify-center gap-3 rounded-[20px] px-8 py-4 text-[18px] md:text-[20px] font-semibold text-white bg-[#003B73] shadow-lg hover:bg-[#002C5A] transition-all duration-200"
             >
-              Get Started
+              Log In
             </a>
           </motion.div>
         </motion.div>
