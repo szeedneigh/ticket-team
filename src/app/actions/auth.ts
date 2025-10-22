@@ -34,8 +34,8 @@ export async function signInWithGoogle(): Promise<{ url: string } | { error: str
       queryParams: {
         access_type: 'offline',
         prompt: 'consent',
-        // Prefer La Verdad domain
-        hd: 'laverdad.edu.ph',
+        // No domain hint - users can freely choose their email
+        // Domain validation happens in the callback route
       },
     },
   })

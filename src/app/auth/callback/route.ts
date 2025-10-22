@@ -27,8 +27,25 @@ export async function GET(request: Request) {
       const domain = email?.split('@')[1]
       
       if (!domain || !allowedDomains.includes(domain)) {
-        // Sign out user if not from allowed domain
+        const userId = data.user.id
+        
+        // Clean up: Delete from public.users first (due to FK constraint)
+        // This prevents invalid domain users from having profiles
+        await supabase
+          .from('users')
+          .delete()
+          .eq('id', userId)
+          .then(({ error: deleteError }) => {
+            if (deleteError) {
+              console.error('Failed to delete invalid domain user from public.users:', deleteError)
+            } else {
+              console.log('Successfully cleaned up invalid domain user from public.users')
+            }
+          })
+        
+        // Sign out the user session
         await supabase.auth.signOut()
+        
         return NextResponse.redirect(
           `${origin}/auth/error?error=invalid_domain`
         )
