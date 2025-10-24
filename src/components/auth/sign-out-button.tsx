@@ -20,6 +20,7 @@ interface SignOutButtonProps {
   size?: ComponentProps<typeof Button>['size']
   showIcon?: boolean
   children?: React.ReactNode
+  className?: string
 }
 
 /**
@@ -36,7 +37,8 @@ export function SignOutButton({
   variant = 'ghost', 
   size = 'default',
   showIcon = true,
-  children = 'Sign out'
+  children = 'Sign out',
+  className
 }: SignOutButtonProps) {
   const [isPending, startTransition] = useTransition()
   
@@ -52,6 +54,7 @@ export function SignOutButton({
       size={size}
       onClick={handleSignOut}
       disabled={isPending}
+      className={className}
     >
       {isPending ? (
         <Loader2 className="h-4 w-4 animate-spin" />
