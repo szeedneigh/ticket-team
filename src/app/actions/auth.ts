@@ -159,7 +159,7 @@ export async function updateAvatar(avatarUrl: string): Promise<ActionResult> {
  */
 export async function checkAuth(): Promise<boolean> {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  return session !== null
+  const { data: { user } } = await supabase.auth.getUser()
+  return user !== null
 }
 
