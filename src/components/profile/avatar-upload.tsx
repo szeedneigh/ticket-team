@@ -46,7 +46,11 @@ export function AvatarUpload({ user }: AvatarUploadProps) {
     setIsUploading(true)
     
     try {
-      const result = await uploadAvatar(file)
+      // Wrap file in FormData for server action
+      const formData = new FormData()
+      formData.append('avatar', file)
+      
+      const result = await uploadAvatar(formData)
       
       if (result.success) {
         toast.success('Avatar updated successfully')
