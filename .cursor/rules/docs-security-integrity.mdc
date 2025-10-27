@@ -1,0 +1,17 @@
+---
+description: Link docs/ADR and security/integrity constraints
+---
+# Docs, ADRs, and Security/Integrity
+
+- Review ADRs and guides before major changes:
+  - [ADR: Choose Next.js](mdc:docs/adr/0001-nextjs.md)
+  - [ADR: Choose Supabase](mdc:docs/adr/0002-supabase.md)
+  - [ADR: Gemini API](mdc:docs/adr/0003-gemini-api.md)
+  - [ADR: RAG Architecture](mdc:docs/adr/0004-RAG-architecture.md)
+  - [Coding Standards](mdc:docs/06-development/coding-standards.md)
+  - [Styling Guide](mdc:docs/05-components/styling-guide.md)
+- Security & Integrity (from Coding Standards):
+  - Enforce RLS and least privilege in Supabase.
+  - Keep service keys server-only.
+  - Immutability: comments/history immutable; no hard deletes for domain records.
+  - Use soft-delete fields for attachments and user deactivation.

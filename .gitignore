@@ -9,7 +9,6 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-.cursor/*
 
 # testing
 /coverage
@@ -18,8 +17,6 @@
 /.next/
 /out/
 
-# development
-.dev_docs
 
 # production
 /build

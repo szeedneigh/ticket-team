@@ -31,20 +31,6 @@ export default function Home() {
 
   return (
     <section className="relative min-h-[100svh] overflow-hidden bg-gradient-to-br from-[#d4e8f0] via-[#e8f4f8] to-[#0a4d7e]">
-      {/* Dev Link to Component Test Page */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-      >
-        <Link
-          href="/test-components"
-          className="absolute top-4 right-4 z-50 rounded-lg bg-white/90 px-4 py-2 text-sm font-medium text-gray-700 shadow-md hover:bg-white transition-colors"
-        >
-          🧪 Test Components
-        </Link>
-      </motion.div>
-
       {/* Background waves*/}
       <motion.div
         aria-hidden

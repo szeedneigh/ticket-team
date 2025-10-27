@@ -51,11 +51,6 @@ export function Footer() {
                   Terms of Service
                 </Link>
               </li>
-              <li>
-                <Link href="/landing-alt" className="text-muted-foreground hover:text-primary transition-colors">
-                  Alternative Landing
-                </Link>
-              </li>
             </ul>
           </div>
         </div>

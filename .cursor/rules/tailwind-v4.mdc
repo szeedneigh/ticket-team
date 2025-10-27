@@ -1,0 +1,12 @@
+---
+globs: *.css,*.tsx
+description: Tailwind CSS v4 usage, tokens, and theming
+---
+# Tailwind v4 Styling
+
+- Tailwind v4 is enabled via PostCSS plugin in [postcss.config.mjs](mdc:postcss.config.mjs) and imported in [src/app/globals.css](mdc:src/app/globals.css).
+- Prefer utility-first classes; co-locate component-level styles when necessary.
+- Tokens:
+  - Define CSS variables on `:root` and override in `html.dark`.
+  - Keep custom tokens aligned with docs [Styling Guide](mdc:docs/05-components/styling-guide.md).
+- Dark mode: use class `html.dark` toggling; avoid media-only unless explicitly desired.

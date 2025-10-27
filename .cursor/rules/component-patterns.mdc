@@ -1,0 +1,210 @@
+---
+globs: *.tsx,*.ts
+description: Component composition, shadcn/ui usage, and React patterns
+---
+# Component Patterns
+
+## Component Structure
+
+- **Prefer Server Components** by default
+- Add `"use client"` only when necessary:
+  - Interactive hooks (useState, useEffect, etc.)
+  - Browser APIs (window, document)
+  - Event handlers (onClick, onChange)
+  - Third-party client-only libraries
+
+```tsx
+// Server Component (default)
+export default async function TicketList() {
+  const tickets = await fetchTickets()
+  return <div>{/* ... */}</div>
+}
+
+// Client Component (when needed)
+'use client'
+export function TicketForm() {
+  const [title, setTitle] = useState('')
+  // ...
+}
+```
+
+## shadcn/ui Integration
+
+- shadcn is available in devDependencies for component generation
+- Components live in `src/components/ui/`
+- Customize via Tailwind classes and CSS variables
+- Use composition for complex components
+
+```tsx
+import { Button } from '@/components/ui/button'
+import { Dialog } from '@/components/ui/dialog'
+
+export function CreateTicketDialog() {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="default">New Ticket</Button>
+      </DialogTrigger>
+      <DialogContent>{/* ... */}</DialogContent>
+    </Dialog>
+  )
+}
+```
+
+## Component Organization
+
+```
+src/
+├─ components/
+│  ├─ ui/           # shadcn/ui primitives
+│  ├─ tickets/      # domain-specific components
+│  ├─ auth/
+│  ├─ chat/
+│  └─ shared/       # reusable app components
+├─ app/             # routes and pages
+└─ lib/             # utilities, hooks, types
+```
+
+## Naming Conventions
+
+- Components: `PascalCase` (e.g., `TicketCard.tsx`)
+- Hooks: `useFoo` (e.g., `useTickets.ts`)
+- Utilities: `camelCase` (e.g., `formatDate.ts`)
+- Types/Interfaces: `PascalCase`, suffix with `Props` for component props
+
+```tsx
+interface TicketCardProps {
+  ticket: Ticket
+  onStatusChange?: (status: string) => void
+}
+
+export function TicketCard({ ticket, onStatusChange }: TicketCardProps) {
+  // ...
+}
+```
+
+## Composition Over Inheritance
+
+- Build complex UIs by composing smaller components
+- Use `children` prop for flexible layouts
+- Prefer render props or hooks for sharing logic
+
+```tsx
+// Good: Composition
+<Card>
+  <CardHeader>
+    <CardTitle>Ticket #{ticket.id}</CardTitle>
+  </CardHeader>
+  <CardContent>
+    {ticket.description}
+  </CardContent>
+</Card>
+
+// Better: Extract to domain component
+<TicketCard ticket={ticket} />
+```
+
+## Data Fetching
+
+- **Server Components**: Fetch directly with async/await
+- **Client Components**: Use hooks (useState + useEffect or SWR/React Query)
+- Prefer streaming and Suspense for progressive loading
+- Use Next.js caching strategies (`fetch` options, `revalidate`)
+
+```tsx
+// Server Component with fetch
+export default async function TicketsPage() {
+  const tickets = await fetchTickets() // direct DB or API call
+  return <TicketList tickets={tickets} />
+}
+
+// With Suspense boundary
+<Suspense fallback={<TicketListSkeleton />}>
+  <TicketList />
+</Suspense>
+```
+
+## Forms & Actions
+
+- Use Server Actions for mutations
+- Validate on server; optionally use client-side validation for UX
+- Handle loading and error states
+- Show optimistic updates when appropriate
+
+```tsx
+'use client'
+import { createTicket } from '@/app/actions/tickets'
+
+export function TicketForm() {
+  const [isPending, startTransition] = useTransition()
+
+  async function handleSubmit(formData: FormData) {
+    startTransition(async () => {
+      const result = await createTicket(formData)
+      if (result.success) {
+        // handle success
+      }
+    })
+  }
+
+  return (
+    <form action={handleSubmit}>
+      {/* form fields */}
+      <Button type="submit" disabled={isPending}>
+        {isPending ? 'Creating...' : 'Create Ticket'}
+      </Button>
+    </form>
+  )
+}
+```
+
+## Error Boundaries
+
+- Wrap sections in error boundaries for graceful degradation
+- Provide user-friendly error messages
+- Log errors for monitoring
+
+```tsx
+// app/tickets/error.tsx
+'use client'
+export default function Error({ error, reset }: {
+  error: Error
+  reset: () => void
+}) {
+  return (
+    <div>
+      <h2>Something went wrong!</h2>
+      <button onClick={reset}>Try again</button>
+    </div>
+  )
+}
+```
+
+## Accessibility
+
+- Use semantic HTML elements
+- Provide ARIA labels for interactive elements
+- Ensure keyboard navigation works
+- Maintain color contrast ratios (≥4.5:1 for text)
+- Test with screen readers
+
+## Performance
+
+- Lazy load heavy components with `next/dynamic`
+- Memoize expensive computations with `useMemo`
+- Prevent unnecessary re-renders with `React.memo` and `useCallback`
+- Optimize images with `next/image`
+
+```tsx
+import dynamic from 'next/dynamic'
+
+const HeavyChart = dynamic(() => import('@/components/analytics/Chart'), {
+  loading: () => <p>Loading chart...</p>,
+  ssr: false
+})
+```
+
+## References
+- See also: [Component Library](mdc:docs/05-components/component-library.md)
+- See also: [Styling Guide](mdc:docs/05-components/styling-guide.md)
+- See also: [Next.js App Router](mdc:.cursor/rules/next-app-router.mdc)

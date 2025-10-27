@@ -1,0 +1,14 @@
+---
+globs: *.ts,*.tsx
+description: TypeScript, path aliases, and import conventions
+---
+# TypeScript & Imports
+
+- Use strict TypeScript. Prefer explicit return types on exported APIs.
+- Path alias: import app modules via `@/` mapped to `src/*` per [tsconfig.json](mdc:tsconfig.json).
+  - Example: `import { X } from "@/lib/x"` not relative `../../lib/x`.
+- Use ESM syntax; no CommonJS `require` in app code.
+- Client vs Server:
+  - Add `"use client"` only when component needs browser APIs or hooks.
+  - Keep server utilities free of client-only imports.
+- Avoid barrel cycles. Keep index barrels small and acyclic.

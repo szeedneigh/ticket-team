@@ -1,0 +1,308 @@
+---
+description: Security best practices, authentication, and authorization patterns
+---
+# Security & Authentication
+
+## Authentication
+
+- Use **Supabase Auth** for user authentication
+- Support email/password authentication (extend later if needed)
+- Store user profiles in `users` table (separate from `auth.users`)
+- Link profiles via foreign key to `auth.users.id`
+
+```ts
+// Sign up
+const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    data: { full_name, role: 'employee' } // metadata
+  }
+})
+
+// Sign in
+const { data, error } = await supabase.auth.signInWithPassword({
+  email,
+  password
+})
+
+// Sign out
+await supabase.auth.signOut()
+```
+
+## Session Management
+
+- Use `@supabase/ssr` for Next.js cookie-based sessions
+- Sessions are httpOnly, secure cookies
+- Refresh tokens automatically
+- Check auth state in middleware for protected routes
+
+```ts
+// middleware.ts
+export async function middleware(request: NextRequest) {
+  const supabase = createMiddlewareClient(request)
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+}
+```
+
+## Role-Based Access Control (RBAC)
+
+### Roles
+- `employee`: Default role; can create tickets, view own tickets
+- `mis_staff`: MIS personnel; can view/update assigned tickets
+- `admin`: Can manage users (except `super_admin`), view analytics
+- `super_admin`: Full governance including managing other `super_admin` accounts
+
+### Permission Patterns
+
+- Store user role in `users.role` column
+- Enforce permissions via:
+  1. **Database RLS policies** (primary enforcement)
+  2. **Server-side checks** in API routes/actions
+  3. **UI guards** (hide/disable elements)
+
+```ts
+// Server-side permission check
+export async function updateUser(userId: string, updates: UserUpdates) {
+  const currentUser = await getCurrentUser()
+  
+  // Only admin and super_admin can update users
+  if (!['admin', 'super_admin'].includes(currentUser.role)) {
+    throw new Error('Unauthorized')
+  }
+  
+  // Only super_admin can manage super_admin roles
+  const targetUser = await getUser(userId)
+  if (targetUser.role === 'super_admin' && currentUser.role !== 'super_admin') {
+    throw new Error('Only super admin can manage super admin accounts')
+  }
+  
+  // Proceed with update
+}
+```
+
+### RLS Policy Examples
+
+```sql
+-- Employees can read their own tickets
+CREATE POLICY "employees_read_own_tickets"
+  ON tickets FOR SELECT
+  TO authenticated
+  USING (created_by = auth.uid());
+
+-- MIS staff can read assigned tickets
+CREATE POLICY "mis_staff_read_assigned_tickets"
+  ON tickets FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM users
+      WHERE id = auth.uid() 
+        AND role IN ('mis_staff', 'admin', 'super_admin')
+    )
+  );
+
+-- Admin can manage users (except super_admin governance)
+CREATE POLICY "admin_manage_users"
+  ON users FOR UPDATE
+  TO authenticated
+  USING (
+    -- Current user is admin or super_admin
+    EXISTS (
+      SELECT 1 FROM users AS u
+      WHERE u.id = auth.uid() 
+        AND u.role IN ('admin', 'super_admin')
+    )
+    AND (
+      -- Target user is not super_admin, OR
+      role != 'super_admin' OR
+      -- Current user is super_admin
+      EXISTS (
+        SELECT 1 FROM users AS u
+        WHERE u.id = auth.uid() AND u.role = 'super_admin'
+      )
+    )
+  );
+```
+
+## Secrets Management
+
+### Environment Variables
+- **Public** (client-safe):
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **Private** (server-only):
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `GEMINI_API_KEY`
+  - `DATABASE_URL` (if direct connection needed)
+
+### Best Practices
+- **Never** expose service keys or API keys to client
+- Use `.env.local` for local development (git-ignored)
+- Use platform environment variables for production (Vercel, etc.)
+- Rotate keys periodically
+- Use different keys for dev/staging/production
+
+```ts
+// Good: Server-only usage
+// app/actions/admin.ts
+'use server'
+import { createClient } from '@supabase/supabase-js'
+
+export async function adminOperation() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY! // server-only
+  )
+  // ...
+}
+
+// Bad: Never do this in client components
+'use client'
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY // ❌ Exposed!
+```
+
+## Input Validation & Sanitization
+
+- **Never trust client input**
+- Validate on server (primary) and client (UX)
+- Use schema validation (e.g., Zod, Yup)
+- Sanitize before database insertion
+
+```ts
+import { z } from 'zod'
+
+const ticketSchema = z.object({
+  title: z.string().min(5).max(200),
+  description: z.string().min(10).max(5000),
+  category: z.enum(['technical', 'development']),
+  priority: z.enum(['low', 'medium', 'high', 'urgent'])
+})
+
+export async function createTicket(formData: FormData) {
+  const parsed = ticketSchema.safeParse({
+    title: formData.get('title'),
+    description: formData.get('description'),
+    category: formData.get('category'),
+    priority: formData.get('priority')
+  })
+  
+  if (!parsed.success) {
+    return { error: 'Invalid input', details: parsed.error }
+  }
+  
+  // Safe to insert
+  const { data, error } = await supabase
+    .from('tickets')
+    .insert(parsed.data)
+}
+```
+
+## File Upload Security
+
+- **Validate file types** (whitelist extensions)
+- **Limit file size** (e.g., 10MB max)
+- **Scan for malware** (if possible)
+- Store in Supabase Storage with RLS policies
+- Generate unique file names to prevent overwriting
+- Serve via CDN/signed URLs, not direct filesystem
+
+```ts
+const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf']
+const maxSize = 10 * 1024 * 1024 // 10MB
+
+export async function uploadAttachment(file: File, ticketId: string) {
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error('Invalid file type')
+  }
+  if (file.size > maxSize) {
+    throw new Error('File too large')
+  }
+  
+  const fileName = `${ticketId}/${crypto.randomUUID()}-${file.name}`
+  const { data, error } = await supabase.storage
+    .from('attachments')
+    .upload(fileName, file)
+  
+  if (error) throw error
+  return data
+}
+```
+
+## XSS Prevention
+
+- React escapes by default (safe from XSS in JSX)
+- **Never** use `dangerouslySetInnerHTML` with user content
+- Sanitize HTML if rendering user content (use DOMPurify)
+- Use Content Security Policy (CSP) headers
+
+## CSRF Protection
+
+- Next.js Server Actions include CSRF protection by default
+- Use SameSite cookies for session management
+- Supabase Auth handles CSRF for auth flows
+
+## Security Headers
+
+Configure security headers in `next.config.ts`:
+
+```ts
+const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin'
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()'
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Logging & Monitoring
+
+- **Do NOT log**:
+  - Passwords or credentials
+  - API keys or tokens
+  - PII (Personally Identifiable Information)
+  - Full session objects
+- **DO log**:
+  - Authentication events (login, logout, failures)
+  - Authorization failures
+  - Critical errors
+  - Security-relevant actions (user deactivation, role changes)
+
+```ts
+// Good
+console.error('Failed login attempt', { email: user.email, timestamp: new Date() })
+
+// Bad
+console.log('User session', session) // May contain tokens
+console.log('API key:', process.env.GEMINI_API_KEY) // ❌
+```
+
+## References
+- See also: [Coding Standards - Security](mdc:docs/06-development/coding-standards.md#security)
+- See also: [Authentication Docs](mdc:docs/04-api/authentication.md)
+- See also: [Supabase Integration](mdc:.cursor/rules/supabase-integration.mdc)
