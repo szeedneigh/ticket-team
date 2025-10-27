@@ -15,35 +15,35 @@ import type { UserRole } from '@/lib/types/database'
 import { hasPermission } from '@/lib/types/database'
 
 /**
- * Get the current session
+ * Get the current authenticated user from Supabase Auth
+ * Uses getUser() which authenticates with the Supabase Auth server for security
  * Cached across the request lifecycle to prevent duplicate fetches
  */
-export const getSession = cache(async () => {
+export const getAuthUser = cache(async () => {
   const supabase = await createClient()
-  const { data: { session }, error } = await supabase.auth.getSession()
+  const { data: { user }, error } = await supabase.auth.getUser()
   
-  if (error) {
-    console.error('Session error:', error)
+  if (error || !user) {
     return null
   }
   
-  return session
+  return user
 })
 
 /**
- * Get the current authenticated user
+ * Get the current database user record
  * Returns null if not authenticated or user is deactivated
  * Cached across the request lifecycle
  */
 export const getUser = cache(async (): Promise<User | null> => {
-  const session = await getSession()
-  if (!session?.user) return null
+  const authUser = await getAuthUser()
+  if (!authUser) return null
   
   const supabase = await createClient()
   const { data: user, error } = await supabase
     .from('users')
     .select('*')
-    .eq('id', session.user.id)
+    .eq('id', authUser.id)
     .single()
   
   if (error || !user) {
@@ -108,8 +108,8 @@ export async function checkRole(requiredRole: UserRole): Promise<boolean> {
  * @returns The user ID or null if not authenticated
  */
 export async function getUserId(): Promise<string | null> {
-  const session = await getSession()
-  return session?.user?.id ?? null
+  const authUser = await getAuthUser()
+  return authUser?.id ?? null
 }
 
 /**
@@ -117,16 +117,16 @@ export async function getUserId(): Promise<string | null> {
  * @returns Boolean indicating authentication status
  */
 export async function isAuthenticated(): Promise<boolean> {
-  const session = await getSession()
-  return session !== null
+  const authUser = await getAuthUser()
+  return authUser !== null
 }
 
 /**
- * Get the user's email from session
+ * Get the user's email from authenticated user
  * @returns The user's email or null if not authenticated
  */
 export async function getUserEmail(): Promise<string | null> {
-  const session = await getSession()
-  return session?.user?.email ?? null
+  const authUser = await getAuthUser()
+  return authUser?.email ?? null
 }
 

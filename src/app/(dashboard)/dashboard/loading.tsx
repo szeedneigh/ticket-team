@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card'
 
 export default function DashboardLoading() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8">      
       {/* Welcome Banner Skeleton */}
       <Card className="p-8 bg-card/90 backdrop-blur-sm shadow-lg rounded-[20px]">
         <div className="flex flex-col md:flex-row md:items-center gap-6">

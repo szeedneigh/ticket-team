@@ -54,9 +54,9 @@ export function useUser(): UseUserReturn {
       setError(null)
       
       const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
       
-      if (!session) {
+      if (authError || !authUser) {
         setUser(null)
         return
       }
@@ -64,7 +64,7 @@ export function useUser(): UseUserReturn {
       const { data, error: fetchError } = await supabase
         .from('users')
         .select('*')
-        .eq('id', session.user.id)
+        .eq('id', authUser.id)
         .single()
       
       if (fetchError) throw fetchError

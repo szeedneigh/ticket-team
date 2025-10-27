@@ -83,14 +83,20 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
 /**
  * Upload and update user avatar
  * 
- * @param file - Image file to upload
+ * @param formData - FormData containing the avatar file
  * @returns ActionResult indicating success or failure
  */
-export async function uploadAvatar(file: File): Promise<ActionResult> {
+export async function uploadAvatar(formData: FormData): Promise<ActionResult> {
   try {
     const user = await getUser()
     if (!user) {
       return { success: false, error: 'Authentication required' }
+    }
+
+    // Extract file from FormData
+    const file = formData.get('avatar') as File | null
+    if (!file) {
+      return { success: false, error: 'No file provided' }
     }
 
     // Validate file
@@ -107,7 +113,7 @@ export async function uploadAvatar(file: File): Promise<ActionResult> {
     // Generate unique filename
     const fileExt = file.name.split('.').pop()
     const fileName = `${user.id}-${Date.now()}.${fileExt}`
-    const filePath = `avatars/${fileName}`
+    const filePath = `${user.id}/${fileName}`
 
     // Upload file to Supabase Storage
     const { error: uploadError } = await supabase.storage
