@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+# Project Structure and Entry Points
+
+The app uses Next.js App Router with TypeScript.
+
+- Main app entry: [src/app/layout.tsx](mdc:src/app/layout.tsx) and [src/app/page.tsx](mdc:src/app/page.tsx)
+- Global styles: [src/app/globals.css](mdc:src/app/globals.css)
+- Next.js config: [next.config.ts](mdc:next.config.ts)
+- TypeScript config: [tsconfig.json](mdc:tsconfig.json) (alias `@/*` → `src/*`)
+- ESLint config: [eslint.config.mjs](mdc:eslint.config.mjs)
+- PostCSS (Tailwind v4): [postcss.config.mjs](mdc:postcss.config.mjs)
+
+Conventions:
+- Use the App Router. Route segments live under `src/app/*`.
+- Co-locate domain modules under `src/*`; import with `@/...` based on `paths`.
+- Keep server-only code out of client components; annotate with `"use client"` only when needed.

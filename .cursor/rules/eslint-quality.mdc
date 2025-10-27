@@ -1,0 +1,9 @@
+---
+description: ESLint rules and quality gates for the project
+---
+# Linting & Quality Gates
+
+- ESLint config extends Next.js and TypeScript via [eslint.config.mjs](mdc:eslint.config.mjs).
+- Keep imports ordered and unused code removed.
+- No console logs in server-side code except structured diagnostics.
+- Run `npm run lint` before commits; fix autofixable issues.

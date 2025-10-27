@@ -1,0 +1,548 @@
+---
+description: AI integration, RAG architecture, and Gemini API usage patterns
+---
+# AI & RAG Patterns
+
+## Gemini API Integration
+
+- **Server-side only**: Never expose `GEMINI_API_KEY` to client
+- Use official **Google GenAI SDK** (`@google/genai`) - the new recommended SDK since Gemini 2.0
+- Implement retry logic with exponential backoff
+- Set appropriate safety settings and generation config
+- Stream responses when possible for better UX
+- **Documentation**: [Gemini API Docs](https://ai.google.dev/gemini-api/docs)
+- **SDK Reference**: [Google Generative AI SDK](https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=node)
+- **Migration Guide**: [Migrate to Google GenAI SDK](https://ai.google.dev/gemini-api/docs/migrate)
+
+### Installation
+
+```bash
+# New SDK (recommended)
+npm install @google/genai
+
+# Legacy SDK (not recommended for new projects)
+# npm install @google/generative-ai
+```
+
+### Important Note
+The Google GenAI SDK (`@google/genai`) is now in General Availability (GA). It offers improved developer experience through an updated client architecture and simplifies the transition between developer and enterprise workflows. If you're using the legacy `@google/generative-ai` library, migrate to the new SDK.
+
+```ts
+import { GoogleGenAI } from '@google/genai'
+
+// Create a centralized client object
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
+
+// Generate content using the new SDK structure
+const response = await ai.models.generateContent({
+  model: 'gemini-2.0-flash-exp', // or 'gemini-2.0-flash', 'gemini-2.5-pro'
+  contents: 'Your prompt here',
+  config: {
+    temperature: 0.7,
+    maxOutputTokens: 2048,
+    topP: 0.95,
+    topK: 40,
+    safetySettings: [
+      {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+      },
+      {
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+      }
+    ]
+  }
+})
+
+// Access response text
+const text = response.text
+```
+
+## RAG Architecture
+
+- **Retrieval flow**:
+  1. Generate embedding for user query using Gemini embeddings API
+  2. Query pgvector in Supabase for top-K similar KB articles
+  3. Construct context from retrieved articles
+  4. Send context + query to Gemini for final response
+- **Embeddings Documentation**: [Gemini API Embeddings Guide](https://ai.google.dev/gemini-api/docs/embeddings)
+- **Embeddings Quickstart**: [Get Started with Embeddings](https://ai.google.dev/gemini-api/cookbook/quickstart_embeddings)
+
+### Embedding Generation
+
+- Use `text-embedding-004` model for embeddings (768 dimensions)
+- Or use `gemini-embedding-001` for general purpose embeddings
+- Batch process embeddings for better efficiency
+- Cache embeddings to avoid redundant API calls
+
+```ts
+import { GoogleGenAI } from '@google/genai'
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
+
+// Generate embedding for a single text
+async function generateEmbedding(text: string): Promise<number[]> {
+  const result = await ai.models.embedContent({
+    model: 'text-embedding-004',
+    contents: text,
+  })
+  
+  return result.embeddings[0].values
+}
+
+// Generate embedding with custom output dimensionality
+async function generateEmbeddingCustom(text: string, dimensions: number = 768): Promise<number[]> {
+  const result = await ai.models.embedContent({
+    model: 'text-embedding-004',
+    contents: text,
+    config: {
+      outputDimensionality: dimensions
+    }
+  })
+  
+  return result.embeddings[0].values
+}
+
+// Batch generate embeddings (more efficient)
+async function batchGenerateEmbeddings(texts: string[]): Promise<number[][]> {
+  const embeddings = await Promise.all(
+    texts.map(async (text) => {
+      const result = await ai.models.embedContent({
+        model: 'text-embedding-004',
+        contents: text,
+      })
+      return result.embeddings[0].values
+    })
+  )
+  
+  return embeddings
+}
+```
+
+### Embedding Storage
+
+- Store embeddings in PostgreSQL with pgvector extension
+- Column type: `vector(768)` for Gemini text-embedding-004
+- Create IVFFlat or HNSW index for fast similarity search
+- Re-generate embeddings when KB articles are updated
+
+```sql
+-- Enable pgvector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Example pgvector table
+CREATE TABLE kb_articles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  embedding vector(768), -- Gemini text-embedding-004 dimension
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+-- Create index for fast similarity search (cosine distance)
+CREATE INDEX kb_articles_embedding_idx ON kb_articles 
+  USING ivfflat (embedding vector_cosine_ops)
+  WITH (lists = 100);
+
+-- Alternative: HNSW index (better for high-dimensional data, requires pgvector 0.5.0+)
+-- CREATE INDEX kb_articles_embedding_hnsw_idx ON kb_articles 
+--   USING hnsw (embedding vector_cosine_ops);
+```
+
+### Similarity Search
+
+```ts
+// Generate embedding for query
+const queryEmbedding = await generateEmbedding(userQuery)
+
+// Create RPC function in Supabase for similarity search
+// See database migration for match_kb_articles function
+
+// Similarity search with pgvector
+const { data, error } = await supabase.rpc('match_kb_articles', {
+  query_embedding: queryEmbedding,
+  match_threshold: 0.7, // Cosine similarity threshold (0-1)
+  match_count: 5 // Top-K results
+})
+
+if (error) throw error
+
+// Use retrieved articles as context
+const context = data
+  .map((article: any) => `Title: ${article.title}\n${article.content}`)
+  .join('\n\n---\n\n')
+```
+
+### Supabase RPC Function for Similarity Search
+
+```sql
+-- Create function for semantic search
+CREATE OR REPLACE FUNCTION match_kb_articles(
+  query_embedding vector(768),
+  match_threshold float DEFAULT 0.7,
+  match_count int DEFAULT 5
+)
+RETURNS TABLE (
+  id uuid,
+  title text,
+  content text,
+  similarity float
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    kb_articles.id,
+    kb_articles.title,
+    kb_articles.content,
+    1 - (kb_articles.embedding <=> query_embedding) AS similarity
+  FROM kb_articles
+  WHERE 1 - (kb_articles.embedding <=> query_embedding) > match_threshold
+  ORDER BY kb_articles.embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$$;
+```
+
+## AI Support Funnel
+
+### Chatbot (First-Line Support)
+- Use RAG to ground responses in KB
+- Track conversation history for context
+- Offer escalation to ticket creation
+- Pre-populate ticket form with chat context
+
+```ts
+async function chatWithRAG(userMessage: string, conversationHistory: Message[]) {
+  // 1. Generate embedding for user message
+  const queryEmbedding = await generateEmbedding(userMessage)
+  
+  // 2. Retrieve relevant KB articles
+  const { data: articles } = await supabase.rpc('match_kb_articles', {
+    query_embedding: queryEmbedding,
+    match_count: 3
+  })
+  
+  // 3. Construct context from retrieved articles
+  const context = articles
+    .map((a: any) => `[${a.title}]\n${a.content}`)
+    .join('\n\n')
+  
+  // 4. Build conversation history
+  const history = conversationHistory.map(m => ({
+    role: m.role,
+    parts: [{ text: m.content }]
+  }))
+  
+  // 5. Generate response with context using new SDK
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.0-flash-exp',
+    contents: [
+      ...history,
+      {
+        role: 'user',
+        parts: [{
+          text: `Context from Knowledge Base:\n${context}\n\nUser Question: ${userMessage}`
+        }]
+      }
+    ],
+    config: {
+      systemInstruction: `You are a helpful IT support assistant. Use the provided knowledge base context to answer questions. If you can't find the answer in the context, offer to escalate to a ticket. Always cite the source articles.`,
+      temperature: 0.7,
+      maxOutputTokens: 1024
+    }
+  })
+  
+  return {
+    response: response.text,
+    sources: articles.map((a: any) => ({ id: a.id, title: a.title }))
+  }
+}
+```
+
+### AI Assistant (Ticket Submission)
+- Suggest relevant KB articles as user types
+- Debounce search queries (300-500ms)
+- Provide "try this first" suggestions before ticket creation
+
+```ts
+// Real-time KB suggestions during ticket creation
+async function suggestKBArticles(ticketDescription: string) {
+  const embedding = await generateEmbedding(ticketDescription)
+  
+  const { data } = await supabase.rpc('match_kb_articles', {
+    query_embedding: embedding,
+    match_threshold: 0.6,
+    match_count: 5
+  })
+  
+  return data
+}
+```
+
+### AI-Assisted KB Creation
+- Extract resolution steps from resolved tickets
+- Generate draft KB article for MIS staff review
+- Suggest title, category, and tags
+- Human-in-the-loop: staff must review and publish
+
+```ts
+async function generateKBDraft(resolvedTicket: Ticket) {
+  const prompt = `Based on this resolved ticket, create a knowledge base article.
+
+Ticket Title: ${resolvedTicket.title}
+Description: ${resolvedTicket.description}
+Resolution: ${resolvedTicket.resolution}
+Comments: ${resolvedTicket.comments.map(c => c.content).join('\n')}
+
+Generate:
+1. A clear article title
+2. Step-by-step resolution guide
+3. Suggested category and tags
+4. Common variations of the problem
+
+Format as JSON.`
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.0-flash-exp',
+    contents: prompt,
+    config: {
+      temperature: 0.3, // Lower for more consistent output
+      responseMimeType: 'application/json'
+    }
+  })
+  
+  return JSON.parse(response.text)
+}
+```
+
+## Prompt Engineering
+
+- Use clear system prompts defining role and constraints
+- Include retrieved KB articles with metadata (title, URL)
+- Limit context window; prioritize most relevant chunks
+- Format responses with markdown for readability
+- Include citations/references to source KB articles
+- **Prompting Guide**: [Intro to Prompting](https://ai.google.dev/gemini-api/docs/prompting-intro)
+- **System Instructions**: [System Instructions Guide](https://ai.google.dev/gemini-api/docs/system-instructions)
+
+```ts
+// Example: System instruction for IT support chatbot
+const systemInstruction = `You are an IT support assistant for La Verdad Christian College's MIS department.
+
+Role: Help employees resolve technical issues by providing clear, step-by-step guidance.
+
+Guidelines:
+- Always use the provided knowledge base context to answer questions
+- If the answer isn't in the KB, acknowledge this and offer to create a ticket
+- Be professional, patient, and clear in your explanations
+- Cite source articles when providing solutions (use [Article Title] format)
+- Ask clarifying questions if the issue is unclear
+- Never make up solutions - only use verified KB content
+
+When to escalate:
+- Issue not covered in knowledge base
+- User has tried suggested solutions without success
+- Issue requires physical hardware intervention
+- Security-sensitive problems`
+
+// Generate response with grounded context
+const response = await ai.models.generateContent({
+  model: 'gemini-2.0-flash-exp',
+  contents: `Knowledge Base Context:\n${kbContext}\n\nUser Question: ${userQuestion}`,
+  config: {
+    systemInstruction: systemInstruction,
+    temperature: 0.7,
+    maxOutputTokens: 1024
+  }
+})
+
+const answer = response.text
+```
+
+## Error Handling
+
+- Gracefully handle API rate limits and quota errors
+- Provide fallback when AI is unavailable
+- Log AI errors for monitoring but don't expose details to users
+- Never leak prompts or system instructions in error messages
+- **Safety Settings**: [Safety Settings Guide](https://ai.google.dev/gemini-api/docs/safety-settings)
+
+```ts
+async function safeGenerateContent(prompt: string) {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash-exp',
+      contents: prompt
+    })
+    
+    // Check if response was blocked by safety filters
+    if (response.promptFeedback?.blockReason) {
+      return {
+        success: false,
+        error: 'Content was blocked by safety filters',
+        blockReason: response.promptFeedback.blockReason
+      }
+    }
+    
+    return {
+      success: true,
+      data: response.text
+    }
+    
+  } catch (error) {
+    // Handle specific API errors
+    if (error instanceof Error) {
+      if (error.message.includes('quota')) {
+        console.error('API quota exceeded:', error)
+        return {
+          success: false,
+          error: 'Service temporarily unavailable. Please try again later.'
+        }
+      }
+      
+      if (error.message.includes('rate limit')) {
+        console.error('Rate limit hit:', error)
+        return {
+          success: false,
+          error: 'Too many requests. Please wait a moment and try again.'
+        }
+      }
+      
+      if (error.message.includes('API key')) {
+        console.error('API key error:', error)
+        return {
+          success: false,
+          error: 'Configuration error. Please contact support.'
+        }
+      }
+    }
+    
+    // Generic error fallback
+    console.error('AI generation error:', error)
+    return {
+      success: false,
+      error: 'Unable to process request. Please try again or contact support.'
+    }
+  }
+}
+
+// Retry logic with exponential backoff
+async function generateWithRetry(
+  prompt: string,
+  maxRetries = 3,
+  baseDelay = 1000
+) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const result = await safeGenerateContent(prompt)
+      if (result.success) return result
+      
+      // If blocked by safety, don't retry
+      if (result.blockReason) return result
+      
+    } catch (error) {
+      if (attempt === maxRetries - 1) throw error
+      
+      // Exponential backoff
+      const delay = baseDelay * Math.pow(2, attempt)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+}
+```
+
+## Streaming Responses
+
+For better user experience, stream AI responses as they're generated:
+
+```ts
+async function streamChatResponse(prompt: string) {
+  const stream = await ai.models.generateContentStream({
+    model: 'gemini-2.0-flash-exp',
+    contents: prompt
+  })
+  
+  // Create ReadableStream for Next.js response
+  const encoder = new TextEncoder()
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const chunk of stream) {
+          // Get text from each chunk
+          const text = chunk.text
+          if (text) {
+            controller.enqueue(encoder.encode(text))
+          }
+        }
+        controller.close()
+      } catch (error) {
+        controller.error(error)
+      }
+    }
+  })
+  
+  return new Response(readableStream, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Transfer-Encoding': 'chunked'
+    }
+  })
+}
+
+// Alternative: Stream to client component
+async function* streamToClient(prompt: string) {
+  const stream = await ai.models.generateContentStream({
+    model: 'gemini-2.0-flash-exp',
+    contents: prompt,
+    config: {
+      temperature: 0.7,
+      maxOutputTokens: 1024
+    }
+  })
+  
+  for await (const chunk of stream) {
+    if (chunk.text) {
+      yield chunk.text
+    }
+  }
+}
+```
+
+## References
+
+### Internal Documentation
+- [ADR: Gemini API](mdc:docs/adr/0003-gemini-api.md)
+- [ADR: RAG Architecture](mdc:docs/adr/0004-RAG-architecture.md)
+- [System Architecture](mdc:docs/02-architecture/system-architecture.md)
+
+### Official Gemini API Documentation
+- [Gemini API Overview](https://ai.google.dev/gemini-api/docs)
+- [Gemini API Cookbook](https://ai.google.dev/gemini-api/cookbook)
+- [Get Started Tutorial (Node.js)](https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=node)
+- [**Migration Guide to New SDK**](https://ai.google.dev/gemini-api/docs/migrate) ⭐
+- [Embeddings Guide](https://ai.google.dev/gemini-api/docs/embeddings)
+- [Embeddings Quickstart](https://ai.google.dev/gemini-api/cookbook/quickstart_embeddings)
+- [Prompting Introduction](https://ai.google.dev/gemini-api/docs/prompting-intro)
+- [System Instructions](https://ai.google.dev/gemini-api/docs/system-instructions)
+- [Safety Settings](https://ai.google.dev/gemini-api/docs/safety-settings)
+- [Safety Guidance](https://ai.google.dev/gemini-api/docs/safety-guidance)
+- [Streaming Guide](https://ai.google.dev/gemini-api/cookbook/streaming)
+
+### SDK & Tools
+- [**Google GenAI SDK (npm)** - Recommended](https://www.npmjs.com/package/@google/genai) ⭐
+- [Google Generative AI SDK (npm) - Legacy](https://www.npmjs.com/package/@google/generative-ai)
+- [AI SDK by Vercel (Gemini Integration)](https://ai.google.dev/gemini-api/docs/vercel-ai-sdk-example)
+
+### SDK Comparison
+
+| Feature | Legacy SDK (`@google/generative-ai`) | New SDK (`@google/genai`) |
+|---------|--------------------------------------|---------------------------|
+| **Status** | Maintenance mode | ✅ General Availability (GA) |
+| **Client Pattern** | `GoogleGenerativeAI` class | Centralized `GoogleGenAI` client |
+| **API Access** | `model.generateContent()` | `ai.models.generateContent()` |
+| **Services** | Separate client classes | Unified: `models`, `chats`, `files`, `caches`, `tunings` |
+| **Recommendation** | Migrate to new SDK | ✅ Use for all new projects |

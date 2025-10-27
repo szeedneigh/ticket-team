@@ -1,0 +1,74 @@
+---
+description: Supabase integration patterns, RLS, and database conventions
+---
+# Supabase Integration
+
+## Client Initialization
+
+- Use environment variables for Supabase config:
+  - `NEXT_PUBLIC_SUPABASE_URL` for public client
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY` for public client
+  - `SUPABASE_SERVICE_ROLE_KEY` for server-only admin operations
+- Create separate client instances for server and client components:
+  - Client components: use `@supabase/ssr` with browser client
+  - Server components/actions: use `@supabase/ssr` with server client
+  - Admin operations: use service role client (server-only)
+
+```ts
+// Example server client
+import { createServerClient } from '@supabase/ssr'
+
+export function createClient() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get, set, remove // from Next.js cookies()
+      }
+    }
+  )
+}
+```
+
+## Row Level Security (RLS)
+
+- **Always enforce RLS** on all tables
+- Design policies using least-privilege principle
+- Policy patterns:
+  - Employees: read own tickets, create tickets
+  - MIS Staff: read/update assigned tickets
+  - Admin: manage users (except super_admin)
+  - Super Admin: full governance including super_admin roles
+- Never bypass RLS in client code; use service role only for trusted server operations
+
+## Database Conventions
+
+- Use snake_case for table and column names
+- Primary keys: `id UUID DEFAULT gen_random_uuid()`
+- Timestamps: `created_at TIMESTAMPTZ DEFAULT NOW()`, `updated_at TIMESTAMPTZ`
+- Audit fields: `created_by UUID`, `updated_by UUID` (FK to auth.users)
+- Soft delete: `deleted_at TIMESTAMPTZ`, `deleted_by UUID` (never hard delete domain records)
+- Use foreign keys with appropriate ON DELETE behavior
+- Index frequently queried columns and foreign keys
+
+## Error Handling
+
+- Always check for Supabase errors:
+
+```ts
+const { data, error } = await supabase.from('tickets').select('*')
+if (error) {
+  console.error('Database error:', error.message)
+  throw new Error('Failed to fetch tickets')
+}
+return data
+```
+
+- Map Supabase errors to user-friendly messages
+- Use RPC functions for complex operations requiring atomic transactions
+
+## References
+- See also: [ADR: Supabase](mdc:docs/adr/0002-supabase.md)
+- See also: [Database Schema](mdc:docs/02-architecture/database-schema.md)
+- See also: [Security Standards](mdc:docs/06-development/coding-standards.md#security)
