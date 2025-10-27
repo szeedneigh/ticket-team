@@ -1,4 +1,4 @@
-import { getUser } from '@/lib/auth/session'
+import { requireAuth } from '@/lib/auth/session'
 import { ProfileForm } from '@/components/profile/profile-form'
 import { AvatarUpload } from '@/components/profile/avatar-upload'
 import { Card } from '@/components/ui/card'
@@ -7,11 +7,7 @@ import { Separator } from '@/components/ui/separator'
 import { CalendarDays, Mail, Building, User as UserIcon } from 'lucide-react'
 
 export default async function ProfilePage() {
-  const user = await getUser()
-  
-  if (!user) {
-    return null
-  }
+  const user = await requireAuth()
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
