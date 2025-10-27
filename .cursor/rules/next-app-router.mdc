@@ -1,0 +1,12 @@
+---
+description: Next.js App Router rules for routing, layouts, and data fetching
+---
+# Next.js App Router Conventions
+
+- Routes live in `src/app/*`. Use nested layouts where appropriate.
+- Place shared UI in `src/app/(groups)` if you need parallel grouping.
+- Data fetching:
+  - Prefer server components and async functions for data.
+  - Use `revalidate` and `fetch` cache options explicitly when needed.
+- Metadata via `export const metadata` in route files.
+- Static assets in `public/`; reference with absolute `/` paths.

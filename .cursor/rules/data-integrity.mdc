@@ -1,0 +1,165 @@
+---
+description: Data integrity constraints, immutability, and audit trail patterns
+---
+# Data Integrity & Audit Trails
+
+## Immutability Principles
+
+Based on [Coding Standards](mdc:docs/06-development/coding-standards.md#security), enforce the following immutability rules:
+
+### Comments & History
+- **Comments are immutable**: No UPDATE or DELETE operations allowed
+- Store comment history with timestamps and author references
+- Display comments in chronological order
+- Use `created_at` and `created_by` for audit trail
+
+```ts
+// Good: Create comment only
+const { data, error } = await supabase
+  .from('comments')
+  .insert({
+    ticket_id: ticketId,
+    content: commentText,
+    created_by: userId
+  })
+
+// Bad: Never implement this
+// .update({ content: newContent })
+// .delete()
+```
+
+### Ticket Lifecycle
+- Ticket status transitions are one-way or controlled
+- Track status history in separate `ticket_status_history` table
+- Status flow: `open` → `in_progress` → `resolved` → `closed`
+- No hard deletes: use status transitions (e.g., `cancelled`)
+
+```ts
+// Example status transition
+await supabase.rpc('update_ticket_status', {
+  p_ticket_id: ticketId,
+  p_new_status: 'in_progress',
+  p_changed_by: userId
+})
+```
+
+## Soft Delete Patterns
+
+### User Lifecycle
+- Users are **deactivated**, not deleted
+- Fields: `deactivated_at TIMESTAMPTZ`, `deactivated_by UUID`
+- Deactivated users cannot log in but records remain
+- Super Admin governance: only `super_admin` can manage other `super_admin` roles
+
+```sql
+-- Example soft delete for user
+UPDATE users
+SET 
+  deactivated_at = NOW(),
+  deactivated_by = current_user_id
+WHERE id = target_user_id;
+```
+
+### Attachments
+- Use soft delete with `deleted_at`, `deleted_by`
+- Implement via RPC function (atomic operation)
+- Retain object in storage; optionally quarantine
+- Never expose deleted attachments to clients
+
+```ts
+// Soft delete attachment
+await supabase.rpc('soft_delete_attachment', {
+  p_attachment_id: attachmentId,
+  p_deleted_by: userId
+})
+```
+
+### Domain Records
+- **No hard deletes** for tickets, users, feedback, or KB articles
+- Use status fields or soft delete columns
+- Archive old records; don't remove
+- Maintain referential integrity with cascading soft deletes
+
+## Audit Trail
+
+### Automatic Timestamps
+- Use database triggers to auto-update `updated_at`:
+
+```sql
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_tickets_updated_at
+  BEFORE UPDATE ON tickets
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+```
+
+### Change Tracking
+- Track who changed what and when:
+  - `created_by`, `created_at` (set on insert)
+  - `updated_by`, `updated_at` (set on update)
+  - `deleted_by`, `deleted_at` (soft delete)
+- For critical tables, maintain separate history tables
+
+### History Tables
+- Pattern: `{entity}_history` table for auditing
+- Example: `ticket_status_history`, `ticket_assignment_history`
+- Store: old value, new value, changed_by, changed_at
+
+```sql
+CREATE TABLE ticket_status_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ticket_id UUID NOT NULL REFERENCES tickets(id),
+  old_status TEXT,
+  new_status TEXT NOT NULL,
+  changed_by UUID NOT NULL REFERENCES auth.users(id),
+  changed_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+## Validation & Constraints
+
+- Enforce data integrity at database level:
+  - NOT NULL constraints for required fields
+  - CHECK constraints for enums and ranges
+  - UNIQUE constraints for business keys
+  - Foreign keys with appropriate CASCADE rules
+- Validate on server before database insert
+- Sanitize user input to prevent injection
+
+## Feedback Isolation
+
+- Feedback is **write-only** for employees
+- Only `super_admin` can read and manage feedback
+- Implement via RLS policies
+- Employees can submit but cannot view their own feedback
+
+```sql
+-- RLS policy: employees can insert but not select
+CREATE POLICY "employees_can_insert_feedback"
+  ON feedback FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = submitted_by);
+
+-- RLS policy: only super_admin can select
+CREATE POLICY "super_admin_can_read_feedback"
+  ON feedback FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM users
+      WHERE id = auth.uid() AND role = 'super_admin'
+    )
+  );
+```
+
+## References
+- See also: [Coding Standards - Security](mdc:docs/06-development/coding-standards.md#security)
+- See also: [Database Schema](mdc:docs/02-architecture/database-schema.md)
+- See also: [Ticket Lifecycle](mdc:docs/02-architecture/ticket-lifecycle.md)

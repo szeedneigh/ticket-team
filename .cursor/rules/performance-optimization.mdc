@@ -1,0 +1,334 @@
+---
+description: Performance optimization patterns, caching, and best practices
+---
+# Performance & Optimization
+
+## Database Performance
+
+### Indexing
+- Index foreign keys and frequently queried columns
+- Use composite indexes for multi-column queries
+- For pgvector similarity search, use IVFFlat or HNSW indexes
+
+```sql
+-- Foreign key index
+CREATE INDEX idx_tickets_created_by ON tickets(created_by);
+
+-- Composite index for common query
+CREATE INDEX idx_tickets_status_priority ON tickets(status, priority);
+
+-- pgvector index for embeddings
+CREATE INDEX idx_kb_articles_embedding ON kb_articles 
+  USING ivfflat (embedding vector_cosine_ops)
+  WITH (lists = 100);
+```
+
+### Query Optimization
+- Use `select()` to fetch only needed columns
+- Apply filters server-side, not client-side
+- Use pagination for large datasets
+- Avoid N+1 queries; use joins or batch fetching
+
+```ts
+// Good: Select specific columns, paginate
+const { data, error } = await supabase
+  .from('tickets')
+  .select('id, title, status, created_at, created_by(full_name)')
+  .eq('status', 'open')
+  .order('created_at', { ascending: false })
+  .range(0, 49) // First 50 rows
+
+// Bad: Select all, fetch all rows
+const { data } = await supabase.from('tickets').select('*')
+```
+
+### Caching Strategies
+- Use `revalidate` in `fetch` or route segments for ISR
+- Cache frequently accessed data (e.g., KB articles, user profiles)
+- Use Supabase Realtime for live updates instead of polling
+- Implement stale-while-revalidate pattern
+
+```tsx
+// Next.js route-level caching
+export const revalidate = 3600 // Revalidate every hour
+
+// Fetch with explicit cache control
+const data = await fetch(url, {
+  next: { revalidate: 60 } // Revalidate every minute
+})
+
+// Supabase query with cache (using React Query or SWR)
+const { data: tickets } = useSWR('/api/tickets', fetcher, {
+  revalidateOnFocus: false,
+  dedupingInterval: 60000 // 1 minute
+})
+```
+
+## React Performance
+
+### Memoization
+- Use `useMemo` for expensive computations
+- Use `useCallback` to stabilize function references
+- Use `React.memo` to prevent unnecessary re-renders
+
+```tsx
+import { useMemo, useCallback, memo } from 'react'
+
+function TicketList({ tickets, onSelect }: TicketListProps) {
+  // Memoize filtered list
+  const filteredTickets = useMemo(() => {
+    return tickets.filter(t => t.status === 'open')
+  }, [tickets])
+  
+  // Stable callback reference
+  const handleSelect = useCallback((id: string) => {
+    onSelect(id)
+  }, [onSelect])
+  
+  return (
+    <div>
+      {filteredTickets.map(ticket => (
+        <TicketCard key={ticket.id} ticket={ticket} onSelect={handleSelect} />
+      ))}
+    </div>
+  )
+}
+
+// Memoize component
+export default memo(TicketList)
+```
+
+### Code Splitting
+- Use dynamic imports for heavy components
+- Lazy load non-critical features
+- Split routes automatically with App Router
+
+```tsx
+import dynamic from 'next/dynamic'
+
+// Lazy load heavy chart component
+const AnalyticsChart = dynamic(
+  () => import('@/components/analytics/Chart'),
+  {
+    loading: () => <ChartSkeleton />,
+    ssr: false // Disable SSR if not needed
+  }
+)
+
+// Lazy load modal (only when opened)
+const CreateTicketModal = dynamic(
+  () => import('@/components/tickets/CreateTicketModal')
+)
+```
+
+### Virtualization
+- Use virtualization for long lists (react-window, react-virtualized)
+- Render only visible items
+- Improves performance for 100+ items
+
+```tsx
+import { FixedSizeList } from 'react-window'
+
+function TicketList({ tickets }: { tickets: Ticket[] }) {
+  const Row = ({ index, style }: { index: number, style: React.CSSProperties }) => (
+    <div style={style}>
+      <TicketCard ticket={tickets[index]} />
+    </div>
+  )
+  
+  return (
+    <FixedSizeList
+      height={600}
+      itemCount={tickets.length}
+      itemSize={100}
+      width="100%"
+    >
+      {Row}
+    </FixedSizeList>
+  )
+}
+```
+
+## Image Optimization
+
+- Use `next/image` for automatic optimization
+- Specify width and height to prevent layout shift
+- Use appropriate formats (WebP, AVIF)
+- Lazy load images below the fold
+
+```tsx
+import Image from 'next/image'
+
+<Image
+  src="/logo.png"
+  alt="Ticket Team Logo"
+  width={200}
+  height={50}
+  priority // For above-the-fold images
+/>
+
+<Image
+  src={userAvatar}
+  alt="User avatar"
+  width={40}
+  height={40}
+  loading="lazy" // Default for below-the-fold
+/>
+```
+
+## AI Performance
+
+### Streaming Responses
+- Stream LLM responses for better UX
+- Use Server-Sent Events (SSE) or ReadableStream
+- Show partial results as they arrive
+
+```ts
+import { GoogleGenerativeAI } from '@google/generative-ai'
+
+export async function streamChatResponse(prompt: string) {
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+  
+  const result = await model.generateContentStream(prompt)
+  
+  // Stream chunks to client
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      for await (const chunk of result.stream) {
+        const text = chunk.text()
+        controller.enqueue(encoder.encode(text))
+      }
+      controller.close()
+    }
+  })
+  
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+  })
+}
+```
+
+### Embedding Caching
+- Cache embeddings for KB articles
+- Regenerate only when content changes
+- Use database triggers to invalidate cache
+
+```sql
+-- Trigger to regenerate embedding on content update
+CREATE OR REPLACE FUNCTION regenerate_embedding()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Set flag to regenerate embedding
+  NEW.embedding_stale = TRUE;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER on_kb_article_update
+  BEFORE UPDATE OF content ON kb_articles
+  FOR EACH ROW
+  EXECUTE FUNCTION regenerate_embedding();
+```
+
+### Debouncing & Throttling
+- Debounce search queries and AI suggestions
+- Throttle API calls to prevent rate limiting
+- Use abort controllers to cancel stale requests
+
+```tsx
+import { useState, useEffect } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
+
+function SearchBar() {
+  const [query, setQuery] = useState('')
+  const debouncedQuery = useDebounce(query, 500) // 500ms delay
+  
+  useEffect(() => {
+    if (debouncedQuery) {
+      // Make API call
+      searchKnowledgeBase(debouncedQuery)
+    }
+  }, [debouncedQuery])
+  
+  return <input value={query} onChange={e => setQuery(e.target.value)} />
+}
+```
+
+## Bundle Size
+
+- Analyze bundle with `@next/bundle-analyzer`
+- Tree-shake unused code
+- Use barrel imports carefully (can prevent tree-shaking)
+- Prefer named imports over namespace imports
+
+```ts
+// Good: Named imports (tree-shakeable)
+import { Button, Dialog } from '@/components/ui'
+
+// Bad: Namespace import (imports entire module)
+import * as UI from '@/components/ui'
+
+// Good: Direct imports for large libraries
+import debounce from 'lodash/debounce'
+
+// Bad: Imports entire lodash
+import { debounce } from 'lodash'
+```
+
+## Network Performance
+
+### Parallel Requests
+- Fetch independent data in parallel
+- Use `Promise.all()` or `Promise.allSettled()`
+
+```ts
+// Good: Parallel fetching
+const [tickets, users, categories] = await Promise.all([
+  fetchTickets(),
+  fetchUsers(),
+  fetchCategories()
+])
+
+// Bad: Sequential fetching (slower)
+const tickets = await fetchTickets()
+const users = await fetchUsers()
+const categories = await fetchCategories()
+```
+
+### Request Deduplication
+- Next.js automatically deduplicates `fetch` requests in Server Components
+- Use React Query or SWR for client-side deduplication
+
+### Compression
+- Enable gzip/brotli compression (automatic on Vercel)
+- Compress API responses for large JSON payloads
+
+## Monitoring
+
+- Use Next.js Analytics and Speed Insights
+- Monitor Core Web Vitals (LCP, FID, CLS)
+- Set performance budgets
+- Use Lighthouse CI in build pipeline
+
+```tsx
+// Enable Next.js Speed Insights
+import { SpeedInsights } from '@vercel/speed-insights/next'
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <SpeedInsights />
+      </body>
+    </html>
+  )
+}
+```
+
+## References
+- See also: [Coding Standards - Performance](mdc:docs/06-development/coding-standards.md#performance)
+- See also: [Database Schema](mdc:docs/02-architecture/database-schema.md)
+- See also: [Component Patterns](mdc:.cursor/rules/component-patterns.mdc)

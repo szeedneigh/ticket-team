@@ -7,6 +7,8 @@ A centralized, AI-powered helpdesk ticketing system for La Verdad Christian Coll
 ## Quick Links
 - [Quick Start](./01-overview/quick-start.md)
 - [Setup Guide](./01-overview/setup-guide.md)
+- [Implementation Status](./08-roadmap/implementation-status.md)
+- [Project Roadmap](./08-roadmap/roadmap.md)
 - [Architecture Overview](./02-architecture/system-architecture.md)
 - [API Endpoints](./04-api/endpoints.md)
 - [Use Cases](./03-features/user-flows.md)
@@ -40,6 +42,9 @@ A centralized, AI-powered helpdesk ticketing system for La Verdad Christian Coll
 - Troubleshooting
   - [Common Issues](./07-troubleshooting/common-issues.md)
   - [Debugging](./07-troubleshooting/debugging.md)
+- Roadmap
+  - [Implementation Status](./08-roadmap/implementation-status.md)
+  - [Project Roadmap](./08-roadmap/roadmap.md)
 - ADRs
   - [ADR 0001: Choose Next.js](./adr/0001-nextjs.md)
   - [ADR 0002: Choose Supabase](./adr/0002-supabase.md)
