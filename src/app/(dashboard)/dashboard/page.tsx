@@ -1,15 +1,11 @@
-import { getUser } from '@/lib/auth/session'
+import { requireAuth } from '@/lib/auth/session'
 import { WelcomeBanner } from '@/components/dashboard/welcome-banner'
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { RecentActivity } from '@/components/dashboard/recent-activity'
 
 export default async function DashboardPage() {
-  const user = await getUser()
-  
-  if (!user) {
-    return null
-  }
+  const user = await requireAuth()
 
   return (
     <div className="space-y-8">
