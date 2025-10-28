@@ -7,7 +7,6 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Loader2, Save, X, Edit3 } from 'lucide-react'
@@ -28,10 +27,12 @@ interface ProfileFormProps {
   user: User
   onCancel?: () => void
   onSuccess?: () => void
+  /** Whether the form should start in edit mode (controlled by parent) */
+  defaultEditing?: boolean
 }
 
-export function ProfileForm({ user, onCancel, onSuccess }: ProfileFormProps) {
-  const [isEditing, setIsEditing] = useState(false)
+export function ProfileForm({ user, onCancel, onSuccess, defaultEditing = false }: ProfileFormProps) {
+  const [isEditing, setIsEditing] = useState(defaultEditing)
   const [isPending, startTransition] = useTransition()
 
   const {
@@ -39,7 +40,6 @@ export function ProfileForm({ user, onCancel, onSuccess }: ProfileFormProps) {
     handleSubmit,
     formState: { errors, isDirty },
     reset,
-    watch
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
