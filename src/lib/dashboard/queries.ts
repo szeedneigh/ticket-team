@@ -34,7 +34,7 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
       .eq('id', userId)
       .single()
     
-    const isStaff = userData?.role && ['staff', 'admin', 'super_admin'].includes(userData.role)
+    const isStaff = ['staff', 'admin', 'super_admin'].includes(userData?.role ?? '')
     
     // Get ticket counts based on user role
     let openTicketsQuery = supabase
