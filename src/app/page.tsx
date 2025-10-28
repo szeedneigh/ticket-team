@@ -111,7 +111,7 @@ export default function Home() {
             variants={itemVariants}
           >
             <a
-              href="/login"
+              href="/auth/sign-in"
               className="w-full inline-flex items-center justify-center gap-3 rounded-[20px] px-8 py-4 text-[18px] md:text-[20px] font-semibold text-white bg-[#003B73] shadow-lg hover:bg-[#002C5A] transition-all duration-200"
             >
               Log In
