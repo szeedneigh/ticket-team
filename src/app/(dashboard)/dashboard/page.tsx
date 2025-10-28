@@ -1,6 +1,7 @@
 import { requireAuth } from '@/lib/auth/session'
 import { getDashboardStats } from '@/lib/dashboard/queries'
 import { getUserActivity } from '@/lib/dashboard/activity-queries'
+import { formatStatValue } from '@/lib/format'
 import { WelcomeBanner } from '@/components/dashboard/welcome-banner'
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
@@ -53,13 +54,13 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Open Tickets"
-          value={(stats?.openTickets ?? 0).toString()}
+          value={formatStatValue(stats?.openTickets)}
           icon="Ticket"
           loading={!stats && !statsError}
         />
         <StatsCard
           title="Resolved Today"
-          value={(stats?.resolvedTickets ?? 0).toString()}
+          value={formatStatValue(stats?.resolvedTickets)}
           icon="CheckCircle"
           loading={!stats && !statsError}
         />
