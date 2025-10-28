@@ -6,59 +6,20 @@ import { Button } from '@/components/ui/button'
 import { 
   Ticket, 
   MessageSquare, 
-  User, 
   Clock,
   CheckCircle,
-  AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
+import type { DashboardActivityItem } from '@/lib/types/dashboard'
 
 interface RecentActivityProps {
-  userId: string
+  items: DashboardActivityItem[]
 }
 
-interface ActivityItem {
-  id: string
-  type: 'ticket_created' | 'ticket_updated' | 'comment_added' | 'status_changed'
-  description: string
-  timestamp: Date
-  metadata?: Record<string, unknown>
-}
-
-// Mock data for now - will be replaced with real data in Phase 4
-const mockActivities: ActivityItem[] = [
-  {
-    id: '1',
-    type: 'ticket_created',
-    description: 'Created ticket #1234: Email access issue',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-  },
-  {
-    id: '2',
-    type: 'status_changed',
-    description: 'Ticket #1230 status changed to "In Progress"',
-    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-  },
-  {
-    id: '3',
-    type: 'comment_added',
-    description: 'Added comment to ticket #1228',
-    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
-  },
-  {
-    id: '4',
-    type: 'ticket_updated',
-    description: 'Updated ticket #1225: Added priority level',
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-  },
-]
-
-const getActivityIcon = (type: ActivityItem['type']) => {
+const getActivityIcon = (type: DashboardActivityItem['type']) => {
   switch (type) {
     case 'ticket_created':
       return Ticket
-    case 'ticket_updated':
-      return AlertCircle
     case 'comment_added':
       return MessageSquare
     case 'status_changed':
@@ -68,12 +29,10 @@ const getActivityIcon = (type: ActivityItem['type']) => {
   }
 }
 
-const getActivityColor = (type: ActivityItem['type']) => {
+const getActivityColor = (type: DashboardActivityItem['type']) => {
   switch (type) {
     case 'ticket_created':
       return 'text-blue-500'
-    case 'ticket_updated':
-      return 'text-yellow-500'
     case 'comment_added':
       return 'text-green-500'
     case 'status_changed':
@@ -83,7 +42,8 @@ const getActivityColor = (type: ActivityItem['type']) => {
   }
 }
 
-const formatTimeAgo = (date: Date) => {
+const formatTimeAgo = (dateString: string) => {
+  const date = new Date(dateString)
   const now = new Date()
   const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
   
@@ -97,7 +57,7 @@ const formatTimeAgo = (date: Date) => {
   }
 }
 
-export function RecentActivity({ userId }: RecentActivityProps) {
+export function RecentActivity({ items }: RecentActivityProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -108,18 +68,18 @@ export function RecentActivity({ userId }: RecentActivityProps) {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-primary">Recent Activity</h2>
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/activity">View All</Link>
+            <Link href="/tickets">View All</Link>
           </Button>
         </div>
         
         <div className="space-y-4">
-          {mockActivities.length === 0 ? (
+          {items.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
               <p>No recent activity</p>
             </div>
           ) : (
-            mockActivities.map((activity, index) => {
+            items.map((activity, index) => {
               const IconComponent = getActivityIcon(activity.type)
               const iconColor = getActivityColor(activity.type)
               
@@ -135,8 +95,15 @@ export function RecentActivity({ userId }: RecentActivityProps) {
                     <IconComponent className={`h-4 w-4 ${iconColor}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground">{activity.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{formatTimeAgo(activity.timestamp)}</p>
+                    <p className="text-sm text-foreground">
+                      <span className="font-medium">{activity.title}</span>
+                      {activity.description && (
+                        <span className="text-muted-foreground"> - {activity.description}</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatTimeAgo(activity.createdAt)}
+                    </p>
                   </div>
                 </motion.div>
               )
