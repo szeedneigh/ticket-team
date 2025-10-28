@@ -40,6 +40,17 @@ export type ActivityType =
   | 'user_registered'
   | 'user_updated'
 
+export interface DashboardActivityItem {
+  id: string
+  type: 'ticket_created' | 'comment_added' | 'status_changed'
+  title: string
+  description?: string
+  ticketId: string
+  actorId: string
+  createdAt: string
+  meta?: Record<string, unknown>
+}
+
 export interface TicketSummary {
   total: number
   open: number
