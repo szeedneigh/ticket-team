@@ -21,3 +21,12 @@ export function formatStatValue(value?: number | null): string {
   return (value ?? 0).toString()
 }
 
+/**
+ * Formats a satisfaction rating value with one decimal place
+ * @param value - The satisfaction rating (typically 0-5)
+ * @returns The formatted rating string (e.g., "4.8"), or "0.0" if value is null/undefined
+ */
+export function formatSatisfactionValue(value?: number | null): string {
+  return (value ?? 0).toFixed(1)
+}
+
