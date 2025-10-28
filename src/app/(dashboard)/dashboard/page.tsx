@@ -53,13 +53,13 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Open Tickets"
-          value={stats?.openTickets.toString() || '0'}
+          value={(stats?.openTickets ?? 0).toString()}
           icon="Ticket"
           loading={!stats && !statsError}
         />
         <StatsCard
           title="Resolved Today"
-          value={stats?.resolvedTickets.toString() || '0'}
+          value={(stats?.resolvedTickets ?? 0).toString()}
           icon="CheckCircle"
           loading={!stats && !statsError}
         />
