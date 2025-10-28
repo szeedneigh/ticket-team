@@ -137,7 +137,7 @@ export async function getUserActivity(
         activities.push({
           id: `activity-${activity.id}`,
           type: 'status_changed',
-          title: `Ticket #${activity.ticket_id.length >= TICKET_ID_DISPLAY_LENGTH ? ticket.id.slice(0, TICKET_ID_DISPLAY_LENGTH) : ticket.id}`,
+          title: `Ticket #${activity.ticket_id.length >= TICKET_ID_DISPLAY_LENGTH ? activity.ticket_id.slice(0, TICKET_ID_DISPLAY_LENGTH) : activity.ticket_id}`,
           description,
           ticketId: activity.ticket_id,
           actorId: activity.user_id,
