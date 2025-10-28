@@ -56,7 +56,7 @@ export async function getUserActivity(
         activities.push({
           id: `ticket-${ticket.id}`,
           type: 'ticket_created',
-          title: `Ticket #${ticket.id.slice(0, TICKET_ID_DISPLAY_LENGTH)}`,
+          title: `Ticket #${ticket.id.length >= TICKET_ID_DISPLAY_LENGTH ? ticket.id.slice(0, TICKET_ID_DISPLAY_LENGTH) : ticket.id}`,
           description: `Created ticket: ${ticket.title}`,
           ticketId: ticket.id,
           actorId: ticket.user_id,
@@ -96,7 +96,9 @@ export async function getUserActivity(
           actorId: comment.user_id,
           createdAt: comment.created_at,
           meta: {
-            commentPreview: comment.content.slice(0, 100),
+            commentPreview: comment.content.length > 100
+              ? comment.content.slice(0, 100) + '...'
+              : comment.content,
           },
         })
       })
@@ -135,7 +137,7 @@ export async function getUserActivity(
         activities.push({
           id: `activity-${activity.id}`,
           type: 'status_changed',
-          title: `Ticket #${activity.ticket_id.slice(0, TICKET_ID_DISPLAY_LENGTH)}`,
+          title: `Ticket #${activity.ticket_id.length >= TICKET_ID_DISPLAY_LENGTH ? ticket.id.slice(0, TICKET_ID_DISPLAY_LENGTH) : ticket.id}`,
           description,
           ticketId: activity.ticket_id,
           actorId: activity.user_id,
