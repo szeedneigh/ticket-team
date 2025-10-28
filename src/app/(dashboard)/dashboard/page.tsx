@@ -1,7 +1,7 @@
 import { requireAuth } from '@/lib/auth/session'
 import { getDashboardStats } from '@/lib/dashboard/queries'
 import { getUserActivity } from '@/lib/dashboard/activity-queries'
-import { formatStatValue } from '@/lib/format'
+import { formatStatValue, formatSatisfactionValue } from '@/lib/format'
 import { WelcomeBanner } from '@/components/dashboard/welcome-banner'
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
         />
         <StatsCard
           title="Satisfaction"
-          value={(stats?.satisfaction ?? 0).toFixed(1)}
+          value={formatSatisfactionValue(stats?.satisfaction)}
           icon="Star"
           loading={!stats && !statsError}
         />
