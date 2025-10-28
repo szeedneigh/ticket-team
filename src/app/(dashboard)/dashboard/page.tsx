@@ -71,7 +71,7 @@ export default async function DashboardPage() {
         />
         <StatsCard
           title="Satisfaction"
-          value={stats?.satisfaction.toFixed(1) || '0.0'}
+          value={(stats?.satisfaction ?? 0).toFixed(1)}
           icon="Star"
           loading={!stats && !statsError}
         />
