@@ -34,6 +34,7 @@ export function ProfileClient({ user, ticketStats }: ProfileClientProps) {
           
           <ProfileForm 
             user={user}
+            defaultEditing={true}
             onCancel={() => setIsEditing(false)}
             onSuccess={() => setIsEditing(false)}
           />
