@@ -95,12 +95,14 @@ export function RecentActivity({ items }: RecentActivityProps) {
                     <IconComponent className={`h-4 w-4 ${iconColor}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground">
-                      <span className="font-medium">{activity.title}</span>
+                    <div className="text-sm">
+                      <strong className="font-medium text-foreground">
+                        {activity.title}
+                      </strong>
                       {activity.description && (
                         <span className="text-muted-foreground"> - {activity.description}</span>
                       )}
-                    </p>
+                    </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {formatTimeAgo(activity.createdAt)}
                     </p>
