@@ -10,6 +10,9 @@
 import { createClient } from '@/lib/supabase/server'
 import type { DashboardActivityItem } from '@/lib/types/dashboard'
 
+// Constants
+const TICKET_ID_DISPLAY_LENGTH = 8
+
 interface ActivityQueryOptions {
   limit?: number
 }
@@ -53,7 +56,7 @@ export async function getUserActivity(
         activities.push({
           id: `ticket-${ticket.id}`,
           type: 'ticket_created',
-          title: `Ticket #${ticket.id.slice(0, 8)}`,
+          title: `Ticket #${ticket.id.slice(0, TICKET_ID_DISPLAY_LENGTH)}`,
           description: `Created ticket: ${ticket.title}`,
           ticketId: ticket.id,
           actorId: ticket.user_id,
@@ -87,7 +90,7 @@ export async function getUserActivity(
         activities.push({
           id: `comment-${comment.id}`,
           type: 'comment_added',
-          title: `Ticket #${comment.ticket_id.slice(0, 8)}`,
+          title: `Ticket #${comment.ticket_id.slice(0, TICKET_ID_DISPLAY_LENGTH)}`,
           description: `Added comment on: ${ticket?.title || 'Unknown ticket'}`,
           ticketId: comment.ticket_id,
           actorId: comment.user_id,
@@ -132,7 +135,7 @@ export async function getUserActivity(
         activities.push({
           id: `activity-${activity.id}`,
           type: 'status_changed',
-          title: `Ticket #${activity.ticket_id.slice(0, 8)}`,
+          title: `Ticket #${activity.ticket_id.slice(0, TICKET_ID_DISPLAY_LENGTH)}`,
           description,
           ticketId: activity.ticket_id,
           actorId: activity.user_id,
