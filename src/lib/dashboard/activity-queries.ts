@@ -8,17 +8,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
-
-export interface DashboardActivityItem {
-  id: string
-  type: 'ticket_created' | 'comment_added' | 'status_changed'
-  title: string
-  description?: string
-  ticketId: string
-  actorId: string
-  createdAt: string
-  meta?: Record<string, unknown>
-}
+import type { DashboardActivityItem } from '@/lib/types/dashboard'
 
 interface ActivityQueryOptions {
   limit?: number
