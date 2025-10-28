@@ -26,9 +26,11 @@ type ProfileFormData = z.infer<typeof profileSchema>
 
 interface ProfileFormProps {
   user: User
+  onCancel?: () => void
+  onSuccess?: () => void
 }
 
-export function ProfileForm({ user }: ProfileFormProps) {
+export function ProfileForm({ user, onCancel, onSuccess }: ProfileFormProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isPending, startTransition] = useTransition()
 
@@ -63,6 +65,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
           toast.success('Profile updated successfully')
           setIsEditing(false)
           reset(data)
+          onSuccess?.()
         } else {
           toast.error(result.error || 'Failed to update profile')
         }
@@ -76,6 +79,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
   const handleCancel = () => {
     reset()
     setIsEditing(false)
+    onCancel?.()
   }
 
   const handleEdit = () => {
