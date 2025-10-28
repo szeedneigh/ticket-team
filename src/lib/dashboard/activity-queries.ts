@@ -83,8 +83,6 @@ export async function getUserActivity(
       comments.forEach(comment => {
         // Supabase returns the relation as an object (not array) when using !inner
         const ticket = comment.tickets as unknown as TicketRelation
-        // Safely truncate comment content to avoid splitting multi-byte characters
-        const commentPreview = Array.from(comment.content).slice(0, 100).join('')
         
         activities.push({
           id: `comment-${comment.id}`,
@@ -95,7 +93,7 @@ export async function getUserActivity(
           actorId: comment.user_id,
           createdAt: comment.created_at,
           meta: {
-            commentPreview,
+            commentPreview: comment.content.slice(0, 100),
           },
         })
       })
