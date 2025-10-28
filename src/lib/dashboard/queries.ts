@@ -27,17 +27,82 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
   const supabase = await createClient()
   
   try {
-    // For Phase 3C, return mock data
-    // In Phase 4, these will be real database queries
+    // Get user info to determine their role
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', userId)
+      .single()
+    
+    const isStaff = userData?.role && ['staff', 'admin', 'super_admin'].includes(userData.role)
+    
+    // Get ticket counts based on user role
+    let openTicketsQuery = supabase
+      .from('tickets')
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['open', 'in_progress'])
+    
+    // Employees only see their own tickets, staff see all
+    if (!isStaff) {
+      openTicketsQuery = openTicketsQuery.eq('user_id', userId)
+    }
+    
+    const { count: openCount } = await openTicketsQuery
+    
+    // Get tickets resolved today
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    let resolvedTodayQuery = supabase
+      .from('tickets')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'resolved')
+      .gte('resolved_at', today.toISOString())
+    
+    if (!isStaff) {
+      resolvedTodayQuery = resolvedTodayQuery.eq('user_id', userId)
+    }
+    
+    const { count: resolvedToday } = await resolvedTodayQuery
+    
+    // Get total tickets
+    let totalTicketsQuery = supabase
+      .from('tickets')
+      .select('id', { count: 'exact', head: true })
+    
+    if (!isStaff) {
+      totalTicketsQuery = totalTicketsQuery.eq('user_id', userId)
+    }
+    
+    const { count: totalCount } = await totalTicketsQuery
+    
+    // Get tickets assigned to user (staff only)
+    let assignedCount = 0
+    if (isStaff) {
+      const { count } = await supabase
+        .from('tickets')
+        .select('id', { count: 'exact', head: true })
+        .eq('assigned_to', userId)
+        .in('status', ['open', 'in_progress'])
+      
+      assignedCount = count || 0
+    }
+    
+    // Calculate average response time (mock for now - requires ticket_activities)
+    const avgResponseTime = '2.4h'
+    
+    // Get satisfaction rating (mock for now - requires ticket_feedback)
+    const satisfaction = 4.8
+    
     return {
-      openTickets: 3,
-      resolvedTickets: 7,
-      avgResponseTime: '2.4h',
-      satisfaction: 4.8,
-      totalTickets: 15,
-      myTickets: 3,
-      assignedTickets: 2,
-      overdueTickets: 1,
+      openTickets: openCount || 0,
+      resolvedTickets: resolvedToday || 0,
+      avgResponseTime,
+      satisfaction,
+      totalTickets: totalCount || 0,
+      myTickets: !isStaff ? (totalCount || 0) : 0,
+      assignedTickets: assignedCount,
+      overdueTickets: 0, // TODO: Calculate based on created_at + SLA
     }
   } catch (error) {
     console.error('Error fetching dashboard stats:', error)
