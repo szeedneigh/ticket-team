@@ -14,7 +14,7 @@ import type { User } from '@/lib/types/users'
 interface UserAvatarProps {
   user: User
   showRole?: boolean
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
   className?: string
 }
 
@@ -36,12 +36,14 @@ export function UserAvatar({
     sm: 'h-8 w-8',
     md: 'h-10 w-10',
     lg: 'h-16 w-16',
+    xl: 'h-24 w-24',
   }
   
   const badgeSizeClasses = {
     sm: 'text-[10px] px-1',
     md: 'text-xs',
     lg: 'text-sm',
+    xl: 'text-base',
   }
   
   // Generate initials from full name
