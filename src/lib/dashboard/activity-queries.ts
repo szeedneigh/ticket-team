@@ -9,6 +9,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { DashboardActivityItem } from '@/lib/types/dashboard'
+import { logger } from '@/lib/logger'
 
 // Constants
 const TICKET_ID_DISPLAY_LENGTH = 8
@@ -50,8 +51,16 @@ export async function getUserActivity(
       .limit(10)
     
     if (ticketsError) {
-      console.error('Error fetching tickets:', ticketsError)
-    } else if (tickets) {
+      logger.error('Error fetching tickets for activity', { 
+        error: ticketsError.message, 
+        code: ticketsError.code,
+        userId 
+      })
+      // Return empty array instead of throwing to allow dashboard to load
+      return []
+    }
+    
+    if (tickets) {
       tickets.forEach(ticket => {
         activities.push({
           id: `ticket-${ticket.id}`,
@@ -81,7 +90,12 @@ export async function getUserActivity(
       .limit(10)
     
     if (commentsError) {
-      console.error('Error fetching comments:', commentsError)
+      logger.error('Error fetching comments for activity', { 
+        error: commentsError.message,
+        code: commentsError.code,
+        userId 
+      })
+      // Don't return early, continue to try other queries
     } else if (comments) {
       comments.forEach(comment => {
         // Supabase returns the relation as an object (not array) when using !inner
@@ -124,7 +138,12 @@ export async function getUserActivity(
       .limit(10)
     
     if (activitiesError) {
-      console.error('Error fetching activities:', activitiesError)
+        logger.error('Error fetching ticket activities for activity', { 
+        error: activitiesError.message,
+        code: activitiesError.code,
+        userId 
+      })
+      // Don't return early, continue with what we have
     } else if (statusChanges) {
       statusChanges.forEach(activity => {
         // Supabase returns the relation as an object (not array) when using !inner
@@ -155,7 +174,12 @@ export async function getUserActivity(
     return activities.slice(0, limit)
     
   } catch (error) {
-    console.error('Error fetching user activity:', error)
-    throw new Error('Failed to fetch user activity')
+    logger.error('Error fetching user activity', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      userId 
+    })
+    // Return empty array instead of throwing to allow dashboard to load
+    return []
   }
 }
