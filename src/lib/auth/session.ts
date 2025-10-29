@@ -10,6 +10,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { cache } from 'react'
 import { redirect } from 'next/navigation'
+import { logger } from '@/lib/logger'
 import type { User } from '@/lib/types/users'
 import type { UserRole } from '@/lib/types/database'
 import { hasPermission } from '@/lib/types/database'
@@ -47,7 +48,7 @@ export const getUser = cache(async (): Promise<User | null> => {
     .single()
   
   if (error || !user) {
-    console.error('User fetch error:', error)
+    logger.error('User fetch error', { error: error?.message })
     return null
   }
   

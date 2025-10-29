@@ -9,7 +9,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useUser } from '@/lib/hooks/use-user'
 import type { 
   DashboardStats, 
@@ -65,7 +65,7 @@ export function useDashboardStats(): UseDashboardStatsReturn {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return
 
     try {
@@ -91,11 +91,11 @@ export function useDashboardStats(): UseDashboardStatsReturn {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     fetchData()
-  }, [user])
+  }, [fetchData])
 
   return {
     data,
@@ -117,7 +117,7 @@ export function useRecentActivity(limit: number = 10): UseRecentActivityReturn {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return
 
     try {
@@ -158,11 +158,11 @@ export function useRecentActivity(limit: number = 10): UseRecentActivityReturn {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user, limit])
 
   useEffect(() => {
     fetchData()
-  }, [user, limit])
+  }, [fetchData])
 
   return {
     data,
@@ -183,7 +183,7 @@ export function useTicketSummary(): UseTicketSummaryReturn {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return
 
     try {
@@ -208,11 +208,11 @@ export function useTicketSummary(): UseTicketSummaryReturn {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     fetchData()
-  }, [user])
+  }, [fetchData])
 
   return {
     data,
@@ -232,7 +232,7 @@ export function useKBStats(): UseKBStatsReturn {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -255,11 +255,11 @@ export function useKBStats(): UseKBStatsReturn {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
 
   return {
     data,
@@ -280,7 +280,7 @@ export function useDashboardData(): UseDashboardDataReturn {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return
 
     try {
@@ -346,11 +346,11 @@ export function useDashboardData(): UseDashboardDataReturn {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     fetchData()
-  }, [user])
+  }, [fetchData])
 
   return {
     data,
