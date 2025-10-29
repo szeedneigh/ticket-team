@@ -71,7 +71,10 @@ export function ProfileForm({ user, onCancel, onSuccess, defaultEditing = false 
         }
       } catch (error) {
         toast.error('An unexpected error occurred')
-        console.error('Profile update error:', error)
+        // Client-side logging - only in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Profile update error:', error)
+        }
       }
     })
   }
