@@ -1,7 +1,6 @@
 'use client'
 
 import Image from "next/image";
-import Link from "next/link";
 import { motion } from 'framer-motion'
 import { Robot } from "@/components/shared/Robot";
 
@@ -24,7 +23,7 @@ export default function Home() {
       y: 0,
       transition: {
         duration: 0.8,
-        ease: 'easeOut',
+        ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
       },
     },
   }
@@ -37,7 +36,7 @@ export default function Home() {
         className="pointer-events-none absolute inset-y-0 left-0 w-[54vw] min-w-[360px] z-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1, ease: 'easeOut' }}
+        transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
       >
         <div className="absolute inset-0 bg-[url('/assets/curvy-bg1.svg')] bg-no-repeat bg-left [background-size:100%]" />
       </motion.div>
@@ -47,7 +46,7 @@ export default function Home() {
         className="pointer-events-none absolute inset-y-0 right-0 w-[54vw] min-w-[360px] z-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 0.1, ease: 'easeOut' }}
+        transition={{ duration: 1, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
       >
         <div className="absolute inset-0 bg-[url('/assets/curvy-bg2.svg')] bg-no-repeat bg-right [background-size:60%]" />
       </motion.div>
