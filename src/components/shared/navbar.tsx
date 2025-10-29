@@ -84,8 +84,8 @@ export function Navbar({ user }: NavbarProps) {
                     <Link href="/settings">Settings</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <SignOutButton variant="ghost" className="w-full justify-start">
+                  <DropdownMenuItem className="p-0">
+                    <SignOutButton variant="ghost" className="w-full justify-start h-auto px-2 py-1.5">
                       Sign Out
                     </SignOutButton>
                   </DropdownMenuItem>

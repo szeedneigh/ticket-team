@@ -12,6 +12,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
+import { env, isValidOrigin } from '@/lib/env'
+import { logger } from '@/lib/logger'
 
 interface ActionResult {
   success?: boolean
@@ -25,7 +27,12 @@ interface ActionResult {
  */
 export async function signInWithGoogle(): Promise<{ url: string } | { error: string }> {
   const supabase = await createClient()
-  const origin = (await headers()).get('origin') || process.env.NEXT_PUBLIC_SITE_URL
+  const origin = (await headers()).get('origin') || env.app.siteUrl
+  
+  // Validate origin if provided
+  if (origin && !isValidOrigin(origin)) {
+    return { error: 'Invalid request origin' }
+  }
   
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -41,7 +48,7 @@ export async function signInWithGoogle(): Promise<{ url: string } | { error: str
   })
   
   if (error) {
-    console.error('Google sign-in error:', error)
+    logger.error('Google sign-in error', { error: error.message })
     return { error: error.message }
   }
   
@@ -80,77 +87,11 @@ export async function updateLastLogin(): Promise<ActionResult> {
     .eq('id', user.id)
   
   if (error) {
-    console.error('Failed to update last login:', error)
+    logger.error('Failed to update last login', { error: error.message })
     return { error: error.message }
   }
   
   return { success: true }
-}
-
-/**
- * Update user profile
- * @param formData - Form data containing profile updates
- */
-export async function updateProfile(formData: FormData): Promise<ActionResult> {
-  const supabase = await createClient()
-  const { data: { user: authUser } } = await supabase.auth.getUser()
-  
-  if (!authUser) {
-    return { error: 'Not authenticated' }
-  }
-  
-  const updates = {
-    full_name: formData.get('fullName') as string,
-    department: formData.get('department') as string || null,
-    position: formData.get('position') as string || null,
-    phone: formData.get('phone') as string || null,
-    updated_at: new Date().toISOString(),
-  }
-  
-  // Validate required fields
-  if (!updates.full_name || updates.full_name.trim().length < 2) {
-    return { error: 'Full name must be at least 2 characters' }
-  }
-  
-  const { error } = await supabase
-    .from('users')
-    .update(updates)
-    .eq('id', authUser.id)
-  
-  if (error) {
-    console.error('Profile update error:', error)
-    return { error: error.message }
-  }
-  
-  return { success: true, message: 'Profile updated successfully' }
-}
-
-/**
- * Update user avatar URL
- * @param avatarUrl - The new avatar URL
- */
-export async function updateAvatar(avatarUrl: string): Promise<ActionResult> {
-  const supabase = await createClient()
-  const { data: { user: authUser } } = await supabase.auth.getUser()
-  
-  if (!authUser) {
-    return { error: 'Not authenticated' }
-  }
-  
-  const { error } = await supabase
-    .from('users')
-    .update({
-      avatar_url: avatarUrl,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', authUser.id)
-  
-  if (error) {
-    console.error('Avatar update error:', error)
-    return { error: error.message }
-  }
-  
-  return { success: true, message: 'Avatar updated successfully' }
 }
 
 /**

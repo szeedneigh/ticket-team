@@ -31,26 +31,12 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
+import { env } from '@/lib/env'
 
 export function createServiceClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl) {
-    throw new Error(
-      'NEXT_PUBLIC_SUPABASE_URL is not defined. Add it to your .env.local file.'
-    )
-  }
-
-  if (!serviceRoleKey) {
-    throw new Error(
-      'SUPABASE_SERVICE_ROLE_KEY is not defined. This is required for service role operations.'
-    )
-  }
-
   return createClient(
-    supabaseUrl,
-    serviceRoleKey,
+    env.supabase.url,
+    env.supabaseService.roleKey,
     {
       auth: {
         autoRefreshToken: false,
