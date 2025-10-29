@@ -1,6 +1,7 @@
 import { requireAuth } from '@/lib/auth/session'
 import { createClient } from '@/lib/supabase/server'
 import { ProfileClient } from '@/components/profile/profile-client'
+import { logger } from '@/lib/logger'
 
 export default async function ProfilePage() {
   const user = await requireAuth()
@@ -33,7 +34,7 @@ export default async function ProfilePage() {
       resolved: resolvedResult.count || 0,
     }
   } catch (error) {
-    console.error('Error fetching ticket stats:', error)
+    logger.error('Error fetching ticket stats', { error: error instanceof Error ? error.message : 'Unknown error' })
     // Continue without stats
   }
 

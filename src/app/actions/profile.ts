@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getUser } from '@/lib/auth/session'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
+import { logger } from '@/lib/logger'
 import type { ActionResult } from '@/lib/types/api'
 
 // Profile update schema
@@ -61,7 +62,7 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
       .eq('id', user.id)
 
     if (error) {
-      console.error('Profile update error:', error)
+      logger.error('Profile update error', { error: error.message })
       return { success: false, error: 'Failed to update profile' }
     }
 
@@ -70,12 +71,12 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
     
     return { success: true }
   } catch (error) {
-    console.error('Profile update error:', error)
-    
     if (error instanceof z.ZodError) {
+      logger.warn('Profile update validation error', { errors: error.errors })
       return { success: false, error: error.errors[0].message }
     }
     
+    logger.error('Profile update error', { error: error instanceof Error ? error.message : 'Unknown error' })
     return { success: false, error: 'An unexpected error occurred' }
   }
 }
@@ -143,7 +144,7 @@ export async function uploadAvatar(formData: FormData): Promise<ActionResult> {
       .eq('id', user.id)
 
     if (updateError) {
-      console.error('Avatar URL update error:', updateError)
+      logger.error('Avatar URL update error', { error: updateError.message })
       return { success: false, error: 'Failed to update avatar' }
     }
 
@@ -152,7 +153,7 @@ export async function uploadAvatar(formData: FormData): Promise<ActionResult> {
     
     return { success: true }
   } catch (error) {
-    console.error('Avatar upload error:', error)
+    logger.error('Avatar upload error', { error: error instanceof Error ? error.message : 'Unknown error' })
     return { success: false, error: 'An unexpected error occurred' }
   }
 }
