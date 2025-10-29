@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Loader2, Upload, Camera, X } from 'lucide-react'
+import { Loader2, Camera, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { uploadAvatar } from '@/app/actions/profile'
 import type { User } from '@/lib/types/users'
@@ -69,7 +69,10 @@ export function AvatarUpload({ user }: AvatarUploadProps) {
       }
     } catch (error) {
       toast.error('An unexpected error occurred')
-      console.error('Avatar upload error:', error)
+      // Client-side logging - only in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Avatar upload error:', error)
+      }
       // Clear preview on error
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl)
