@@ -6,6 +6,9 @@ import { Card } from '@/components/ui/card'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 import Link from 'next/link'
 
+// Note: Since this is a client component, we can't use the server-side logger
+// The error reporting should be done through an error boundary service
+
 interface ErrorBoundaryProps {
   error: Error & { digest?: string }
   reset: () => void
@@ -13,8 +16,11 @@ interface ErrorBoundaryProps {
 
 export default function DashboardError({ error, reset }: ErrorBoundaryProps) {
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error('Dashboard error:', error)
+    // In production, this should send to an error reporting service (e.g., Sentry)
+    // For now, we only log in development to avoid exposing sensitive data
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Dashboard error:', error)
+    }
   }, [error])
 
   return (

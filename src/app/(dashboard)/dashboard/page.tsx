@@ -8,9 +8,16 @@ import { QuickActions } from '@/components/dashboard/quick-actions'
 import { RecentActivity } from '@/components/dashboard/recent-activity'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
+import { logger } from '@/lib/logger'
 
 export default async function DashboardPage() {
-  const user = await requireAuth()
+  let user
+  try {
+    user = await requireAuth()
+  } catch (error) {
+    logger.error('Auth error in dashboard', { error: error instanceof Error ? error.message : 'Unknown error' })
+    throw error
+  }
 
   // Fetch stats and activity in parallel
   const [statsResult, activityResult] = await Promise.allSettled([
@@ -23,6 +30,21 @@ export default async function DashboardPage() {
   
   const activity = activityResult.status === 'fulfilled' ? activityResult.value : []
   const activityError = activityResult.status === 'rejected' ? activityResult.reason : null
+
+  // Log errors for debugging
+  if (statsError) {
+    logger.error('Dashboard stats error', { 
+      error: statsError instanceof Error ? statsError.message : 'Unknown error',
+      stack: statsError instanceof Error ? statsError.stack : undefined
+    })
+  }
+  
+  if (activityError) {
+    logger.error('Dashboard activity error', { 
+      error: activityError instanceof Error ? activityError.message : 'Unknown error',
+      stack: activityError instanceof Error ? activityError.stack : undefined
+    })
+  }
 
   return (
     <div className="space-y-8">
