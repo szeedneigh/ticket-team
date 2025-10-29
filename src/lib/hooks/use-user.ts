@@ -93,7 +93,7 @@ export function useUser(): UseUserReturn {
     
     // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           await fetchUser()
         } else if (event === 'SIGNED_OUT') {
@@ -106,8 +106,7 @@ export function useUser(): UseUserReturn {
     return () => {
       subscription.unsubscribe()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []) // fetchUser is intentionally not in deps as subscription handles refetch
   
   const hasRole = (role: UserRole): boolean => {
     if (!user) return false

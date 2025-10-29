@@ -40,6 +40,21 @@ export type ActivityType =
   | 'user_registered'
   | 'user_updated'
 
+// Dashboard activity items use a subset of ActivityType
+// Only tracking ticket-related activities that are relevant for user dashboard
+export type DashboardActivityType = Extract<ActivityType, 'ticket_created' | 'comment_added' | 'status_changed'>
+
+export interface DashboardActivityItem {
+  id: string
+  type: DashboardActivityType
+  title: string
+  description?: string
+  ticketId: string
+  actorId: string
+  createdAt: string
+  meta?: Record<string, unknown>
+}
+
 export interface TicketSummary {
   total: number
   open: number

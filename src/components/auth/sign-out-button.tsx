@@ -9,7 +9,7 @@
 
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useTransition } from 'react'
 import { signOut } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Loader2, LogOut } from 'lucide-react'
