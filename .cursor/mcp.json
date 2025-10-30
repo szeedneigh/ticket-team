@@ -7,7 +7,7 @@
         "mcp"
       ]
     },
-      "supabase-ticket-team": {
+    "supabase-ticket-team": {
       "command": "cmd",
       "args": [
         "/c",
@@ -19,8 +19,9 @@
       "env": {
         "SUPABASE_ACCESS_TOKEN": "sbp_2331c8c6c95961a40b5ee50a966ce70d876bb800"
       }
+    },
+    "Sentry": {
+      "url": "https://mcp.sentry.dev/mcp/wise-mind-solutions/ticket-team"
     }
   }
 }
-
-    
