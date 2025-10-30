@@ -85,7 +85,7 @@ function checkManifestFiles(): HealthCheckResult[] {
           critical: false,
           message: `✓ ${manifest.name} exists and is valid`,
         });
-      } catch (error) {
+      } catch {
         results.push({
           passed: false,
           critical: true,
