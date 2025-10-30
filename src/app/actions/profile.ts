@@ -125,7 +125,7 @@ export async function uploadAvatar(formData: FormData): Promise<ActionResult> {
       })
 
     if (uploadError) {
-      console.error('Avatar upload error:', uploadError)
+      logger.error('Avatar upload error', { error: uploadError.message })
       return { success: false, error: 'Failed to upload avatar' }
     }
 
