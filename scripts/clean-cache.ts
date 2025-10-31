@@ -51,11 +51,14 @@ async function isDevServerRunning(): Promise<boolean> {
 
 async function cleanCache() {
   const projectRoot = join(__dirname, '..');
-  const nextDir = join(projectRoot, '.next');
+  const webpackCacheDir = join(projectRoot, '.next', 'cache', 'webpack');
   const nodeModulesCacheDir = join(projectRoot, 'node_modules', '.cache');
+  const tsBuildInfo = join(projectRoot, 'tsconfig.tsbuildinfo');
 
-  log('\n🧹 Next.js Cache Cleanup Utility', 'cyan');
+  log('\n🧹 Next.js Safe Cache Cleanup', 'cyan');
   log('================================\n', 'cyan');
+  log('This will clean webpack cache while preserving manifests', 'blue');
+  log('to prevent Next.js startup race conditions.\n', 'blue');
 
   // Check if dev server is running
   log('Checking if development server is running...', 'blue');
@@ -71,13 +74,18 @@ async function cleanCache() {
   log('✓ Development server is not running\n', 'green');
 
   const dirsToClean = [
-    { path: nextDir, name: '.next directory' },
+    { path: webpackCacheDir, name: '.next/cache/webpack (safe - preserves manifests)' },
     { path: nodeModulesCacheDir, name: 'node_modules/.cache' },
+  ];
+
+  const filesToClean = [
+    { path: tsBuildInfo, name: 'tsconfig.tsbuildinfo' },
   ];
 
   let cleanedCount = 0;
   let skippedCount = 0;
 
+  // Clean directories
   for (const { path, name } of dirsToClean) {
     if (existsSync(path)) {
       try {
@@ -94,13 +102,31 @@ async function cleanCache() {
     }
   }
 
-  log('\n================================', 'cyan');
-  log(`\n✨ Cache cleanup complete!`, 'green');
-  log(`   Cleaned: ${cleanedCount} directories`, 'green');
-  if (skippedCount > 0) {
-    log(`   Skipped: ${skippedCount} directories (already clean)`, 'yellow');
+  // Clean files
+  for (const { path, name } of filesToClean) {
+    if (existsSync(path)) {
+      try {
+        log(`Removing ${name}...`, 'blue');
+        await rm(path, { force: true });
+        log(`✓ Removed ${name}`, 'green');
+        cleanedCount++;
+      } catch (error) {
+        log(`✗ Failed to remove ${name}: ${error}`, 'red');
+      }
+    } else {
+      log(`⊘ ${name} does not exist, skipping`, 'yellow');
+      skippedCount++;
+    }
   }
-  log('\n💡 You can now run: npm run dev\n', 'blue');
+
+  log('\n================================', 'cyan');
+  log(`\n✨ Safe cache cleanup complete!`, 'green');
+  log(`   Cleaned: ${cleanedCount} items`, 'green');
+  if (skippedCount > 0) {
+    log(`   Skipped: ${skippedCount} items (already clean)`, 'yellow');
+  }
+  log('\n🛡️  Manifests preserved - faster startup, no race conditions!', 'green');
+  log('💡 You can now run: npm run dev\n', 'blue');
 }
 
 // Run the cleanup
