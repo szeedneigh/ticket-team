@@ -19,6 +19,8 @@ export interface User {
   position: string | null
   phone: string | null
   avatar_url: string | null
+  is_online: boolean
+  last_seen: string | null
   created_at: string
   updated_at: string
   last_login: string | null

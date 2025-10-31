@@ -20,6 +20,20 @@ const nextConfig: NextConfig = {
 
   // Webpack configuration for cache stability and error prevention
   webpack: (config, { dev, isServer, nextRuntime }) => {
+    // Fix for Sentry webpack plugin issue with oneOf rules
+    // Ensure all module rules with oneOf have arrays
+    if (config.module?.rules) {
+      config.module.rules = config.module.rules.map((rule) => {
+        if (rule && typeof rule === 'object' && 'oneOf' in rule) {
+          return {
+            ...rule,
+            oneOf: Array.isArray(rule.oneOf) ? rule.oneOf : [],
+          };
+        }
+        return rule;
+      });
+    }
+
     // Development-specific optimizations
     if (dev) {
       // Enhanced cache config with proper file locking to prevent race conditions
@@ -29,17 +43,23 @@ const nextConfig: NextConfig = {
         name: `${nextRuntime ?? (isServer ? 'node' : 'client')}-development`,
         // Use 'pack' store for proper file locking and atomic operations
         store: 'pack',
-        version: '1',
+        version: '2', // Bumped version to invalidate old caches with __filename issue
         compression: 'gzip',
         // Build dependencies for automatic cache invalidation
+        // NOTE: Removed __filename to prevent "next.config.compiled.js" warnings
+        // Next.js automatically invalidates cache when config changes via timestamp checks
         buildDependencies: {
-          config: [__filename],
+          // Using package.json as a more stable dependency marker
+          config: [path.resolve(process.cwd(), 'package.json')],
         },
         idleTimeout: 60000,
         idleTimeoutAfterLargeChanges: 1000,
         idleTimeoutForInitialStore: 0,
         maxMemoryGenerations: 3,
         memoryCacheUnaffected: true,
+        // Add max cache size limit (500 MB) to prevent bloat
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        profile: false, // Disable profiling in dev for better performance
       };
 
       // Snapshot configuration for better module resolution

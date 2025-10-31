@@ -81,25 +81,24 @@ function getEnvVar(
     return defaultValue || ''
   }
 
-  // In development, provide helpful warnings instead of throwing
+  // In development, provide helpful error message
   if (process.env.NODE_ENV === 'development') {
-    console.warn(
-      `⚠️  Missing environment variable: ${key}\n` +
-      `   Make sure .env.local is properly configured.\n` +
-      `   See docs/01-overview/setup-guide.md for instructions.`
+    console.error(
+      `❌ CRITICAL: Missing required environment variable: ${key}\n\n` +
+      `This will cause the application to malfunction!\n\n` +
+      `Steps to fix:\n` +
+      `1. Check that .env.local exists in project root\n` +
+      `2. Verify ${key} is set in .env.local\n` +
+      `3. Restart the dev server: npm run dev\n` +
+      `4. Clear browser cache (Ctrl+Shift+R)\n\n` +
+      `See docs/01-overview/setup-guide.md for detailed instructions.`
     )
-    
-    // Return safe fallbacks for development
-    switch (key) {
-      case 'NEXT_PUBLIC_SUPABASE_URL':
-        return 'https://placeholder.supabase.co'
-      case 'NEXT_PUBLIC_SUPABASE_ANON_KEY':
-        return 'placeholder-anon-key'
-      case 'SUPABASE_SERVICE_ROLE_KEY':
-        return 'placeholder-service-role-key'
-      default:
-        return defaultValue || ''
-    }
+
+    // Throw error instead of silently using placeholders
+    throw new Error(
+      `Missing required environment variable: ${key}\n` +
+      `Please check .env.local and restart the dev server.`
+    )
   }
 
   // In production, throw error
