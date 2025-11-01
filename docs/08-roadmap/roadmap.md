@@ -63,7 +63,7 @@
 
 **Deliverables:**
 
-#### Sprint 1: Ticket Pages (Weeks 5-6)
+#### Sprint 1: Ticket Pages (Weeks)
 - [ ] Ticket list page (`/tickets`)
   - View all tickets
   - Filter by status/priority
@@ -77,7 +77,7 @@
   - Status transitions
   - Staff assignment
 
-#### Sprint 2: Comments & Workflow (Weeks 7-8)
+#### Sprint 2: Comments & Workflow (Weeks)
 - [ ] Comment system
   - Add comments to tickets
   - Internal notes for staff
@@ -102,7 +102,7 @@
 
 ### Phase 3: Knowledge Base 🚧 **PLANNED**
 
-**Duration:** Weeks 9-12  
+**Duration:** Weeks 
 **Status:** 🚧 40% Complete (Database ready)
 
 **Objectives:**
@@ -113,7 +113,7 @@
 
 **Deliverables:**
 
-#### Sprint 3: KB Browse (Weeks 9-10)
+#### Sprint 3: KB Browse (Weeks)
 - [ ] KB browse page (`/kb`)
   - Article listing
   - Category filtering
@@ -127,7 +127,7 @@
   - Category filters
   - Search bar
 
-#### Sprint 4: KB Management (Weeks 11-12)
+#### Sprint 4: KB Management (Weeks)
 - [ ] Create article (`/kb/new` - Staff only)
   - Rich text editor
   - Category and tags
@@ -163,7 +163,7 @@
 
 **Deliverables:**
 
-#### Sprint 5: Chatbot UI (Weeks 13-14)
+#### Sprint 5: Chatbot UI (Weeks)
 - [ ] Chat interface (`/chat`)
   - Chat window
   - Message history
@@ -177,7 +177,7 @@
   - Loading states
   - Error handling
 
-#### Sprint 6: RAG Integration (Weeks 15-16)
+#### Sprint 6: RAG Integration (Weeks)
 - [ ] Gemini API proxy
   - Server-side endpoint
   - API key security
@@ -215,7 +215,7 @@
 
 **Deliverables:**
 
-#### Sprint 7: Analytics (Weeks 17-18)
+#### Sprint 7: Analytics (Weeks)
 - [ ] Analytics dashboard (`/admin/analytics`)
   - KPI cards
   - Trend charts
@@ -233,7 +233,7 @@
   - Satisfaction scores
   - Date range filtering
 
-#### Sprint 8: User Management (Weeks 19-20)
+#### Sprint 8: User Management (Weeks)
 - [ ] User list (`/admin/users`)
   - User table
   - Search and filter
