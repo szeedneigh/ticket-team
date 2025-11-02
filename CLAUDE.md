@@ -36,7 +36,78 @@ npm run clean:cache      # Clean webpack cache (fixes build issues)
 ### Testing
 Tests are not yet implemented. When adding tests, follow patterns in `.cursor/rules/testing-quality.mdc`.
 
+### Security & Build Validation
+```bash
+npm run check-bundle-security  # Scan client bundle for exposed secrets
+npm run lint                    # Includes no-restricted-imports rules
+```
+
+The build process automatically validates that server secrets are not exposed to the client bundle.
+
 ## Critical Architecture Patterns
+
+### Environment Variables (SECURITY CRITICAL)
+
+**IMPORTANT: Environment variables have been split for security.**
+
+The application uses a **split environment variable architecture** to prevent accidentally exposing server-only secrets to the browser:
+
+```typescript
+// ✅ CLIENT-SIDE (browser-safe, NEXT_PUBLIC_* variables only)
+import { clientEnv } from '@/lib/env/client'
+
+function MyClientComponent() {
+  const url = clientEnv.supabase.url      // ✅ Safe
+  const siteUrl = clientEnv.app.siteUrl   // ✅ Safe
+}
+
+// ✅ SERVER-SIDE ONLY (Server Components, API Routes, Server Actions)
+import { serverEnv } from '@/lib/env/server'
+import { clientEnv } from '@/lib/env/client'
+
+async function myServerAction() {
+  // Access public vars
+  const url = clientEnv.supabase.url
+
+  // Access server-only secrets
+  const serviceKey = serverEnv.supabaseService.roleKey  // ✅ Server-only
+  const geminiKey = serverEnv.gemini.apiKey             // ✅ Server-only
+}
+
+// ❌ NEVER DO THIS - Will throw security error
+import { serverEnv } from '@/lib/env/server'  // In a 'use client' file
+```
+
+**Security Layers:**
+
+1. **Runtime Protection:** `@/lib/env/server` throws an error if imported in browser code
+2. **Build-Time Validation:** `npm run check-bundle-security` scans for exposed secrets
+3. **ESLint Rules:** Prevents importing deprecated `@/lib/env` module
+4. **Type Safety:** Separate types for client vs server env
+
+**Migration from Legacy `@/lib/env`:**
+
+The old unified `@/lib/env` module is **DEPRECATED** and will throw errors if imported. Update your code:
+
+```typescript
+// ❌ OLD (deprecated, will error)
+import { env } from '@/lib/env'
+
+// ✅ NEW (secure)
+// Client components:
+import { clientEnv } from '@/lib/env/client'
+
+// Server components/actions:
+import { serverEnv } from '@/lib/env/server'
+import { clientEnv } from '@/lib/env/client'
+```
+
+**Why This Matters:**
+
+- `SUPABASE_SERVICE_ROLE_KEY` **bypasses ALL Row Level Security (RLS)**
+- If exposed to the browser, attackers could access/modify all data
+- `GEMINI_API_KEY` exposure leads to API abuse and billing fraud
+- The split architecture prevents this entire class of vulnerabilities
 
 ### Supabase Client Initialization
 

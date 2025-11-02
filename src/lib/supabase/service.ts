@@ -31,12 +31,13 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import { env } from '@/lib/env'
+import { clientEnv } from '@/lib/env/client'
+import { serverEnv } from '@/lib/env/server'
 
 export function createServiceClient() {
   return createClient(
-    env.supabase.url,
-    env.supabaseService.roleKey,
+    clientEnv.supabase.url,
+    serverEnv.supabaseService.roleKey,
     {
       auth: {
         autoRefreshToken: false,

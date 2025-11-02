@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { motion } from 'framer-motion'
 import { Robot } from "@/components/shared/Robot";
+import { Footer } from "@/components/shared/footer";
 
 export default function Home() {
   const containerVariants = {
@@ -111,13 +112,14 @@ export default function Home() {
           >
             <a
               href="/auth/sign-in"
-              className="w-full inline-flex items-center justify-center gap-3 rounded-[20px] px-8 py-4 text-[18px] md:text-[20px] font-semibold text-white bg-[#003B73] shadow-lg hover:bg-[#002C5A] transition-all duration-200"
+              className="w-full inline-flex items-center justify-center gap-3 rounded-[20px] px-8 py-4 text-[18px] md:text-[20px] font-semibold text-white bg-[linear-gradient(90deg,#002C64_53.85%,#0059CA_100%)] shadow-lg hover:opacity-90 transition-all duration-200"
             >
               Log In
             </a>
           </motion.div>
         </motion.div>
       </div>
+      <Footer />
     </section>
   );
 }
