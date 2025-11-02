@@ -17,12 +17,12 @@
  */
 
 import { createBrowserClient } from '@supabase/ssr'
-import { env } from '@/lib/env'
+import { clientEnv } from '@/lib/env/client'
 
 export function createClient() {
   return createBrowserClient(
-    env.supabase.url,
-    env.supabase.anonKey
+    clientEnv.supabase.url,
+    clientEnv.supabase.anonKey
   )
 }
 
