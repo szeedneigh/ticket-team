@@ -12,11 +12,19 @@
     "prebuild": "tsx scripts/check-build-health.ts || echo 'Build health check failed, continuing...'",
     "start": "next start",
     "lint": "eslint",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
+    "playwright:install": "playwright install chromium",
     "clean": "rm -rf .next node_modules/.cache",
     "clean:cache": "tsx scripts/clean-cache.ts",
     "check-db": "tsx scripts/check-db.ts",
     "check-env": "node scripts/check-env.js",
-    "health": "tsx scripts/check-build-health.ts"
+    "health": "tsx scripts/check-build-health.ts",
+    "check-bundle-security": "tsx scripts/check-client-bundle-security.ts",
+    "postbuild": "npm run check-bundle-security"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -48,8 +56,9 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4.1.16",
-    "@types/node": "^20",
+    "@types/node": "^20.19.24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "cross-env": "^10.1.0",
