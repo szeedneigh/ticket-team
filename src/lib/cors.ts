@@ -8,7 +8,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { env } from './env'
+import { clientEnv } from './env/client'
 
 /**
  * CORS configuration options
@@ -50,7 +50,7 @@ export interface CorsOptions {
  */
 const DEFAULT_CORS_OPTIONS: Required<CorsOptions> = {
   origins: [
-    env.app.siteUrl,
+    clientEnv.app.siteUrl,
     'http://localhost:3000',
     'http://localhost:3001',
   ],
