@@ -7,9 +7,14 @@
  * @module lib/logger
  */
 
-import { isDevelopment } from './env'
-
 type LogLevel = 'error' | 'warn' | 'info' | 'debug'
+
+/**
+ * Check if running in development mode
+ * Uses process.env.NODE_ENV directly to avoid circular dependencies
+ * This is safe for both client and server as webpack statically replaces it
+ */
+const isDevelopment = process.env.NODE_ENV === 'development'
 
 interface LogContext {
   [key: string]: unknown
@@ -64,7 +69,7 @@ function redactSensitiveData(data: unknown): unknown {
  * Base logging function
  */
 function log(level: LogLevel, message: string, context?: LogContext) {
-  if (!isDevelopment()) {
+  if (!isDevelopment) {
     // Don't log in production
     return
   }
