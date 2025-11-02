@@ -10,6 +10,8 @@ import { StatusBadge } from './status-badge'
 import { PriorityBadge } from './priority-badge'
 import { TicketTimeline } from './ticket-timeline'
 import { TicketActions } from './ticket-actions'
+import { CommentBox } from './comment-box'
+import { CommentList } from './comment-list'
 import type { TicketWithUser, TicketCommentWithUser, TicketActivityWithUser } from '@/lib/types/tickets'
 import type { User as UserType } from '@/lib/types/users'
 
@@ -175,6 +177,32 @@ export function TicketDetail({
             isStaff={isStaff}
           />
         </div>
+
+        {/* Comments Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Comments & Discussion</CardTitle>
+            <CardDescription>
+              {isStaff
+                ? 'Add public comments or internal notes (visible only to staff)'
+                : 'Add comments to communicate with support staff'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Comment Input */}
+            <CommentBox ticketId={ticket.id} isStaff={isStaff} />
+
+            <Separator />
+
+            {/* Comment List */}
+            <div>
+              <h3 className="text-sm font-medium mb-4">
+                All Comments ({comments.length})
+              </h3>
+              <CommentList comments={comments} />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Sidebar */}
