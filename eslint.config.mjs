@@ -20,6 +20,24 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  {
+    rules: {
+      // Prevent importing the deprecated unified env module
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/lib/env",
+              message:
+                "DEPRECATED: @/lib/env has been split for security. " +
+                "Use '@/lib/env/client' for client components or '@/lib/env/server' for server components.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;

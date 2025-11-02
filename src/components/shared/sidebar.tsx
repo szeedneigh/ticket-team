@@ -1,4 +1,4 @@
-  "use client"
+"use client"
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -108,7 +108,7 @@ export function Sidebar({ user }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile menu button */}
+      {/* Mobile menu button - uses shadcn theme */}
       <Button
         variant="ghost"
         size="sm"
@@ -131,20 +131,20 @@ export function Sidebar({ user }: SidebarProps) {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed blue gradient, isolated from shadcn theme */}
       <motion.aside
         initial={false}
         animate={{
           width: isCollapsed ? 80 : 280,
         }}
         className={cn(
-          "hidden lg:flex flex-col bg-background/90 backdrop-blur-sm border-r border-border",
+          "hidden lg:flex flex-col bg-[linear-gradient(180deg,#002C64_48.56%,#0693D2_100%)] backdrop-blur-sm border-r border-white/10",
           "transition-all duration-300 ease-in-out",
           isMobileOpen && "lg:hidden flex fixed left-0 top-0 z-50 h-full w-80"
         )}
       >
         {/* Header */}
-        <div className="p-6 border-b border-border">
+        <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between">
             <AnimatePresence>
               {!isCollapsed && (
@@ -154,19 +154,17 @@ export function Sidebar({ user }: SidebarProps) {
                   exit={{ opacity: 0, width: 0 }}
                   className="overflow-hidden"
                 >
-                  <h2 className="text-lg font-semibold text-primary">Navigation</h2>
+                  <h2 className="text-lg font-semibold text-white">Navigation</h2>
                 </motion.div>
               )}
             </AnimatePresence>
             
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={toggleCollapse}
-              className="hidden lg:flex"
+              className="hidden lg:flex items-center justify-center h-8 w-8 rounded-md text-white hover:bg-white/10 transition-colors"
             >
               {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -182,45 +180,42 @@ export function Sidebar({ user }: SidebarProps) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
               >
-                <Button
-                  asChild
-                  variant={isActive ? "default" : "ghost"}
+                <Link 
+                  href={item.href}
                   className={cn(
-                    "w-full justify-start h-12",
+                    "flex items-center w-full h-12 px-3 rounded-md transition-colors",
                     isActive 
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                      : "hover:bg-primary/5 text-foreground",
-                    isCollapsed && "px-3"
+                      ? "bg-white text-[#002C64] font-medium" 
+                      : "text-white/90 hover:bg-white/10 hover:text-white",
+                    isCollapsed && "justify-center"
                   )}
                 >
-                  <Link href={item.href}>
-                    <item.icon className={cn("h-5 w-5", !isCollapsed && "mr-3")} />
-                    <AnimatePresence>
-                      {!isCollapsed && (
-                        <motion.div
-                          initial={{ opacity: 0, width: 0 }}
-                          animate={{ opacity: 1, width: 'auto' }}
-                          exit={{ opacity: 0, width: 0 }}
-                          className="flex items-center justify-between flex-1 overflow-hidden"
-                        >
-                          <span className="truncate">{item.title}</span>
-                          {item.badge && (
-                            <Badge variant="secondary" className="ml-2 text-xs">
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </Link>
-                </Button>
+                  <item.icon className={cn("h-5 w-5 flex-shrink-0", !isCollapsed && "mr-3")} />
+                  <AnimatePresence>
+                    {!isCollapsed && (
+                      <motion.div
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: 'auto' }}
+                        exit={{ opacity: 0, width: 0 }}
+                        className="flex items-center justify-between flex-1 overflow-hidden"
+                      >
+                        <span className="truncate">{item.title}</span>
+                        {item.badge && (
+                          <span className="ml-2 px-2 py-0.5 text-xs rounded-md bg-white/20 text-white whitespace-nowrap">
+                            {item.badge}
+                          </span>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </Link>
               </motion.div>
             )
           })}
         </nav>
 
         {/* User info */}
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-white/10">
           <AnimatePresence>
             {!isCollapsed && (
               <motion.div
@@ -229,15 +224,15 @@ export function Sidebar({ user }: SidebarProps) {
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="flex items-center gap-3 p-3 rounded-[12px] bg-accent">
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
+                <div className="flex items-center gap-3 p-3 rounded-[12px] bg-white/10">
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#002C64] text-sm font-medium flex-shrink-0">
                     {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
+                    <p className="text-sm font-medium text-white truncate">
                       {user.full_name || 'User'}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-xs text-white/70 truncate capitalize">
                       {user.role.replace('_', ' ')}
                     </p>
                   </div>
