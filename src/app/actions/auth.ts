@@ -12,7 +12,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
-import { env, isValidOrigin } from '@/lib/env'
+import { clientEnv } from '@/lib/env/client'
+import { isValidOrigin } from '@/lib/env/server'
 import { logger } from '@/lib/logger'
 
 interface ActionResult {
@@ -27,7 +28,7 @@ interface ActionResult {
  */
 export async function signInWithGoogle(): Promise<{ url: string } | { error: string }> {
   const supabase = await createClient()
-  const origin = (await headers()).get('origin') || env.app.siteUrl
+  const origin = (await headers()).get('origin') || clientEnv.app.siteUrl
   
   // Validate origin if provided
   if (origin && !isValidOrigin(origin)) {
