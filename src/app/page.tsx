@@ -31,25 +31,26 @@ export default function Home() {
 
   return (
     <section className="relative min-h-[100svh] overflow-hidden bg-gradient-to-br from-[#d4e8f0] via-[#e8f4f8] to-[#0a4d7e]">
+      
       {/* Background waves*/}
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-0 w-[54vw] min-w-[360px] z-0"
+        className="pointer-events-none absolute inset-0 z-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
       >
-        <div className="absolute inset-0 bg-[url('/assets/curvy-bg1.svg')] bg-no-repeat bg-left [background-size:100%]" />
+        <div className="absolute inset-0 bg-[url('/assets/curvy-bg1.svg')] bg-no-repeat bg-left-top bg-[length:50%_100%] md:bg-[length:45%_100%] lg:bg-[length:40%_100%]" />
       </motion.div>
 
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 right-0 w-[54vw] min-w-[360px] z-0"
+        className="pointer-events-none absolute inset-0 z-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
       >
-        <div className="absolute inset-0 bg-[url('/assets/curvy-bg2.svg')] bg-no-repeat bg-right [background-size:60%]" />
+        <div className="absolute inset-0 bg-[url('/assets/curvy-bg2.svg')] bg-no-repeat bg-right-top bg-[length:50%_100%] md:bg-[length:45%_100%] lg:bg-[length:40%_100%]" />
       </motion.div>
 
       {/* Timi Assistant*/}
