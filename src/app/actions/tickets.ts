@@ -777,3 +777,78 @@ export async function reopenTicket(
     }
   }
 }
+
+// ============================================================================
+// Attachment Actions
+// ============================================================================
+
+/**
+ * Get signed download URL for an attachment
+ * @param attachmentId - ID of the attachment to download
+ * @returns Signed URL for secure download
+ */
+export async function getAttachmentDownloadUrl(
+  attachmentId: string
+): Promise<ServerActionResponse<{ url: string }>> {
+  try {
+    const supabase = await createClient()
+
+    // Get current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized' }
+    }
+
+    // Fetch attachment details
+    const { data: attachment, error: attachmentError } = await supabase
+      .from('attachments')
+      .select('id, ticket_id, storage_path, filename')
+      .eq('id', attachmentId)
+      .is('deleted_at', null)
+      .single()
+
+    if (attachmentError || !attachment) {
+      return { success: false, error: 'Attachment not found' }
+    }
+
+    // Check if user has access to this ticket (RLS will handle this)
+    const { data: ticket, error: ticketError } = await supabase
+      .from('tickets')
+      .select('id, user_id')
+      .eq('id', attachment.ticket_id)
+      .single()
+
+    if (ticketError || !ticket) {
+      return { success: false, error: 'Access denied' }
+    }
+
+    // Generate signed URL (valid for 1 hour)
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from('ticket-attachments')
+      .createSignedUrl(attachment.storage_path, 3600)
+
+    if (signedError || !signedData) {
+      console.error('Error creating signed URL:', signedError)
+      return { success: false, error: 'Failed to generate download URL' }
+    }
+
+    // Log the download activity
+    await supabase.from('ticket_activities').insert({
+      ticket_id: attachment.ticket_id,
+      user_id: user.id,
+      action: 'file_downloaded',
+      description: `Downloaded file: ${attachment.filename}`,
+    })
+
+    return {
+      success: true,
+      data: { url: signedData.signedUrl },
+    }
+  } catch (error) {
+    console.error('Download attachment error:', error)
+    return { success: false, error: 'An unexpected error occurred' }
+  }
+}
