@@ -4,31 +4,29 @@
  * Server Component that fetches and displays tickets based on user role.
  * - Employees see only their tickets
  * - Staff/Admin see all tickets or filtered by assignment
- * Includes filters, search, and cursor-based pagination.
+ * Includes status tabs, search, time filter, and page-based pagination.
  */
 
 import { Suspense } from 'react'
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TicketFilters } from '@/components/tickets/ticket-filters'
 import { TicketList } from '@/components/tickets/ticket-list'
+import { StatusTabs } from '@/components/tickets/status-tabs'
+import { TimeFilter } from '@/components/tickets/time-filter'
 import { createClient } from '@/lib/supabase/server'
-import { getTickets } from '@/lib/tickets/queries'
-import type { TicketFilters as TTicketFilters } from '@/lib/tickets/queries'
-import type { TicketStatus, TicketPriority } from '@/lib/types/database'
+import { getTicketsPaged } from '@/lib/tickets/queries'
+import type { TicketFilters as TTicketFilters, TimePeriod } from '@/lib/types/tickets'
+import type { TicketStatus } from '@/lib/types/database'
 import { isStaffOrAbove } from '@/lib/types/database'
-import { PAGINATION } from '@/lib/constants/pagination'
+import { PAGINATION } from '@/lib/constants'
 
 interface PageProps {
   searchParams: Promise<{
     status?: string
-    priority?: string
     search?: string
-    cursor?: string
-    prev?: string
-    limit?: string
+    timePeriod?: string
+    page?: string
   }>
 }
 
@@ -71,88 +69,71 @@ export default async function TicketsPage({ searchParams }: PageProps) {
     filters.status = params.status as TicketStatus
   }
 
-  if (params.priority) {
-    filters.priority = params.priority as TicketPriority
-  }
-
   if (params.search) {
     filters.search = params.search
   }
 
-  // Parse pagination options
-  const limit = params.limit
-    ? Math.min(parseInt(params.limit, 10), PAGINATION.MAX_PAGE_SIZE)
-    : PAGINATION.DEFAULT_PAGE_SIZE
+  if (params.timePeriod) {
+    filters.timePeriod = params.timePeriod as TimePeriod
+  } else {
+    // Default to 'this_week' if not specified
+    filters.timePeriod = 'this_week'
+  }
 
-  const cursor = params.cursor || undefined
-  const prevCursor = params.prev || undefined
+  // Parse page number
+  const page = params.page ? parseInt(params.page, 10) : 1
+  filters.page = page
 
-  // Fetch tickets
-  const result = await getTickets(supabase, filters, {
-    cursor: cursor || prevCursor,
-    limit,
-    order: prevCursor ? 'asc' : 'desc', // Reverse order when going back
-    orderBy: 'created_at',
-  })
-
-  // Reverse items if going back (prev cursor)
-  const tickets = prevCursor ? result.items.reverse() : result.items
+  // Fetch tickets with page-based pagination
+  const result = await getTicketsPaged(
+    supabase,
+    filters,
+    PAGINATION.DEFAULT_PAGE_SIZE
+  )
 
   return (
     <div className="container mx-auto py-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {isStaffOrAbove(user.role) ? 'All Tickets' : 'My Tickets'}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {isStaffOrAbove(user.role)
-              ? 'View and manage support tickets'
-              : 'Track your support requests'}
-          </p>
-        </div>
-
-        <Link href="/tickets/new">
-          <Button>
-            Create Ticket
-          </Button>
-        </Link>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">
+          List of My Tickets
+        </h1>
       </div>
 
-      {/* Filters */}
-      <Suspense fallback={<Skeleton className="h-32 w-full" />}>
-        <TicketFilters />
+      {/* Filter Bar: Search (left) + Time Filter (right) */}
+      <div className="flex items-center justify-between gap-4">
+        <Suspense fallback={<Skeleton className="h-10 w-full max-w-md" />}>
+          <TicketFilters />
+        </Suspense>
+
+        <Suspense fallback={<Skeleton className="h-10 w-[150px]" />}>
+          <TimeFilter defaultValue="this_week" />
+        </Suspense>
+      </div>
+
+      {/* Status Tabs */}
+      <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+        <StatusTabs />
       </Suspense>
 
-      {/* Ticket List */}
-      <Suspense fallback={<TicketListSkeleton />}>
-        <TicketList
-          tickets={tickets}
-          nextCursor={prevCursor ? null : result.nextCursor}
-          prevCursor={prevCursor ? result.prevCursor : null}
-          hasMore={prevCursor ? false : result.hasMore}
-        />
-      </Suspense>
-
-      {/* Staff-only: Link to Queue */}
-      {isStaffOrAbove(user.role) && (
-        <div className="mt-6 p-4 border rounded-lg bg-muted/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold">Staff Queue</h3>
-              <p className="text-sm text-muted-foreground">
-                Manage unassigned tickets and your assigned work
-              </p>
-            </div>
-            <Link href="/tickets/queue">
-              <Button variant="outline">
-                View Queue
-              </Button>
-            </Link>
-          </div>
+      {/* Ticket Count */}
+      {result.totalCount > 0 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Showing {result.tickets.length} of {result.totalCount} ticket{result.totalCount !== 1 ? 's' : ''}
+          </p>
         </div>
       )}
+
+      {/* Ticket List (Table) */}
+      <Suspense fallback={<TicketListSkeleton />}>
+        <TicketList
+          tickets={result.tickets}
+          currentPage={result.currentPage}
+          totalPages={result.totalPages}
+          totalCount={result.totalCount}
+        />
+      </Suspense>
     </div>
   )
 }
@@ -163,9 +144,30 @@ export default async function TicketsPage({ searchParams }: PageProps) {
 function TicketListSkeleton() {
   return (
     <div className="space-y-4">
-      {[1, 2, 3].map((i) => (
-        <Skeleton key={i} className="h-48 w-full" />
-      ))}
+      {/* Table header skeleton */}
+      <div className="rounded-lg border">
+        <div className="border-b bg-muted/50 p-4">
+          <div className="flex gap-4">
+            <Skeleton className="h-4 w-[180px]" />
+            <Skeleton className="h-4 w-[200px]" />
+            <Skeleton className="h-4 w-[140px]" />
+            <Skeleton className="h-4 w-[160px]" />
+            <Skeleton className="h-4 w-[120px]" />
+          </div>
+        </div>
+        {/* Table rows skeleton */}
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="border-b p-4 last:border-b-0">
+            <div className="flex gap-4">
+              <Skeleton className="h-4 w-[180px]" />
+              <Skeleton className="h-4 w-[200px]" />
+              <Skeleton className="h-4 w-[140px]" />
+              <Skeleton className="h-4 w-[160px]" />
+              <Skeleton className="h-4 w-[120px]" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

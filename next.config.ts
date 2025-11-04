@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
     // Fix for Sentry webpack plugin issue with oneOf rules
     // Ensure all module rules with oneOf have arrays
     if (config.module?.rules) {
-      config.module.rules = config.module.rules.map((rule) => {
+      config.module.rules = config.module.rules.map((rule: any) => {
         if (rule && typeof rule === 'object' && 'oneOf' in rule) {
           return {
             ...rule,
