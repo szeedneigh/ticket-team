@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+  import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -12,6 +12,9 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Ticket Team - La Verdad Christian College",
   description: "Intelligent Helpdesk Platform for La Verdad Christian College",
+  icons: {
+    icon: "logo.svg"
+  },
 };
 
 export default function RootLayout({
