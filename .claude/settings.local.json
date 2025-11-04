@@ -1,5 +1,4 @@
 {
-  "outputStyle": "default",
   "hooks": {
     "PostToolUse": [
       {
@@ -12,6 +11,12 @@
           }
         ]
       }
+    ]
+  },
+  "outputStyle": "default",
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)"
     ]
   }
 }
