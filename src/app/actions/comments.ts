@@ -103,7 +103,7 @@ export async function createComment(
     if (userError || !user) {
       return {
         success: false,
-        error: ERROR_MESSAGES.USER_NOT_FOUND,
+        error: ERROR_MESSAGES.UNAUTHORIZED,
       }
     }
 
@@ -184,7 +184,7 @@ export async function createComment(
         // Upload file (reuse ticket storage utility)
         const uploadResult = await uploadTicketAttachment(file, ticket_id, user.id)
 
-        if (!uploadResult.success || !uploadResult.data) {
+        if (!uploadResult.success || !uploadResult.path) {
           return {
             success: false,
             error: `Failed to upload "${file.name}"`,
@@ -195,7 +195,7 @@ export async function createComment(
           filename: file.name,
           size_bytes: file.size,
           mime_type: file.type,
-          storage_path: uploadResult.data.path,
+          storage_path: uploadResult.path,
         })
       }
     }
@@ -263,7 +263,7 @@ export async function createComment(
     console.error('Create comment error:', error)
     return {
       success: false,
-      error: ERROR_MESSAGES.UNKNOWN_ERROR,
+      error: ERROR_MESSAGES.GENERIC,
     }
   }
 }
