@@ -164,16 +164,14 @@ export function usePresence({
       { type: 'application/json' }
     )
 
-    // Fallback to synchronous update if sendBeacon not available
-    if (navigator.sendBeacon) {
-      // Note: This would require an API endpoint to handle the beacon
-      // For now, we'll rely on the cleanup in useEffect
-      if (debug) {
-        console.log('[Presence] Page unloading - setting offline')
-      }
+    // sendBeacon could be used for reliable status update
+    // Note: This would require an API endpoint to handle the beacon
+    // For now, we'll rely on the cleanup in useEffect
+    if (debug) {
+      console.log('[Presence] Page unloading - setting offline')
     }
 
-    // Synchronous update as fallback
+    // Synchronous update
     updateOnlineStatus(false)
   }
 

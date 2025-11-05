@@ -14,9 +14,12 @@ import type {
   TicketCommentWithUser,
   TicketActivity,
   TicketActivityWithUser,
+  PagedTicketListResponse,
+  TimePeriod,
 } from '@/lib/types/tickets'
 import type { TicketStatus, TicketPriority } from '@/lib/types/database'
-import { PAGINATION } from '@/lib/constants/pagination'
+import { PAGINATION } from '@/lib/constants'
+import { getTimePeriodStartDate } from '@/lib/constants'
 
 // Re-export types for convenience
 export type { TicketFilters, TicketWithUser, TicketCommentWithUser, TicketActivityWithUser }
@@ -153,6 +156,127 @@ export async function getTickets(
 }
 
 /**
+ * Fetch tickets with page-based pagination and time period filtering
+ * @param supabase - Supabase client
+ * @param filters - Filter criteria including timePeriod and page
+ * @param pageSize - Number of items per page (default: 20)
+ * @returns PagedTicketListResponse with tickets, totalPages, currentPage, totalCount
+ */
+export async function getTicketsPaged(
+  supabase: SupabaseClient,
+  filters: TicketFilters = {},
+  pageSize: number = PAGINATION.DEFAULT_PAGE_SIZE
+): Promise<PagedTicketListResponse> {
+  const page = filters.page || 1
+  const safeLimit = Math.min(pageSize, PAGINATION.MAX_PAGE_SIZE)
+  const from = (page - 1) * safeLimit
+  const to = from + safeLimit - 1
+
+  // Build count query (for total pages calculation)
+  let countQuery = supabase
+    .from('tickets')
+    .select('*', { count: 'exact', head: true })
+
+  // Build data query
+  let dataQuery = supabase
+    .from('tickets')
+    .select(`
+      *,
+      user:users!tickets_user_id_fkey(id, full_name, email, avatar_url),
+      assigned_user:users!tickets_assigned_to_fkey(id, full_name, email, avatar_url)
+    `)
+
+  // Apply filters to both queries
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const applyFilters = (query: any) => {
+    if (filters.status) {
+      if (Array.isArray(filters.status)) {
+        query = query.in('status', filters.status)
+      } else {
+        query = query.eq('status', filters.status)
+      }
+    }
+
+    if (filters.priority) {
+      if (Array.isArray(filters.priority)) {
+        query = query.in('priority', filters.priority)
+      } else {
+        query = query.eq('priority', filters.priority)
+      }
+    }
+
+    if (filters.category) {
+      query = query.eq('category', filters.category)
+    }
+
+    if (filters.assigned_to) {
+      query = query.eq('assigned_to', filters.assigned_to)
+    }
+
+    if (filters.user_id) {
+      query = query.eq('user_id', filters.user_id)
+    }
+
+    if (filters.search) {
+      query = query.or(
+        `title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
+      )
+    }
+
+    // Time period filter
+    if (filters.timePeriod && filters.timePeriod !== 'all') {
+      const startDate = getTimePeriodStartDate(filters.timePeriod)
+      if (startDate) {
+        query = query.gte('created_at', startDate)
+      }
+    }
+
+    // Date range filters (fallback if not using timePeriod)
+    if (filters.created_after) {
+      query = query.gte('created_at', filters.created_after)
+    }
+
+    if (filters.created_before) {
+      query = query.lte('created_at', filters.created_before)
+    }
+
+    return query
+  }
+
+  countQuery = applyFilters(countQuery)
+  dataQuery = applyFilters(dataQuery)
+
+  // Apply pagination and ordering to data query
+  dataQuery = dataQuery
+    .order('created_at', { ascending: false })
+    .range(from, to)
+
+  // Execute both queries
+  const [{ count, error: countError }, { data, error: dataError }] = await Promise.all([
+    countQuery,
+    dataQuery,
+  ])
+
+  if (countError) {
+    throw new Error(`Failed to count tickets: ${countError.message}`)
+  }
+
+  if (dataError) {
+    throw new Error(`Failed to fetch tickets: ${dataError.message}`)
+  }
+
+  const totalCount = count || 0
+  const totalPages = Math.ceil(totalCount / safeLimit)
+
+  return {
+    tickets: (data || []) as TicketWithUser[],
+    totalPages,
+    currentPage: page,
+    totalCount,
+  }
+}
+
+/**
  * Fetch a single ticket by ID
  */
 export async function getTicketById(
@@ -219,7 +343,7 @@ export async function getTicketComments(
 ): Promise<PaginatedResponse<TicketCommentWithUser>> {
   const {
     cursor,
-    limit = PAGINATION.DEFAULT_PAGE_SIZE_COMMENTS,
+    limit = PAGINATION.COMMENTS_PAGE_SIZE,
     order = 'asc',
     orderBy = 'created_at',
   } = options
@@ -230,7 +354,7 @@ export async function getTicketComments(
     .from('ticket_comments')
     .select(`
       *,
-      user:users!ticket_comments_user_id_fkey(id, full_name, email, avatar_url)
+      user:users!ticket_comments_user_id_fkey(id, full_name, email, avatar_url, role)
     `)
     .eq('ticket_id', ticketId)
 

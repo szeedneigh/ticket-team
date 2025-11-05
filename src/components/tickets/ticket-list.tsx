@@ -1,34 +1,32 @@
 /**
  * Ticket List Component
  *
- * Client component for displaying ticket list with pagination controls.
- * Maps ticket data to TicketCard components, handles empty states, and loading.
+ * Client component for displaying ticket list with table view and numbered pagination.
+ * Uses TicketTable component for display, handles empty states, and loading.
  */
 
 'use client'
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { useTransition } from 'react'
+import { useTransition, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Card } from '@/components/ui/card'
-import { TicketCard } from './ticket-card'
+import { TicketTable } from './ticket-table'
 import type { TicketWithUser } from '@/lib/types/tickets'
 import { cn } from '@/lib/utils'
 
 interface TicketListProps {
   tickets: TicketWithUser[]
-  nextCursor: string | null
-  prevCursor: string | null
-  hasMore: boolean
+  currentPage: number
+  totalPages: number
+  totalCount: number
   className?: string
 }
 
 export function TicketList({
   tickets,
-  nextCursor,
-  prevCursor,
-  hasMore,
+  currentPage,
+  totalPages,
+  totalCount,
   className,
 }: TicketListProps) {
   const router = useRouter()
@@ -37,19 +35,17 @@ export function TicketList({
   const [isPending, startTransition] = useTransition()
 
   /**
-   * Navigate to next/previous page
+   * Navigate to specific page
    */
-  const navigatePage = (cursor: string | null, direction: 'next' | 'prev') => {
-    if (!cursor) return
+  const navigateToPage = (page: number) => {
+    if (page < 1 || page > totalPages) return
 
     const params = new URLSearchParams(searchParams.toString())
 
-    if (direction === 'next') {
-      params.set('cursor', cursor)
-      params.delete('prev')
+    if (page === 1) {
+      params.delete('page')
     } else {
-      params.set('prev', cursor)
-      params.delete('cursor')
+      params.set('page', String(page))
     }
 
     startTransition(() => {
@@ -57,111 +53,114 @@ export function TicketList({
     })
   }
 
-  // Empty state
-  if (tickets.length === 0 && !isPending) {
-    return (
-      <Card className={cn('p-12 text-center', className)}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="text-4xl">🎫</div>
-          <div>
-            <h3 className="text-lg font-semibold">No tickets found</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {searchParams.toString()
-                ? 'Try adjusting your filters or search query'
-                : 'Create your first ticket to get started'}
-            </p>
-          </div>
-          {!searchParams.toString() && (
-            <Button
-              onClick={() => router.push('/tickets/new')}
-              className="mt-2"
-            >
-              Create Ticket
-            </Button>
-          )}
-        </div>
-      </Card>
-    )
-  }
+  /**
+   * Generate page numbers to display (memoized for performance)
+   * Shows: 1, 2, 3 when few pages
+   * Shows: 1, ..., 5, 6, 7, ..., 10 when many pages
+   */
+  const pageNumbers = useMemo(() => {
+    const pages: (number | string)[] = []
+    const maxPagesToShow = 5
+
+    if (totalPages <= maxPagesToShow) {
+      // Show all pages if total is small
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      // Always show first page
+      pages.push(1)
+
+      // Calculate range around current page
+      const startPage = Math.max(2, currentPage - 1)
+      const endPage = Math.min(totalPages - 1, currentPage + 1)
+
+      // Add ellipsis if needed
+      if (startPage > 2) {
+        pages.push('...')
+      }
+
+      // Add pages around current
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i)
+      }
+
+      // Add ellipsis if needed
+      if (endPage < totalPages - 1) {
+        pages.push('...')
+      }
+
+      // Always show last page
+      if (totalPages > 1) {
+        pages.push(totalPages)
+      }
+    }
+
+    return pages
+  }, [currentPage, totalPages])
 
   return (
     <div className={cn('space-y-4', className)}>
-      {/* Ticket Cards */}
-      <div className="grid gap-4">
-        {isPending ? (
-          // Loading skeleton
-          <>
-            <TicketCardSkeleton />
-            <TicketCardSkeleton />
-            <TicketCardSkeleton />
-          </>
-        ) : (
-          tickets.map((ticket) => (
-            <TicketCard key={ticket.id} ticket={ticket} />
-          ))
-        )}
-      </div>
+      {/* Ticket Table */}
+      <TicketTable tickets={tickets} />
 
       {/* Pagination Controls */}
-      {(prevCursor || hasMore) && (
-        <div className="flex items-center justify-between pt-4">
+      {totalPages > 1 && (
+        <nav className="flex items-center justify-center gap-2 pt-4" aria-label="Pagination" role="navigation">
+          {/* Previous Button */}
           <Button
             variant="outline"
-            onClick={() => navigatePage(prevCursor, 'prev')}
-            disabled={!prevCursor || isPending}
+            onClick={() => navigateToPage(currentPage - 1)}
+            disabled={currentPage === 1 || isPending}
+            className="h-9 px-4"
+            aria-label="Go to previous page"
           >
             Previous
           </Button>
 
-          <div className="text-sm text-muted-foreground">
-            {tickets.length} {tickets.length === 1 ? 'ticket' : 'tickets'}
-            {hasMore && ' (more available)'}
-          </div>
+          {/* Page Numbers */}
+          {pageNumbers.map((page, index) => {
+            if (page === '...') {
+              return (
+                <span key={`ellipsis-${index}`} className="px-2 text-muted-foreground" aria-hidden="true">
+                  ...
+                </span>
+              )
+            }
 
+            const pageNumber = page as number
+            const isActive = pageNumber === currentPage
+
+            return (
+              <Button
+                key={pageNumber}
+                variant={isActive ? 'default' : 'outline'}
+                onClick={() => navigateToPage(pageNumber)}
+                disabled={isPending}
+                className={cn(
+                  'h-9 w-9 p-0',
+                  isActive && 'bg-blue-600 hover:bg-blue-700 text-white'
+                )}
+                aria-label={`${isActive ? 'Current page, ' : ''}Page ${pageNumber}`}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {pageNumber}
+              </Button>
+            )
+          })}
+
+          {/* Next Button */}
           <Button
             variant="outline"
-            onClick={() => navigatePage(nextCursor, 'next')}
-            disabled={!hasMore || isPending}
+            onClick={() => navigateToPage(currentPage + 1)}
+            disabled={currentPage === totalPages || isPending}
+            className="h-9 px-4"
+            aria-label="Go to next page"
           >
             Next
           </Button>
-        </div>
+        </nav>
       )}
     </div>
-  )
-}
-
-/**
- * Loading skeleton for ticket cards
- */
-function TicketCardSkeleton() {
-  return (
-    <Card className="p-6">
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <Skeleton className="h-6 w-3/4" />
-          <div className="flex gap-2 flex-shrink-0">
-            <Skeleton className="h-6 w-20" />
-            <Skeleton className="h-6 w-16" />
-          </div>
-        </div>
-
-        {/* Description */}
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-2/3" />
-        </div>
-
-        {/* Category */}
-        <Skeleton className="h-4 w-48" />
-
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-2">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-4 w-32" />
-        </div>
-      </div>
-    </Card>
   )
 }

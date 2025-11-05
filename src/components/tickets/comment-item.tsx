@@ -25,7 +25,7 @@ interface CommentUser {
   role: string
 }
 
-interface CommentAttachment {
+export interface CommentAttachment {
   filename: string
   size_bytes: number
   mime_type: string
