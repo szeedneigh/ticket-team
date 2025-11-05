@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -48,51 +49,41 @@ interface InfoItemProps {
   icon: React.ComponentType<{ className?: string }>
   label: string
   value: string
-  delay?: number
 }
 
-function InfoItem({ icon: Icon, label, value, delay = 0 }: InfoItemProps) {
+function InfoItemComponent({ icon: Icon, label, value }: InfoItemProps) {
   return (
-    <motion.div
-      className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-all duration-300 hover:shadow-md"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, type: 'spring', stiffness: 300, damping: 20 }}
-      whileHover={{ scale: 1.02 }}
-    >
-      <div className="p-2.5 rounded-lg bg-primary/20 shadow-sm">
-        <Icon className="h-5 w-5 text-primary" />
+    <div className="group flex items-center gap-3 p-3 rounded-xl bg-[var(--brand-tint)]/10 transition-[transform,opacity,box-shadow] duration-[var(--duration-base)] ease-[var(--transition-timing)] hover:translate-y-[-1px] hover:shadow-[var(--elev-2)] transform-gpu will-change-[transform,opacity]">
+      <div className="p-2.5 rounded-lg bg-[var(--brand-primary)]/15 shadow-[var(--elev-1)] transition-colors duration-[var(--duration-fast)]">
+        <Icon className="h-5 w-5 text-[var(--brand-primary)]" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
         <p className="font-medium text-sm truncate">{value}</p>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
-export function ProfileView({ user, onEdit, ticketStats }: ProfileViewProps) {
+const InfoItem = memo(InfoItemComponent)
+
+function ProfileViewComponent({ user, onEdit, ticketStats }: ProfileViewProps) {
   return (
     <div className="space-y-6">
       {/* Profile Header Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.2, ease: [0.2, 0.7, 0.2, 1] }}
       >
-        <Card className="overflow-hidden bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-md shadow-xl rounded-[24px] border-2 border-primary/10">
+        <Card className="overflow-hidden bg-card shadow-[var(--elev-3)] rounded-[20px] border border-[var(--brand-primary)]/10">
           <div className="p-8">
             <div className="flex flex-col md:flex-row md:items-start gap-8">
               {/* Avatar Section */}
-              <motion.div
-                className="flex flex-col items-center"
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              >
+              <div className="flex flex-col items-center">
                 <AvatarUpload user={user} />
                 <div className="mt-6 text-center space-y-3">
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  <h1 className="text-3xl font-bold text-[var(--brand-primary)]">
                     {user.full_name}
                   </h1>
                   <Badge variant={getRoleBadgeVariant(user.role)} className="mt-2 px-4 py-1 text-sm font-semibold">
@@ -119,20 +110,15 @@ export function ProfileView({ user, onEdit, ticketStats }: ProfileViewProps) {
                     </span>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* User Info */}
-              <motion.div
-                className="flex-1 space-y-6"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-              >
+              <div className="flex-1 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InfoItem icon={Mail} label="Email" value={user.email} delay={0.1} />
-                  {user.position && <InfoItem icon={Briefcase} label="Position" value={user.position} delay={0.15} />}
-                  {user.department && <InfoItem icon={Building} label="Department" value={user.department} delay={0.2} />}
-                  {user.phone && <InfoItem icon={Phone} label="Phone" value={user.phone} delay={0.25} />}
+                  <InfoItem icon={Mail} label="Email" value={user.email} />
+                  {user.position && <InfoItem icon={Briefcase} label="Position" value={user.position} />}
+                  {user.department && <InfoItem icon={Building} label="Department" value={user.department} />}
+                  {user.phone && <InfoItem icon={Phone} label="Phone" value={user.phone} />}
                   <InfoItem
                     icon={CalendarDays}
                     label="Member Since"
@@ -141,7 +127,6 @@ export function ProfileView({ user, onEdit, ticketStats }: ProfileViewProps) {
                       month: 'long',
                       day: 'numeric'
                     })}
-                    delay={0.3}
                   />
                   {user.last_login && (
                     <InfoItem
@@ -152,28 +137,22 @@ export function ProfileView({ user, onEdit, ticketStats }: ProfileViewProps) {
                         month: 'long',
                         day: 'numeric'
                       })}
-                      delay={0.35}
                     />
                   )}
                 </div>
 
                 {/* Edit Button */}
-                <motion.div
-                  className="flex justify-end pt-4"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                >
+                <div className="flex justify-end pt-4">
                   <Button
                     onClick={onEdit}
                     size="lg"
-                    className="shadow-lg hover:shadow-xl transition-shadow duration-300"
+                    className="shadow-[var(--elev-2)] transition-[transform,box-shadow] duration-[var(--duration-base)] hover:translate-y-[-1px] hover:shadow-[var(--elev-3)] transform-gpu will-change-transform bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white"
                   >
                     <Edit3 className="h-4 w-4 mr-2" />
                     Edit Profile
                   </Button>
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
             </div>
           </div>
         </Card>
@@ -184,57 +163,45 @@ export function ProfileView({ user, onEdit, ticketStats }: ProfileViewProps) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
+          transition={{ duration: 0.2, delay: 0.1, ease: [0.2, 0.7, 0.2, 1] }}
         >
-          <Card className="p-6 bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-md shadow-xl rounded-[24px] border-2 border-primary/10">
-            <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-6">
+          <Card className="p-6 bg-card shadow-[var(--elev-3)] rounded-[20px] border border-[var(--brand-primary)]/10">
+            <h2 className="text-xl font-bold text-[var(--brand-primary)] mb-6">
               Activity Statistics
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Total Tickets */}
-              <motion.div
-                className="flex items-center gap-4 p-5 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 hover:from-primary/15 hover:to-primary/10 transition-all duration-300 hover:shadow-lg"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-              >
-                <div className="p-3 rounded-lg bg-primary/20 shadow-md">
-                  <Ticket className="h-7 w-7 text-primary" />
+              <div className="flex items-center gap-4 p-5 rounded-xl bg-[var(--brand-primary)]/5 transition-[transform,box-shadow] duration-[var(--duration-base)] ease-[var(--transition-timing)] hover:translate-y-[-2px] hover:shadow-[var(--elev-2)] transform-gpu will-change-transform cursor-default">
+                <div className="p-3 rounded-lg bg-[var(--brand-primary)]/15 shadow-[var(--elev-1)]">
+                  <Ticket className="h-6 w-6 text-[var(--brand-primary)]" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Tickets</p>
-                  <p className="text-3xl font-bold text-primary">{ticketStats.total}</p>
+                  <p className="text-3xl font-bold text-[var(--brand-primary)]">{ticketStats.total}</p>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Open Tickets */}
-              <motion.div
-                className="flex items-center gap-4 p-5 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/5 hover:from-blue-500/15 hover:to-blue-500/10 transition-all duration-300 hover:shadow-lg"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-              >
-                <div className="p-3 rounded-lg bg-blue-500/20 shadow-md">
-                  <Clock className="h-7 w-7 text-blue-500" />
+              <div className="flex items-center gap-4 p-5 rounded-xl bg-[var(--brand-accent)]/5 transition-[transform,box-shadow] duration-[var(--duration-base)] ease-[var(--transition-timing)] hover:translate-y-[-2px] hover:shadow-[var(--elev-2)] transform-gpu will-change-transform cursor-default">
+                <div className="p-3 rounded-lg bg-[var(--brand-accent)]/15 shadow-[var(--elev-1)]">
+                  <Clock className="h-6 w-6 text-[var(--brand-accent)]" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Open Tickets</p>
-                  <p className="text-3xl font-bold text-blue-500">{ticketStats.open}</p>
+                  <p className="text-3xl font-bold text-[var(--brand-accent)]">{ticketStats.open}</p>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Resolved Tickets */}
-              <motion.div
-                className="flex items-center gap-4 p-5 rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 hover:from-green-500/15 hover:to-green-500/10 transition-all duration-300 hover:shadow-lg"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-              >
-                <div className="p-3 rounded-lg bg-green-500/20 shadow-md">
-                  <CheckCircle className="h-7 w-7 text-green-500" />
+              <div className="flex items-center gap-4 p-5 rounded-xl bg-green-500/5 transition-[transform,box-shadow] duration-[var(--duration-base)] ease-[var(--transition-timing)] hover:translate-y-[-2px] hover:shadow-[var(--elev-2)] transform-gpu will-change-transform cursor-default">
+                <div className="p-3 rounded-lg bg-green-500/15 shadow-[var(--elev-1)]">
+                  <CheckCircle className="h-6 w-6 text-green-500" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Resolved</p>
                   <p className="text-3xl font-bold text-green-500">{ticketStats.resolved}</p>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </Card>
         </motion.div>
@@ -242,3 +209,5 @@ export function ProfileView({ user, onEdit, ticketStats }: ProfileViewProps) {
     </div>
   )
 }
+
+export const ProfileView = memo(ProfileViewComponent)
