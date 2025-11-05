@@ -29,19 +29,6 @@ const SLA_THRESHOLDS = {
 } as const
 
 /**
- * Type for ticket comment with user info from join
- */
-interface TicketCommentWithUser {
-  created_at: string
-  user_id: string
-  users?: {
-    role: string
-  } | {
-    role: string
-  }[]
-}
-
-/**
  * Format duration in hours to human-readable string
  */
 function formatDuration(hours: number): string {
@@ -66,51 +53,56 @@ async function calculateAvgResponseTime(userId: string, isStaff: boolean): Promi
   const supabase = await createClient()
 
   try {
-    // Get tickets with their comments
+    // Step 1: Get resolved/closed tickets
     let ticketQuery = supabase
       .from('tickets')
-      .select(`
-        id,
-        created_at,
-        ticket_comments!inner(
-          created_at,
-          user_id,
-          users!inner(role)
-        )
-      `)
+      .select('id, created_at')
       .in('status', ['resolved', 'closed'])
 
     if (!isStaff) {
       ticketQuery = ticketQuery.eq('user_id', userId)
     }
 
-    const { data: tickets, error } = await ticketQuery
+    const { data: tickets, error: ticketsError } = await ticketQuery
 
-    if (error || !tickets || tickets.length === 0) {
-      logger.error('Error fetching tickets for response time', { error: error?.message })
+    if (ticketsError || !tickets || tickets.length === 0) {
+      logger.error('Error fetching tickets for response time', { error: ticketsError?.message })
       return '-'
     }
 
-    // Calculate time to first staff response for each ticket
+    // Step 2: Get all comments for these tickets with user role
+    const ticketIds = tickets.map(t => t.id)
+    const { data: comments, error: commentsError } = await supabase
+      .from('ticket_comments')
+      .select(`
+        ticket_id,
+        created_at,
+        users!inner(role)
+      `)
+      .in('ticket_id', ticketIds)
+      .order('created_at', { ascending: true })
+
+    if (commentsError || !comments) {
+      logger.error('Error fetching comments for response time', { error: commentsError?.message })
+      return '-'
+    }
+
+    // Step 3: Calculate time to first staff response for each ticket
     const responseTimes: number[] = []
 
     for (const ticket of tickets) {
       const ticketCreated = new Date(ticket.created_at).getTime()
 
-      // Find first comment by staff
-      const staffComments = (ticket.ticket_comments as TicketCommentWithUser[])
-        .filter((comment) => {
-          // Handle users as either object or array
-          const users = comment.users
-          const role = Array.isArray(users) ? users[0]?.role : users?.role
-          return role === 'staff' || role === 'admin' || role === 'super_admin'
-        })
-        .sort((a, b) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        )
+      // Find first staff comment for this ticket
+      const firstStaffComment = comments.find(comment => {
+        if (comment.ticket_id !== ticket.id) return false
+        // Handle users as either object or array (Supabase returns array for !inner joins)
+        const users = comment.users
+        const role = Array.isArray(users) ? users[0]?.role : (users as { role: string })?.role
+        return role === 'staff' || role === 'admin' || role === 'super_admin'
+      })
 
-      if (staffComments.length > 0) {
-        const firstStaffComment = staffComments[0]
+      if (firstStaffComment) {
         const commentTime = new Date(firstStaffComment.created_at).getTime()
         const responseTimeHours = (commentTime - ticketCreated) / (1000 * 60 * 60)
         responseTimes.push(responseTimeHours)
