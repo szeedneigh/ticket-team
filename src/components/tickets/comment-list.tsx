@@ -2,6 +2,7 @@
 
 import { CommentItem } from './comment-item'
 import type { TicketCommentWithUser } from '@/lib/types/tickets'
+import type { CommentAttachment } from './comment-item'
 
 /**
  * Comment List Component
@@ -40,7 +41,7 @@ export function CommentList({
           id={comment.id}
           content={comment.content}
           is_internal={comment.is_internal}
-          attachments={comment.attachments || []}
+          attachments={(comment.attachments as unknown as CommentAttachment[]) || []}
           created_at={comment.created_at}
           user={comment.user}
         />
