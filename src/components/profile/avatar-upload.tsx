@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from 'react'
+import { useState, useRef, memo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -13,7 +13,7 @@ interface AvatarUploadProps {
   user: User
 }
 
-export function AvatarUpload({ user }: AvatarUploadProps) {
+function AvatarUploadComponent({ user }: AvatarUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -44,14 +44,14 @@ export function AvatarUpload({ user }: AvatarUploadProps) {
 
   const uploadFile = async (file: File) => {
     setIsUploading(true)
-    
+
     try {
       // Wrap file in FormData for server action
       const formData = new FormData()
       formData.append('avatar', file)
-      
+
       const result = await uploadAvatar(formData)
-      
+
       if (result.success) {
         toast.success('Avatar updated successfully')
         // Clear preview URL after successful upload
@@ -110,30 +110,30 @@ export function AvatarUpload({ user }: AvatarUploadProps) {
   }
 
   return (
-    <Card className="p-4 bg-card/90 backdrop-blur-sm shadow-lg rounded-[20px]">
+    <Card className="p-4 bg-card shadow-[var(--elev-2)] rounded-[18px] border border-[var(--brand-primary)]/10">
       <div className="flex flex-col items-center space-y-4">
         {/* Avatar Display */}
         <div className="relative">
-          <Avatar className="h-24 w-24">
-            <AvatarImage 
-              src={previewUrl || user.avatar_url || undefined} 
-              alt={user.full_name || 'User avatar'} 
+          <Avatar className="h-24 w-24 ring-4 ring-[var(--brand-tint)]/30 transition-all duration-[var(--duration-base)]">
+            <AvatarImage
+              src={previewUrl || user.avatar_url || undefined}
+              alt={user.full_name || 'User avatar'}
             />
-            <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+            <AvatarFallback className="bg-[var(--brand-primary)] text-white text-lg font-semibold">
               {getInitials()}
             </AvatarFallback>
           </Avatar>
-          
+
           {/* Upload overlay */}
           {isUploading && (
-            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
               <Loader2 className="h-6 w-6 text-white animate-spin" />
             </div>
           )}
         </div>
 
         {/* Upload Controls */}
-        <div className="flex flex-col items-center space-y-2">
+        <div className="flex flex-col items-center space-y-2 w-full">
           <input
             ref={fileInputRef}
             type="file"
@@ -142,18 +142,18 @@ export function AvatarUpload({ user }: AvatarUploadProps) {
             className="hidden"
             disabled={isUploading}
           />
-          
+
           <Button
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="w-full"
+            className="w-full border-[var(--brand-accent)]/30 hover:border-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10 transition-all duration-[var(--duration-base)]"
           >
             {isUploading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
-              <Camera className="h-4 w-4 mr-2" />
+              <Camera className="h-4 w-4 mr-2 text-[var(--brand-accent)]" />
             )}
             {isUploading ? 'Uploading...' : 'Change Avatar'}
           </Button>
@@ -163,7 +163,7 @@ export function AvatarUpload({ user }: AvatarUploadProps) {
               variant="ghost"
               size="sm"
               onClick={handleRemovePreview}
-              className="text-red-500 hover:text-red-700"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 w-full"
             >
               <X className="h-4 w-4 mr-2" />
               Cancel
@@ -172,11 +172,13 @@ export function AvatarUpload({ user }: AvatarUploadProps) {
         </div>
 
         {/* Upload Guidelines */}
-        <div className="text-center text-xs text-muted-foreground max-w-xs">
-          <p>Upload a profile picture</p>
-          <p>Max size: 5MB • Formats: JPG, PNG, GIF</p>
+        <div className="text-center text-xs text-muted-foreground max-w-xs space-y-1">
+          <p className="font-medium">Upload a profile picture</p>
+          <p className="text-[10px]">Max size: 5MB • Formats: JPG, PNG, GIF</p>
         </div>
       </div>
     </Card>
   )
 }
+
+export const AvatarUpload = memo(AvatarUploadComponent)

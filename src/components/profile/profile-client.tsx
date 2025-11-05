@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, memo } from 'react'
 import { ProfileView } from '@/components/profile/profile-view'
 import { ProfileForm } from '@/components/profile/profile-form'
 import { Card } from '@/components/ui/card'
@@ -17,66 +16,42 @@ interface ProfileClientProps {
   }
 }
 
-export function ProfileClient({ user, ticketStats }: ProfileClientProps) {
+function ProfileClientComponent({ user, ticketStats }: ProfileClientProps) {
   const [isEditing, setIsEditing] = useState(false)
 
   return (
-    <AnimatePresence mode="wait">
+    <div className="animate-in fade-in duration-200">
       {isEditing ? (
-        <motion.div
-          key="edit-mode"
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: -20 }}
-          transition={{ duration: 0.3, ease: 'easeInOut' }}
-        >
-          <Card className="p-8 bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-md shadow-xl rounded-[24px] border-2 border-primary/10">
-            <div className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  Edit Profile
-                </h2>
-                <p className="text-muted-foreground mt-2">
-                  Update your personal information and preferences.
-                </p>
-              </motion.div>
-
-              <Separator />
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <ProfileForm
-                  user={user}
-                  defaultEditing={true}
-                  onCancel={() => setIsEditing(false)}
-                  onSuccess={() => setIsEditing(false)}
-                />
-              </motion.div>
+        <Card className="p-8 bg-card shadow-[var(--elev-3)] rounded-[20px] border border-[var(--brand-primary)]/10 animate-in fade-in duration-200">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-[var(--brand-primary)]">
+                Edit Profile
+              </h2>
+              <p className="text-muted-foreground mt-2">
+                Update your personal information and preferences.
+              </p>
             </div>
-          </Card>
-        </motion.div>
+
+            <Separator />
+
+            <ProfileForm
+              user={user}
+              defaultEditing={true}
+              onCancel={() => setIsEditing(false)}
+              onSuccess={() => setIsEditing(false)}
+            />
+          </div>
+        </Card>
       ) : (
-        <motion.div
-          key="view-mode"
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: -20 }}
-          transition={{ duration: 0.3, ease: 'easeInOut' }}
-        >
-          <ProfileView
-            user={user}
-            onEdit={() => setIsEditing(true)}
-            ticketStats={ticketStats}
-          />
-        </motion.div>
+        <ProfileView
+          user={user}
+          onEdit={() => setIsEditing(true)}
+          ticketStats={ticketStats}
+        />
       )}
-    </AnimatePresence>
+    </div>
   )
 }
+
+export const ProfileClient = memo(ProfileClientComponent)

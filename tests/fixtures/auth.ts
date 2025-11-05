@@ -1,4 +1,4 @@
-import { test as base } from '@playwright/test'
+import { test as base, type Page } from '@playwright/test'
 
 /**
  * Authentication fixture for Playwright tests
@@ -14,7 +14,7 @@ import { test as base } from '@playwright/test'
  */
 
 type AuthFixtures = {
-  authenticatedPage: any
+  authenticatedPage: Page
 }
 
 export const test = base.extend<AuthFixtures>({
@@ -30,7 +30,7 @@ export const test = base.extend<AuthFixtures>({
    * @see https://playwright.dev/docs/auth
    * @see https://supabase.com/docs/guides/auth/auth-helpers
    */
-  authenticatedPage: async ({ page }, use) => {
+  authenticatedPage: async ({ page }: { page: Page }, use) => {
     // TODO: Implement authentication flow
     // Example:
     // await page.goto('/auth/sign-in')

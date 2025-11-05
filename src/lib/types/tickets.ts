@@ -52,7 +52,7 @@ export interface TicketComment {
 }
 
 export interface TicketCommentWithUser extends TicketComment {
-  user: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url'>
+  user: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url' | 'role'>
 }
 
 // ============================================================================
@@ -128,6 +128,8 @@ export interface CreateFeedbackData {
 // Filter/Query Types
 // ============================================================================
 
+export type TimePeriod = 'today' | 'this_week' | 'this_month' | 'all'
+
 export interface TicketFilters {
   status?: TicketStatus | TicketStatus[]
   priority?: TicketPriority | TicketPriority[]
@@ -137,6 +139,8 @@ export interface TicketFilters {
   search?: string
   created_after?: string
   created_before?: string
+  timePeriod?: TimePeriod
+  page?: number
 }
 
 export interface TicketListResponse {
@@ -144,6 +148,13 @@ export interface TicketListResponse {
   total: number
   page: number
   per_page: number
+}
+
+export interface PagedTicketListResponse {
+  tickets: TicketWithUser[]
+  totalPages: number
+  currentPage: number
+  totalCount: number
 }
 
 // ============================================================================
