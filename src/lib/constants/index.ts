@@ -256,6 +256,53 @@ export const SEARCH = {
 } as const
 
 // ============================================================================
+// Time Period Filter
+// ============================================================================
+
+export const TIME_PERIOD = {
+  LABELS: {
+    today: 'Today',
+    this_week: 'This Week',
+    this_month: 'This Month',
+    all: 'All Time',
+  } as const,
+} as const
+
+/**
+ * Get date range for a time period
+ * @param period - Time period to filter by
+ * @returns ISO date string for the start of the period, or null for 'all'
+ */
+export function getTimePeriodStartDate(period: keyof typeof TIME_PERIOD.LABELS): string | null {
+  const now = new Date()
+
+  switch (period) {
+    case 'today': {
+      // Start of today (00:00:00)
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      return startOfDay.toISOString()
+    }
+
+    case 'this_week': {
+      // Start of week (Sunday 00:00:00)
+      const dayOfWeek = now.getDay()
+      const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek)
+      return startOfWeek.toISOString()
+    }
+
+    case 'this_month': {
+      // Start of month (1st day 00:00:00)
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      return startOfMonth.toISOString()
+    }
+
+    case 'all':
+    default:
+      return null
+  }
+}
+
+// ============================================================================
 // Session & Cache Configuration
 // ============================================================================
 
