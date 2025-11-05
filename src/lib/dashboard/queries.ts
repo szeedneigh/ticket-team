@@ -29,6 +29,19 @@ const SLA_THRESHOLDS = {
 } as const
 
 /**
+ * Type for ticket comment with user info from join
+ */
+interface TicketCommentWithUser {
+  created_at: string
+  user_id: string
+  users?: {
+    role: string
+  } | {
+    role: string
+  }[]
+}
+
+/**
  * Format duration in hours to human-readable string
  */
 function formatDuration(hours: number): string {
@@ -85,12 +98,14 @@ async function calculateAvgResponseTime(userId: string, isStaff: boolean): Promi
       const ticketCreated = new Date(ticket.created_at).getTime()
 
       // Find first comment by staff
-      const staffComments = ticket.ticket_comments
-        .filter((comment: any) => {
-          const role = comment.users?.role
+      const staffComments = (ticket.ticket_comments as TicketCommentWithUser[])
+        .filter((comment) => {
+          // Handle users as either object or array
+          const users = comment.users
+          const role = Array.isArray(users) ? users[0]?.role : users?.role
           return role === 'staff' || role === 'admin' || role === 'super_admin'
         })
-        .sort((a: any, b: any) =>
+        .sort((a, b) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         )
 
