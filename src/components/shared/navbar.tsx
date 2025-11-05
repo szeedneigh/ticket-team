@@ -12,21 +12,58 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu'
-import { Bell, Search } from 'lucide-react'
+import { Bell, Search, PanelLeft } from 'lucide-react'
 import type { User } from '@/lib/types/users'
 
 interface NavbarProps {
   user?: User | null
+  isCollapsed?: boolean
+  setIsCollapsed?: (collapsed: boolean) => void
+  isMobileOpen?: boolean
+  setIsMobileOpen?: (open: boolean) => void
 }
 
-export function Navbar({ user }: NavbarProps) {
+export function Navbar({ 
+  user, 
+  isCollapsed, 
+  setIsCollapsed, 
+  isMobileOpen, 
+  setIsMobileOpen 
+}: NavbarProps) {
+  const handleToggle = () => {
+    if (window.innerWidth < 1024) {
+      // Mobile: toggle mobile menu
+      setIsMobileOpen?.(!isMobileOpen)
+    } else {
+      // Desktop: toggle collapse
+      setIsCollapsed?.(!isCollapsed)
+    }
+  }
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+    <header className="z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0">
+      <div className="flex h-16 items-center justify-between px-4 lg:px-6">
         <div className="flex items-center gap-6">
-          <Link href={user ? "/dashboard" : "/"} className="flex items-center space-x-2">
-            <span className="text-xl font-bold text-primary">TicketTeam</span>
-          </Link>
+          {/* Sidebar toggle button - only show when user is logged in */}
+          {user && setIsCollapsed && setIsMobileOpen && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleToggle}
+              aria-label="Toggle sidebar"
+              className="flex-shrink-0 cursor-pointer"
+            >
+              <PanelLeft className="h-5 w-5" />
+            </Button>
+          )}
+          
+          {/* Logo - only show when user is NOT logged in */}
+          {!user && (
+            <Link href="/" className="flex items-center space-x-2">
+              <span className="text-xl font-bold text-primary">TicketTeam</span>
+            </Link>
+          )}
+          
           {!user && (
             <nav className="hidden md:flex items-center gap-6 text-sm">
               <Link
