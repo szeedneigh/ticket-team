@@ -7,8 +7,9 @@ import { StatsCard } from '@/components/dashboard/stats-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { RecentActivity } from '@/components/dashboard/recent-activity'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, AlertTriangle } from 'lucide-react'
 import { logger } from '@/lib/logger'
+import Link from 'next/link'
 
 export default async function DashboardPage() {
   let user
@@ -71,7 +72,27 @@ export default async function DashboardPage() {
           </AlertDescription>
         </Alert>
       )}
-      
+
+      {/* Overdue Tickets Alert */}
+      {stats && stats.overdueTickets > 0 && (
+        <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertTitle className="text-orange-800 dark:text-orange-200">
+            Overdue Tickets
+          </AlertTitle>
+          <AlertDescription className="text-orange-700 dark:text-orange-300">
+            You have {stats.overdueTickets} ticket{stats.overdueTickets > 1 ? 's' : ''} past
+            {stats.overdueTickets > 1 ? ' their' : ' its'} SLA deadline.
+            <Link
+              href="/tickets?status=open&status=in_progress"
+              className="ml-2 underline font-medium hover:text-orange-900 dark:hover:text-orange-100"
+            >
+              Review now →
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
