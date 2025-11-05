@@ -1,7 +1,9 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { Paperclip, Download } from 'lucide-react'
+import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -12,6 +14,9 @@ import { TicketTimeline } from './ticket-timeline'
 import { TicketActions } from './ticket-actions'
 import { CommentBox } from './comment-box'
 import { CommentList } from './comment-list'
+import { FeedbackPrompt } from './feedback-prompt'
+import { getAttachmentDownloadUrl } from '@/app/actions/tickets'
+import { hasFeedback } from '@/app/actions/feedback'
 import type { TicketWithUser, TicketCommentWithUser, TicketActivityWithUser } from '@/lib/types/tickets'
 import type { User as UserType } from '@/lib/types/users'
 
@@ -62,9 +67,46 @@ export function TicketDetail({
   isStaff,
 }: TicketDetailProps) {
   const isSubmitter = ticket.user_id === currentUserId
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false)
+  const [feedbackAlreadySubmitted, setFeedbackAlreadySubmitted] = useState(false)
+
+  // Check if feedback prompt should be shown
+  useEffect(() => {
+    const checkFeedback = async () => {
+      // Only show prompt for resolved tickets where user is the submitter
+      if (ticket.status === 'resolved' && isSubmitter && !isStaff) {
+        const hasSubmittedFeedback = await hasFeedback(ticket.id)
+        setFeedbackAlreadySubmitted(hasSubmittedFeedback)
+
+        // Show prompt if feedback hasn't been submitted yet
+        if (!hasSubmittedFeedback) {
+          setShowFeedbackPrompt(true)
+        }
+      }
+    }
+
+    checkFeedback()
+  }, [ticket.id, ticket.status, isSubmitter, isStaff])
+
+  const handleFeedbackSubmitted = () => {
+    setFeedbackAlreadySubmitted(true)
+    setShowFeedbackPrompt(false)
+  }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <>
+      {/* Feedback Prompt Dialog */}
+      {showFeedbackPrompt && !feedbackAlreadySubmitted && (
+        <FeedbackPrompt
+          ticketId={ticket.id}
+          ticketTitle={ticket.title}
+          isOpen={showFeedbackPrompt}
+          onClose={() => setShowFeedbackPrompt(false)}
+          onSubmitted={handleFeedbackSubmitted}
+        />
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Main Content */}
       <div className="lg:col-span-2 space-y-6">
         {/* Ticket Header */}
@@ -217,6 +259,7 @@ export function TicketDetail({
         />
       </div>
     </div>
+    </>
   )
 }
 
@@ -229,6 +272,8 @@ interface AttachmentItemProps {
 }
 
 function AttachmentItem({ attachment }: AttachmentItemProps) {
+  const [isDownloading, setIsDownloading] = useState(false)
+
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -248,9 +293,33 @@ function AttachmentItem({ attachment }: AttachmentItemProps) {
     return '📎'
   }
 
-  const handleDownload = () => {
-    // TODO: Implement download with signed URL
-    console.log('Download:', attachment.storage_path)
+  const handleDownload = async () => {
+    try {
+      setIsDownloading(true)
+
+      // Get signed download URL from server action
+      const result = await getAttachmentDownloadUrl(attachment.id)
+
+      if (!result.success || !result.data?.url) {
+        toast.error(result.error || 'Failed to download file')
+        return
+      }
+
+      // Trigger browser download
+      const link = document.createElement('a')
+      link.href = result.data.url
+      link.download = attachment.filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      toast.success(`Downloading ${attachment.filename}`)
+    } catch (error) {
+      console.error('Download error:', error)
+      toast.error('An unexpected error occurred')
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   return (
@@ -270,10 +339,13 @@ function AttachmentItem({ attachment }: AttachmentItemProps) {
         variant="ghost"
         size="icon"
         onClick={handleDownload}
+        disabled={isDownloading}
         className="flex-shrink-0"
       >
-        <Download className="h-4 w-4" />
-        <span className="sr-only">Download {attachment.filename}</span>
+        <Download className={`h-4 w-4 ${isDownloading ? 'animate-pulse' : ''}`} />
+        <span className="sr-only">
+          {isDownloading ? 'Downloading...' : `Download ${attachment.filename}`}
+        </span>
       </Button>
     </div>
   )
