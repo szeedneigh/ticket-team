@@ -65,8 +65,12 @@ async function calculateAvgResponseTime(userId: string, isStaff: boolean): Promi
 
     const { data: tickets, error: ticketsError } = await ticketQuery
 
-    if (ticketsError || !tickets || tickets.length === 0) {
-      logger.error('Error fetching tickets for response time', { error: ticketsError?.message })
+    // Only log when there is an actual query error; empty results are a valid case
+    if (ticketsError) {
+      logger.error('Error fetching tickets for response time', { error: ticketsError.message })
+      return '-'
+    }
+    if (!tickets || tickets.length === 0) {
       return '-'
     }
 
