@@ -10,14 +10,210 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUser } from '@/lib/auth/session'
 import { logger } from '@/lib/logger'
-import type { 
-  DashboardStats, 
+import type {
+  DashboardStats,
   Activity,
-  ActivityType, 
-  UserTicketSummary, 
+  ActivityType,
+  UserTicketSummary,
   KBStats,
-  DashboardData 
+  DashboardData
 } from '@/lib/types/dashboard'
+
+/**
+ * SLA thresholds in hours by priority
+ */
+const SLA_THRESHOLDS = {
+  low: 48,      // 2 days
+  medium: 24,   // 1 day
+  high: 8,      // 8 hours
+} as const
+
+/**
+ * Format duration in hours to human-readable string
+ */
+function formatDuration(hours: number): string {
+  if (hours < 1) {
+    return `${Math.round(hours * 60)}m`
+  } else if (hours < 24) {
+    return `${hours.toFixed(1)}h`
+  } else {
+    const days = hours / 24
+    return `${days.toFixed(1)}d`
+  }
+}
+
+/**
+ * Calculate average response time based on first staff comment
+ *
+ * @param userId - User ID to calculate for
+ * @param isStaff - Whether user is staff
+ * @returns Formatted average response time string
+ */
+async function calculateAvgResponseTime(userId: string, isStaff: boolean): Promise<string> {
+  const supabase = await createClient()
+
+  try {
+    // Step 1: Get resolved/closed tickets
+    let ticketQuery = supabase
+      .from('tickets')
+      .select('id, created_at')
+      .in('status', ['resolved', 'closed'])
+
+    if (!isStaff) {
+      ticketQuery = ticketQuery.eq('user_id', userId)
+    }
+
+    const { data: tickets, error: ticketsError } = await ticketQuery
+
+    // Only log when there is an actual query error; empty results are a valid case
+    if (ticketsError) {
+      logger.error('Error fetching tickets for response time', { error: ticketsError.message })
+      return '-'
+    }
+    if (!tickets || tickets.length === 0) {
+      return '-'
+    }
+
+    // Step 2: Get all comments for these tickets with user role
+    const ticketIds = tickets.map(t => t.id)
+    const { data: comments, error: commentsError } = await supabase
+      .from('ticket_comments')
+      .select(`
+        ticket_id,
+        created_at,
+        users!inner(role)
+      `)
+      .in('ticket_id', ticketIds)
+      .order('created_at', { ascending: true })
+
+    if (commentsError || !comments) {
+      logger.error('Error fetching comments for response time', { error: commentsError?.message })
+      return '-'
+    }
+
+    // Step 3: Calculate time to first staff response for each ticket
+    const responseTimes: number[] = []
+
+    for (const ticket of tickets) {
+      const ticketCreated = new Date(ticket.created_at).getTime()
+
+      // Find first staff comment for this ticket
+      const firstStaffComment = comments.find(comment => {
+        if (comment.ticket_id !== ticket.id) return false
+        // Handle users as either object or array (Supabase returns array for !inner joins)
+        const users = comment.users
+        const role = Array.isArray(users) ? users[0]?.role : (users as { role: string })?.role
+        return role === 'staff' || role === 'admin' || role === 'super_admin'
+      })
+
+      if (firstStaffComment) {
+        const commentTime = new Date(firstStaffComment.created_at).getTime()
+        const responseTimeHours = (commentTime - ticketCreated) / (1000 * 60 * 60)
+        responseTimes.push(responseTimeHours)
+      }
+    }
+
+    if (responseTimes.length === 0) {
+      return '-'
+    }
+
+    // Calculate average
+    const avgHours = responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
+    return formatDuration(avgHours)
+  } catch (error) {
+    logger.error('Error calculating response time', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    return '-'
+  }
+}
+
+/**
+ * Calculate satisfaction score from feedback
+ *
+ * @param userId - User ID to calculate for
+ * @param isStaff - Whether user is staff
+ * @returns Average satisfaction rating (0-5)
+ */
+async function calculateSatisfactionScore(userId: string, isStaff: boolean): Promise<number> {
+  const supabase = await createClient()
+
+  try {
+    let query = supabase
+      .from('ticket_feedback')
+      .select('rating, tickets!inner(user_id)')
+
+    if (!isStaff) {
+      // Filter to user's tickets only
+      query = query.eq('tickets.user_id', userId)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      logger.error('Error fetching satisfaction scores', { error: error.message })
+      return 0
+    }
+
+    if (!data || data.length === 0) {
+      return 0
+    }
+
+    // Calculate average rating
+    const avgRating = data.reduce((sum, f) => sum + f.rating, 0) / data.length
+    return Math.round(avgRating * 10) / 10 // Round to 1 decimal
+  } catch (error) {
+    logger.error('Error calculating satisfaction', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    return 0
+  }
+}
+
+/**
+ * Calculate number of overdue tickets based on SLA
+ *
+ * @param userId - User ID to calculate for
+ * @param isStaff - Whether user is staff
+ * @returns Count of overdue tickets
+ */
+async function calculateOverdueTickets(userId: string, isStaff: boolean): Promise<number> {
+  const supabase = await createClient()
+
+  try {
+    let query = supabase
+      .from('tickets')
+      .select('id, priority, created_at, status')
+      .in('status', ['open', 'in_progress'])
+
+    if (!isStaff) {
+      query = query.eq('user_id', userId)
+    }
+
+    const { data, error } = await query
+
+    if (error || !data) {
+      logger.error('Error fetching tickets for overdue calculation', { error: error?.message })
+      return 0
+    }
+
+    // Check each ticket against SLA threshold
+    const now = new Date().getTime()
+    const overdueCount = data.filter(ticket => {
+      const createdAt = new Date(ticket.created_at).getTime()
+      const ageInHours = (now - createdAt) / (1000 * 60 * 60)
+      const threshold = SLA_THRESHOLDS[ticket.priority as keyof typeof SLA_THRESHOLDS]
+      return ageInHours > threshold
+    }).length
+
+    return overdueCount
+  } catch (error) {
+    logger.error('Error calculating overdue tickets', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    return 0
+  }
+}
 
 /**
  * Get dashboard statistics for the current user
@@ -114,12 +310,13 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
       }
     }
     
-    // Calculate average response time (mock for now - requires ticket_activities)
-    const avgResponseTime = '2.4h'
-    
-    // Get satisfaction rating (mock for now - requires ticket_feedback)
-    const satisfaction = 4.8
-    
+    // Calculate real metrics
+    const [avgResponseTime, satisfaction, overdueCount] = await Promise.all([
+      calculateAvgResponseTime(userId, isStaff),
+      calculateSatisfactionScore(userId, isStaff),
+      calculateOverdueTickets(userId, isStaff),
+    ])
+
     return {
       openTickets: openCount || 0,
       resolvedTickets: resolvedToday || 0,
@@ -128,7 +325,7 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
       totalTickets: totalCount || 0,
       myTickets: !isStaff ? (totalCount || 0) : 0,
       assignedTickets: assignedCount,
-      overdueTickets: 0, // TODO: Calculate based on created_at + SLA
+      overdueTickets: overdueCount,
     }
   } catch (error) {
     logger.error('Error fetching dashboard stats', { 
@@ -189,13 +386,16 @@ export async function getUserTicketSummary(userId: string): Promise<UserTicketSu
       throw error
     }
     
+    // Calculate overdue tickets
+    const overdueCount = await calculateOverdueTickets(userId, false)
+
     const counts = {
       total: tickets?.length || 0,
       open: tickets?.filter(t => t.status === 'open').length || 0,
       inProgress: tickets?.filter(t => t.status === 'in_progress').length || 0,
       resolved: tickets?.filter(t => t.status === 'resolved').length || 0,
       closed: tickets?.filter(t => t.status === 'closed').length || 0,
-      overdue: 0, // TODO: Calculate based on created_at + SLA
+      overdue: overdueCount,
     }
     
     // Get tickets assigned to user
