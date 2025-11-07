@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { cn } from '@/lib/utils'
 import { Navbar } from './navbar'
 import { Sidebar } from './sidebar'
+import { BackToTop } from './back-to-top'
 import type { User } from '@/lib/types/users'
 
 interface DashboardLayoutWrapperProps {
@@ -13,6 +15,8 @@ interface DashboardLayoutWrapperProps {
 export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrapperProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [scrollState, setScrollState] = useState({ atTop: true, atBottom: false })
+  const mainRef = useRef<HTMLElement>(null)
 
   // Load collapsed state from localStorage on mount
   useEffect(() => {
@@ -26,6 +30,27 @@ export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrappe
   useEffect(() => {
     localStorage.setItem('sidebar-collapsed', String(isCollapsed))
   }, [isCollapsed])
+
+  // Track scroll position for shadow indicators
+  useEffect(() => {
+    const handleScroll = () => {
+      if (mainRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = mainRef.current
+        setScrollState({
+          atTop: scrollTop === 0,
+          atBottom: scrollTop + clientHeight >= scrollHeight - 1
+        })
+      }
+    }
+
+    const main = mainRef.current
+    main?.addEventListener('scroll', handleScroll)
+
+    // Initial check
+    handleScroll()
+
+    return () => main?.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
     <div className="flex h-full overflow-hidden">
@@ -43,10 +68,31 @@ export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrappe
           isMobileOpen={isMobileOpen}
           setIsMobileOpen={setIsMobileOpen}
         />
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-          {children}
-        </main>
+        <div className="relative flex-1 overflow-hidden">
+          {/* Top scroll shadow */}
+          <div
+            className={cn(
+              "absolute top-0 left-0 right-0 h-8 pointer-events-none z-10 transition-opacity duration-300",
+              "bg-gradient-to-b from-background to-transparent",
+              scrollState.atTop ? "opacity-0" : "opacity-100"
+            )}
+          />
+
+          <main ref={mainRef} className="flex-1 overflow-y-auto p-6 lg:p-8 h-full">
+            {children}
+          </main>
+
+          {/* Bottom scroll shadow */}
+          <div
+            className={cn(
+              "absolute bottom-0 left-0 right-0 h-8 pointer-events-none z-10 transition-opacity duration-300",
+              "bg-gradient-to-t from-background to-transparent",
+              scrollState.atBottom ? "opacity-0" : "opacity-100"
+            )}
+          />
+        </div>
       </div>
+      <BackToTop />
     </div>
   )
 }
