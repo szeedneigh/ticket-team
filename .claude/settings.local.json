@@ -1,4 +1,17 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "mcp__playwright__playwright_navigate",
+      "Bash(npx playwright install:*)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "playwright",
+    "shadcn"
+  ],
   "hooks": {
     "PostToolUse": [
       {
@@ -13,10 +26,5 @@
       }
     ]
   },
-  "outputStyle": "default",
-  "permissions": {
-    "allow": [
-      "Bash(npm run build:*)"
-    ]
-  }
+  "outputStyle": "default"
 }
