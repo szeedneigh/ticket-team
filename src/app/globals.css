@@ -117,12 +117,55 @@
 }
 
 @layer base {
+  /* Fix height inheritance for dashboard layout */
+  html,
+  body {
+    height: 100%;
+  }
+
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /* Custom scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-muted-foreground);
+    border-radius: 4px;
+    transition: background var(--duration-base);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-foreground);
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-muted-foreground) transparent;
+  }
+
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 }
 
@@ -137,8 +180,86 @@
   transform-origin: 55% 55%;
 }
 
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+@keyframes nav-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0); }
+}
+
+.nav-item-active {
+  animation: nav-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes focus-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 3px var(--color-ring), 0 0 0 0 var(--color-ring);
+  }
+  50% {
+    box-shadow: 0 0 0 3px var(--color-ring), 0 0 16px 4px var(--color-ring);
+  }
+}
+
+/* Enhanced focus states with premium glow */
+*:focus-visible {
+  animation: focus-glow 1.5s ease-in-out infinite;
+}
+
+/* Premium utility classes */
+@layer utilities {
+  /* Card gradient border glow effect */
+  .card-glow {
+    position: relative;
+  }
+
+  .card-glow::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg,
+      var(--color-brand-accent) 0%,
+      var(--color-primary) 50%,
+      var(--color-brand-tint) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box,
+                  linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--transition-timing);
+    pointer-events: none;
+  }
+
+  .card-glow:hover::before {
+    opacity: 1;
+  }
+
+  /* Gradient text effect */
+  .gradient-text {
+    background: linear-gradient(135deg,
+      var(--color-brand-accent) 0%,
+      var(--color-primary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .float-tilt { animation: none !important; }
+  .animate-shimmer { animation: none !important; }
+  .nav-item-active { animation: none !important; }
+  *:focus-visible { animation: none !important; }
 }
 
 @theme inline {
