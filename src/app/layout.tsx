@@ -10,7 +10,7 @@ const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
-
+ 
 export const metadata: Metadata = {
   title: "Ticket Team - La Verdad Christian College",
   description: "Intelligent Helpdesk Platform for La Verdad Christian College",
