@@ -49,8 +49,7 @@ export const kbArticleSchema = z.object({
 
   tags: z
     .array(z.string().min(2, 'Tag must be at least 2 characters').max(30, 'Tag must not exceed 30 characters'))
-    .max(10, 'Maximum 10 tags allowed')
-    .default([]),
+    .max(10, 'Maximum 10 tags allowed'),
 
   status: z.enum(['draft', 'published', 'archived'], {
     errorMap: () => ({ message: 'Status must be draft, published, or archived' })
