@@ -19,8 +19,8 @@ export function useCountUp(
   enabled: boolean = true
 ): number {
   const [count, setCount] = useState(0)
-  const frameRef = useRef<number>()
-  const startTimeRef = useRef<number>()
+  const frameRef = useRef<number | undefined>(undefined)
+  const startTimeRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     // If animation is disabled, immediately set to end value
