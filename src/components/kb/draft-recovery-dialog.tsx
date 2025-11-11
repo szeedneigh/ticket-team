@@ -50,9 +50,17 @@ export function DraftRecoveryDialog({
 }: DraftRecoveryDialogProps) {
   const [open, setOpen] = useState(false)
   const [draftData, setDraftData] = useState<DraftData | null>(null)
+  const [mounted, setMounted] = useState(false)
+  const [hasChecked, setHasChecked] = useState(false)
 
   useEffect(() => {
-    // Check for saved draft on mount
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted || hasChecked) return
+
+    // Check for saved draft on mount (ONE TIME ONLY)
     try {
       const saved = localStorage.getItem(storageKey)
       if (saved) {
@@ -60,21 +68,13 @@ export function DraftRecoveryDialog({
 
         // Only show dialog if draft has meaningful content
         const hasContent =
-          parsed.title ||
-          (parsed.content && parsed.content.length > 50) ||
+          (parsed.title && parsed.title.length > 5) ||
+          (parsed.content && parsed.content.length > 100) ||
           (parsed.tags && parsed.tags.length > 0)
 
         if (hasContent) {
-          // Check if current data is different from saved draft
-          const isDifferent =
-            !currentData ||
-            parsed.title !== currentData.title ||
-            parsed.content !== currentData.content
-
-          if (isDifferent) {
-            setDraftData(parsed)
-            setOpen(true)
-          }
+          setDraftData(parsed)
+          setOpen(true)
         } else {
           // Clean up empty drafts
           localStorage.removeItem(storageKey)
@@ -83,12 +83,15 @@ export function DraftRecoveryDialog({
     } catch (error) {
       console.error('Failed to load draft:', error)
       localStorage.removeItem(storageKey)
+    } finally {
+      setHasChecked(true)
     }
-  }, [storageKey, currentData])
+  }, [storageKey, mounted, hasChecked])
 
   const handleRecover = () => {
     if (draftData) {
       onRecover(draftData)
+      localStorage.removeItem(storageKey) // Clear draft after recovery
       setOpen(false)
     }
   }
@@ -99,10 +102,19 @@ export function DraftRecoveryDialog({
     setOpen(false)
   }
 
-  if (!draftData) return null
+  const handleKeepEditing = () => {
+    // User wants to keep current work, clear the old draft to prevent re-showing
+    localStorage.removeItem(storageKey)
+    setOpen(false)
+  }
+
+  if (!draftData || !mounted) return null
 
   const savedDate = new Date(draftData.savedAt)
-  const timeAgo = formatDistanceToNow(savedDate, { addSuffix: true })
+  const isValidDate = !isNaN(savedDate.getTime())
+  const timeAgo = isValidDate
+    ? formatDistanceToNow(savedDate, { addSuffix: true })
+    : 'recently'
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
@@ -112,7 +124,7 @@ export function DraftRecoveryDialog({
             <FileText className="h-5 w-5 text-primary" />
             <AlertDialogTitle>Unsaved Draft Found</AlertDialogTitle>
           </div>
-          <AlertDialogDescription>
+          <AlertDialogDescription suppressHydrationWarning>
             We found an unsaved draft from {timeAgo}. Would you like to recover it?
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -170,8 +182,8 @@ export function DraftRecoveryDialog({
           )}
 
           {/* Timestamp */}
-          <div className="text-xs text-muted-foreground">
-            Last saved: {savedDate.toLocaleString()}
+          <div className="text-xs text-muted-foreground" suppressHydrationWarning>
+            Last saved: {isValidDate ? savedDate.toLocaleString() : 'Unknown date'}
           </div>
         </div>
 
@@ -185,7 +197,7 @@ export function DraftRecoveryDialog({
             <Trash2 className="h-4 w-4 mr-2" />
             Discard Draft
           </Button>
-          <AlertDialogCancel className="sm:order-2">
+          <AlertDialogCancel onClick={handleKeepEditing} className="sm:order-2">
             Keep Editing
           </AlertDialogCancel>
           <AlertDialogAction onClick={handleRecover} className="sm:order-3">
