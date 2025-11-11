@@ -1,14 +1,31 @@
 import { format, formatDistanceToNow } from 'date-fns'
 
+/**
+ * Checks if a date value is valid
+ */
+function isValidDate(date: Date | string): boolean {
+  const d = date instanceof Date ? date : new Date(date)
+  return !isNaN(d.getTime())
+}
+
 export function formatDate(date: Date | string): string {
+  if (!isValidDate(date)) {
+    return 'Invalid date'
+  }
   return format(new Date(date), 'MMM d, yyyy')
 }
 
 export function formatDateTime(date: Date | string): string {
+  if (!isValidDate(date)) {
+    return 'Invalid date'
+  }
   return format(new Date(date), 'MMM d, yyyy h:mm a')
 }
 
 export function formatRelativeTime(date: Date | string): string {
+  if (!isValidDate(date)) {
+    return 'recently'
+  }
   return formatDistanceToNow(new Date(date), { addSuffix: true })
 }
 

@@ -1,16 +1,19 @@
 "use client"
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { cn } from '@/lib/utils'
 import { ThemeToggle } from './theme-toggle'
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/auth/user-avatar'
 import { SignOutButton } from '@/components/auth/sign-out-button'
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { Bell, Search, PanelLeft } from 'lucide-react'
 import type { User } from '@/lib/types/users'
@@ -23,13 +26,26 @@ interface NavbarProps {
   setIsMobileOpen?: (open: boolean) => void
 }
 
-export function Navbar({ 
-  user, 
-  isCollapsed, 
-  setIsCollapsed, 
-  isMobileOpen, 
-  setIsMobileOpen 
+export function Navbar({
+  user,
+  isCollapsed,
+  setIsCollapsed,
+  isMobileOpen,
+  setIsMobileOpen
 }: NavbarProps) {
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const main = document.querySelector('main')
+      setScrolled((main?.scrollTop ?? 0) > 20)
+    }
+
+    const main = document.querySelector('main')
+    main?.addEventListener('scroll', handleScroll)
+    return () => main?.removeEventListener('scroll', handleScroll)
+  }, [])
+
   const handleToggle = () => {
     if (window.innerWidth < 1024) {
       // Mobile: toggle mobile menu
@@ -41,9 +57,14 @@ export function Navbar({
   }
 
   return (
-    <header className="z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0">
-      <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-        <div className="flex items-center gap-6">
+    <header className={cn(
+      "z-50 w-full border-b flex-shrink-0 transition-all duration-300",
+      scrolled
+        ? "bg-background/80 backdrop-blur-xl shadow-md"
+        : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+    )} suppressHydrationWarning>
+      <div className="flex h-16 items-center justify-between px-4 lg:px-6" suppressHydrationWarning>
+        <div className="flex items-center gap-6" suppressHydrationWarning>
           {/* Sidebar toggle button - only show when user is logged in */}
           {user && setIsCollapsed && setIsMobileOpen && (
             <Button
@@ -82,7 +103,7 @@ export function Navbar({
           )}
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" suppressHydrationWarning>
           <ThemeToggle />
           
           {user ? (
@@ -92,10 +113,26 @@ export function Navbar({
                 <Search className="h-4 w-4" />
               </Button>
               
-              {/* Notifications placeholder */}
-              <Button variant="ghost" size="sm">
-                <Bell className="h-4 w-4" />
-              </Button>
+              {/* Notifications with premium animation */}
+              <motion.div
+                whileHover={{ rotate: [0, -15, 15, -15, 0] }}
+                transition={{ duration: 0.5 }}
+              >
+                <Button variant="ghost" size="sm" className="relative">
+                  <Bell className="h-4 w-4" />
+                  {/* Notification badge - will appear when there are notifications */}
+                  {/* Uncomment and set hasNotifications when implementing notification system
+                  {hasNotifications && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                      className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full"
+                    />
+                  )}
+                  */}
+                </Button>
+              </motion.div>
               
               {/* User menu */}
               <DropdownMenu>

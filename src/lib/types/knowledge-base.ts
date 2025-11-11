@@ -24,7 +24,7 @@ export interface KnowledgeArticle {
   view_count: number
   helpful_votes: number
   total_votes: number
-  embedding: number[] | null // vector(1536)
+  embedding: number[] | null // vector(768) - Gemini text-embedding-004
   source_ticket_id: string | null
   created_at: string
   updated_at: string

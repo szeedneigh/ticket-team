@@ -34,21 +34,27 @@ export default async function TicketsPage({ searchParams }: PageProps) {
   const params = await searchParams
   const supabase = await createClient()
 
-  // Get authenticated user
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser()
+  // Parallelize: Get authenticated user info and prepare for data fetching
+  const [authResult, userResult] = await Promise.all([
+    supabase.auth.getUser(),
+    (async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (!authUser) return null
+      return supabase
+        .from('users')
+        .select('id, email, full_name, role, avatar_url')
+        .eq('id', authUser.id)
+        .single()
+    })()
+  ])
+
+  const { data: { user: authUser } } = authResult
 
   if (!authUser) {
     redirect('/auth/sign-in')
   }
 
-  // Get user profile with role
-  const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('id, email, full_name, role, avatar_url')
-    .eq('id', authUser.id)
-    .single()
+  const { data: user, error: userError } = userResult || {}
 
   if (userError || !user) {
     redirect('/auth/sign-in')

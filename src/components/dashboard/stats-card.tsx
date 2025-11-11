@@ -10,6 +10,8 @@ import {
   Star,
   TrendingUp,
   TrendingDown,
+  Users,
+  AlertCircle,
   LucideIcon
 } from 'lucide-react'
 
@@ -37,6 +39,9 @@ const iconMap: Record<string, LucideIcon> = {
   CheckCircle,
   Clock,
   Star,
+  TrendingUp,
+  Users,
+  AlertCircle,
 }
 
 /**

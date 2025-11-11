@@ -372,7 +372,23 @@ export async function getTicketComments(
   const { data, error } = await query
 
   if (error) {
-    throw new Error(`Failed to fetch comments: ${error.message}`)
+    console.error('Error fetching ticket comments:', error)
+    // Return empty result instead of throwing to prevent page crash
+    return {
+      items: [],
+      nextCursor: null,
+      prevCursor: null,
+      hasMore: false,
+    }
+  }
+
+  if (!data) {
+    return {
+      items: [],
+      nextCursor: null,
+      prevCursor: null,
+      hasMore: false,
+    }
   }
 
   const hasMore = data.length > safeLimit
@@ -417,7 +433,13 @@ export async function getTicketActivities(
     .limit(limit)
 
   if (error) {
-    throw new Error(`Failed to fetch activities: ${error.message}`)
+    console.error('Error fetching ticket activities:', error)
+    // Return empty array instead of throwing to prevent page crash
+    return []
+  }
+
+  if (!data) {
+    return []
   }
 
   return data as TicketActivityWithUser[]
