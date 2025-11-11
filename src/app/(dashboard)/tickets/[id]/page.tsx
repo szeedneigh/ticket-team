@@ -6,6 +6,7 @@ import { getStaffUsers } from '@/lib/users/queries'
 import { TicketDetail } from '@/components/tickets/ticket-detail'
 import { PageHeader } from '@/components/shared/page-header'
 import { isStaffOrAbove } from '@/lib/types/database'
+import { isValidUUID } from '@/lib/utils'
 
 /**
  * Ticket Detail Page
@@ -32,64 +33,76 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function TicketDetailPage({ params: paramsPromise }: PageProps) {
   const params = await paramsPromise
+
+  // Validate UUID format before attempting any operations
+  if (!isValidUUID(params.id)) {
+    notFound()
+  }
+
   const supabase = await createClient()
 
-  // 1. Authenticate user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // 1. Authenticate user and get user details in parallel with ticket data
+  const [authResult, userResult, ticketResult] = await Promise.all([
+    supabase.auth.getUser(),
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return null
+      return supabase
+        .from('users')
+        .select('id, role')
+        .eq('id', user.id)
+        .single()
+    })(),
+    getTicketWithRelations(supabase, params.id).catch(() => null)
+  ])
+
+  const { data: { user } } = authResult
 
   if (!user) {
     redirect('/auth/sign-in?redirect=/tickets/' + params.id)
   }
 
-  // 2. Get user details for role checking
-  const { data: userData } = await supabase
-    .from('users')
-    .select('id, role')
-    .eq('id', user.id)
-    .single()
+  const { data: userData } = userResult || {}
 
   if (!userData) {
     redirect('/auth/sign-in')
   }
 
+  if (!ticketResult) {
+    notFound()
+  }
+
+  const { ticket, comments, activities } = ticketResult
   const userIsStaff = isStaffOrAbove(userData.role)
 
-  // 3. Fetch ticket with all relations
-  let ticketData
-  try {
-    ticketData = await getTicketWithRelations(supabase, params.id)
-  } catch (error) {
-    console.error('Error fetching ticket:', error)
-    notFound()
+  // 2. Fetch attachments and staff users in parallel (attachments always, staff only if needed)
+  const parallelFetches = [
+    supabase
+      .from('attachments')
+      .select(`
+        id,
+        filename,
+        storage_path,
+        mime_type,
+        size_bytes,
+        created_at,
+        uploaded_by,
+        user:users!attachments_uploaded_by_fkey(id, full_name, email)
+      `)
+      .eq('ticket_id', params.id)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: true })
+  ]
+
+  if (userIsStaff) {
+    parallelFetches.push(getStaffUsers(supabase).catch(() => []))
   }
 
-  if (!ticketData) {
-    notFound()
-  }
-
-  const { ticket, comments, activities } = ticketData
-
-  // 4. Fetch attachments
-  const { data: attachmentsData } = await supabase
-    .from('attachments')
-    .select(`
-      id,
-      filename,
-      storage_path,
-      mime_type,
-      size_bytes,
-      created_at,
-      uploaded_by,
-      user:users!attachments_uploaded_by_fkey(id, full_name, email)
-    `)
-    .eq('ticket_id', params.id)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: true })
+  const results = await Promise.all(parallelFetches)
+  const { data: attachmentsData } = results[0]
+  const staffUsers = userIsStaff ? (results[1] as Awaited<ReturnType<typeof getStaffUsers>>) : []
 
   // Transform attachments to match expected type
-  // Supabase sometimes returns user as array, we need to flatten it
   type SupabaseAttachment = {
     id: string
     filename: string
@@ -111,17 +124,6 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
     uploaded_by: att.uploaded_by,
     user: Array.isArray(att.user) ? att.user[0] : att.user
   }))
-
-  // 5. Fetch staff users for assignment dropdown (only if user is staff)
-  let staffUsers: Awaited<ReturnType<typeof getStaffUsers>> = []
-  if (userIsStaff) {
-    try {
-      staffUsers = await getStaffUsers(supabase)
-    } catch (error) {
-      console.error('Error fetching staff users:', error)
-      // Continue without staff users
-    }
-  }
 
   return (
     <div className="container max-w-7xl py-8">
