@@ -3,8 +3,10 @@
  *
  * Displays semantically related KB articles based on vector similarity.
  * Falls back to same-category articles if embeddings are unavailable.
+ * Optimized with React.memo to prevent unnecessary re-renders.
  */
 
+import { memo } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Eye, ThumbsUp } from 'lucide-react'
 import { CategoryBadge } from './category-badge'
@@ -16,7 +18,7 @@ interface RelatedArticlesProps {
   articles: Partial<KnowledgeArticle>[]
 }
 
-export function RelatedArticles({ articles }: RelatedArticlesProps) {
+export const RelatedArticles = memo(function RelatedArticles({ articles }: RelatedArticlesProps) {
   if (articles.length === 0) {
     return null
   }
@@ -35,13 +37,13 @@ export function RelatedArticles({ articles }: RelatedArticlesProps) {
       </CardContent>
     </Card>
   )
-}
+})
 
 interface RelatedArticleItemProps {
   article: Partial<KnowledgeArticle>
 }
 
-function RelatedArticleItem({ article }: RelatedArticleItemProps) {
+const RelatedArticleItem = memo(function RelatedArticleItem({ article }: RelatedArticleItemProps) {
   const helpfulnessPercent = article.total_votes && article.total_votes > 0 && article.helpful_votes
     ? Math.round((article.helpful_votes / article.total_votes) * 100)
     : 0
@@ -100,4 +102,4 @@ function RelatedArticleItem({ article }: RelatedArticleItemProps) {
       </div>
     </Link>
   )
-}
+})
