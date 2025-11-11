@@ -7,15 +7,19 @@
 
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Eye, ThumbsUp, ThumbsDown, Edit } from 'lucide-react'
+import { Eye, Edit } from 'lucide-react'
+import { parse } from 'node-html-parser'
 import { requireAuth } from '@/lib/auth/session'
-import { getArticleById, getUserVote, canUserEditArticle } from '@/lib/kb/queries'
+import { getArticleById, getUserVote, canUserEditArticle, getRelatedArticles } from '@/lib/kb/queries'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { FeedbackSection } from '@/components/kb/feedback-section'
+import { RelatedArticles } from '@/components/kb/related-articles'
+import { BreadcrumbNav } from '@/components/kb/breadcrumb-nav'
+import { TableOfContents } from '@/components/kb/table-of-contents'
+import { isValidUUID } from '@/lib/utils'
 
 interface PageProps {
   params: Promise<{
@@ -25,6 +29,12 @@ interface PageProps {
 
 export default async function ArticleDetailPage({ params }: PageProps) {
   const { id } = await params
+
+  // Validate UUID format before attempting any operations
+  if (!isValidUUID(id)) {
+    notFound()
+  }
+
   const user = await requireAuth()
 
   // Fetch article
@@ -41,11 +51,8 @@ export default async function ArticleDetailPage({ params }: PageProps) {
   // Get user's existing vote
   const userVote = await getUserVote(id, user.id)
 
-  // Calculate helpfulness percentage
-  const helpfulnessPercent =
-    article.total_votes > 0
-      ? Math.round((article.helpful_votes / article.total_votes) * 100)
-      : 0
+  // Get related articles
+  const relatedArticles = await getRelatedArticles(id, 5)
 
   // Format published date
   const publishedDate = article.published_at
@@ -56,20 +63,28 @@ export default async function ArticleDetailPage({ params }: PageProps) {
       })
     : 'Draft'
 
-  return (
-    <div className="container mx-auto py-8 max-w-5xl">
-      {/* Back Button */}
-      <div className="mb-6">
-        <Button variant="ghost" asChild>
-          <Link href="/kb">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Knowledge Base
-          </Link>
-        </Button>
-      </div>
+  // Add IDs to headings for TOC navigation
+  const contentWithIds = addHeadingIds(article.content)
 
-      {/* Article Header */}
-      <div className="space-y-4 mb-8">
+  return (
+    <div className="container mx-auto py-8 max-w-7xl">
+      {/* Breadcrumb Navigation */}
+      <BreadcrumbNav
+        items={[
+          { label: 'Knowledge Base', href: '/kb' },
+          { label: article.category, href: `/kb?category=${encodeURIComponent(article.category)}` },
+          { label: article.title }
+        ]}
+      />
+
+      {/* Mobile TOC */}
+      <TableOfContents content={contentWithIds} />
+
+      <div className="lg:grid lg:grid-cols-[1fr_250px] lg:gap-8">
+        {/* Main Content */}
+        <div>
+          {/* Article Header */}
+          <div className="space-y-4 mb-8">
         {/* Category Badge */}
         <div className="flex items-center gap-2">
           <Badge variant="outline">{article.category}</Badge>
@@ -145,96 +160,63 @@ export default async function ArticleDetailPage({ params }: PageProps) {
         )}
       </div>
 
-      <Separator className="my-8" />
+          <Separator className="my-8" />
 
-      {/* Article Content */}
-      <div className="prose prose-slate dark:prose-invert max-w-none mb-12">
-        {/* Simple content display for now */}
-        <div className="whitespace-pre-wrap">{article.content}</div>
-      </div>
+          {/* Article Content */}
+          <article
+            className="prose prose-slate dark:prose-invert max-w-none mb-12"
+            dangerouslySetInnerHTML={{ __html: contentWithIds }}
+          />
 
-      <Separator className="my-8" />
+          <Separator className="my-8" />
 
-      {/* Feedback Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Was this article helpful?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4 mb-4">
-            <Button
-              variant={userVote?.is_helpful ? 'default' : 'outline'}
-              disabled={!!userVote}
-            >
-              <ThumbsUp className="h-4 w-4 mr-2" />
-              Helpful
-            </Button>
-            <Button
-              variant={userVote && !userVote.is_helpful ? 'default' : 'outline'}
-              disabled={!!userVote}
-            >
-              <ThumbsDown className="h-4 w-4 mr-2" />
-              Not Helpful
-            </Button>
-          </div>
+          {/* Feedback Section */}
+          <FeedbackSection
+            articleId={id}
+            helpfulVotes={article.helpful_votes}
+            totalVotes={article.total_votes}
+            userVote={userVote}
+          />
 
-          {/* Vote Statistics */}
-          {article.total_votes > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {article.helpful_votes} out of {article.total_votes} people found
-              this helpful ({helpfulnessPercent}%)
-            </p>
+          {/* Related Articles */}
+          {relatedArticles.length > 0 && (
+            <div className="mt-12">
+              <RelatedArticles articles={relatedArticles} />
+            </div>
           )}
+        </div>
 
-          {/* Thank You Message */}
-          {userVote && (
-            <p className="text-sm text-green-600 dark:text-green-400 mt-2">
-              ✓ Thank you for your feedback!
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Related Articles Placeholder */}
-      <div className="mt-12">
-        <h2 className="text-2xl font-semibold mb-4">Related Articles</h2>
-        <p className="text-muted-foreground">
-          Related articles will be displayed here based on semantic similarity.
-        </p>
+        {/* Desktop TOC Sidebar */}
+        <TableOfContents content={contentWithIds} />
       </div>
     </div>
   )
 }
 
 /**
- * Loading skeleton for article detail page
+ * Add IDs to h2 and h3 headings for TOC navigation
+ * This ensures headings have stable IDs for linking
  */
-export function ArticleDetailSkeleton() {
-  return (
-    <div className="container mx-auto py-8 max-w-5xl">
-      <div className="mb-6">
-        <Skeleton className="h-10 w-48" />
-      </div>
+function addHeadingIds(html: string): string {
+  const doc = parse(html)
 
-      <div className="space-y-4 mb-8">
-        <Skeleton className="h-6 w-32" />
-        <Skeleton className="h-12 w-full" />
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-6 w-6 rounded-full" />
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-20" />
-        </div>
-        <Skeleton className="h-20 w-full" />
-      </div>
+  // Find all h2 and h3 elements
+  const headings = doc.querySelectorAll('h2, h3')
+  const usedIds = new Set<string>()
 
-      <Separator className="my-8" />
+  headings.forEach((heading: any, index: number) => {
+    const text = heading.text || ''
+    // Generate ID from text
+    let id = text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
 
-      <div className="space-y-4 mb-12">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-3/4" />
-      </div>
-    </div>
-  )
+    // Ensure unique IDs
+    if (usedIds.has(id)) {
+      id = `${id}-${index}`
+    }
+
+    usedIds.add(id)
+    heading.setAttribute('id', id)
+  })
+
+  return doc.toString()
 }
