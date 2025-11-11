@@ -20,6 +20,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Save, Send, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import dynamic from 'next/dynamic'
 import { kbArticleSchema, type KBArticleInput } from '@/lib/validations/kb-articles'
 import type { KnowledgeArticleWithAuthor } from '@/lib/types/knowledge-base'
 import { createArticle, updateArticle } from '@/lib/kb/actions'
@@ -27,6 +28,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
@@ -41,12 +43,17 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card'
-import { TiptapEditor } from './tiptap-editor'
 import { TagInput } from './tag-input'
 import { AutoSaveIndicator } from './auto-save-indicator'
 import { DraftRecoveryDialog } from './draft-recovery-dialog'
 import type { DraftData } from './draft-recovery-dialog'
 import { useAutoSave } from '@/lib/hooks/use-auto-save'
+
+// Dynamic import for TiptapEditor to reduce initial bundle size
+const TiptapEditor = dynamic(() => import('./tiptap-editor').then(mod => ({ default: mod.TiptapEditor })), {
+  loading: () => <Skeleton className="h-96 w-full" />,
+  ssr: false
+})
 
 // Article categories with subcategories
 const CATEGORIES = [
@@ -155,6 +162,9 @@ export function KBEditorForm({ article, existingTags = [], mode }: KBEditorFormP
   const onSubmit = async (data: KBArticleInput) => {
     startTransition(async () => {
       try {
+        // Clear auto-saved draft BEFORE submission to prevent recovery dialog
+        clearSaved()
+
         let result
 
         if (mode === 'edit' && article) {
@@ -169,11 +179,7 @@ export function KBEditorForm({ article, existingTags = [], mode }: KBEditorFormP
           return
         }
 
-        // If we get here, the action either redirected or succeeded
-        // Clear auto-saved draft
-        clearSaved()
-
-        // Show success message (this will show before redirect happens)
+        // Show success message
         toast.success(
           data.status === 'published'
             ? mode === 'edit'
@@ -183,6 +189,15 @@ export function KBEditorForm({ article, existingTags = [], mode }: KBEditorFormP
             ? 'Article updated as draft'
             : 'Article saved as draft'
         )
+
+        // Redirect after successful submission
+        if (result?.data?.id) {
+          router.push(`/kb/${result.data.id}`)
+        } else if (mode === 'edit' && article) {
+          router.push(`/kb/${article.id}`)
+        } else {
+          router.push('/kb')
+        }
       } catch (error) {
         console.error('Form submission error:', error)
         toast.error('Failed to save article. Please try again.')
@@ -202,6 +217,26 @@ export function KBEditorForm({ article, existingTags = [], mode }: KBEditorFormP
     form.handleSubmit(onSubmit)()
   }
 
+  // Handle cancel with confirmation
+  const handleCancel = () => {
+    const hasUnsavedChanges = 
+      formData.title ||
+      formData.content ||
+      formData.tags.length > 0
+
+    if (hasUnsavedChanges) {
+      const confirmLeave = window.confirm(
+        'You have unsaved changes. Are you sure you want to leave? Your draft will be discarded.'
+      )
+      if (confirmLeave) {
+        clearSaved()
+        router.back()
+      }
+    } else {
+      router.back()
+    }
+  }
+
   return (
     <>
       {/* Draft Recovery Dialog */}
@@ -214,7 +249,7 @@ export function KBEditorForm({ article, existingTags = [], mode }: KBEditorFormP
         />
       )}
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" suppressHydrationWarning>
         {/* Header with Auto-Save Indicator */}
         <Card>
           <CardHeader>
@@ -379,7 +414,7 @@ export function KBEditorForm({ article, existingTags = [], mode }: KBEditorFormP
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.back()}
+                onClick={handleCancel}
                 disabled={isPending}
               >
                 Cancel
