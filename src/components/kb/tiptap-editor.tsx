@@ -83,6 +83,7 @@ export function TiptapEditor({
     ],
     content,
     editable,
+    immediatelyRender: false, // Required for SSR to avoid hydration mismatches
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
     },
