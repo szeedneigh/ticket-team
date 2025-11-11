@@ -40,21 +40,37 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
   const params = await searchParams
   const supabase = await createClient()
 
-  // Get authenticated user
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser()
+  // Parallelize: Get authenticated user info AND fetch tickets simultaneously
+  const [authResult, userResult, ticketsResult] = await Promise.all([
+    supabase.auth.getUser(),
+    (async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (!authUser) return null
+      return supabase
+        .from('users')
+        .select('id, email, full_name, role, avatar_url')
+        .eq('id', authUser.id)
+        .single()
+    })(),
+    supabase
+      .from('tickets')
+      .select(`
+        *,
+        user:users!tickets_user_id_fkey(id, full_name, email, avatar_url),
+        assigned_user:users!tickets_assigned_to_fkey(id, full_name, email, avatar_url)
+      `)
+      .in('status', ['open', 'in_progress'])
+      .is('assigned_to', null)
+      .order('created_at', { ascending: false })
+  ])
+
+  const { data: { user: authUser } } = authResult
 
   if (!authUser) {
     redirect('/auth/sign-in')
   }
 
-  // Get user profile with role
-  const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('id, email, full_name, role, avatar_url')
-    .eq('id', authUser.id)
-    .single()
+  const { data: user, error: userError } = userResult || {}
 
   if (userError || !user) {
     redirect('/auth/sign-in')
@@ -64,6 +80,14 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
   if (!isStaffOrAbove(user.role)) {
     redirect('/tickets')
   }
+
+  const { data: allTickets, error: ticketsError } = ticketsResult
+
+  if (ticketsError) {
+    console.error('Error fetching queue tickets:', ticketsError)
+  }
+
+  const queueTickets = allTickets || []
 
   // Build filters for unassigned tickets
   const filters: TTicketFilters = {
@@ -90,26 +114,6 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
   // Parse page number
   const page = params.page ? parseInt(params.page, 10) : 1
   filters.page = page
-
-  // Fetch unassigned tickets
-  // We need to add a filter for assigned_to IS NULL
-  // Let's fetch all tickets and filter for unassigned in the query
-  const { data: allTickets, error: ticketsError } = await supabase
-    .from('tickets')
-    .select(`
-      *,
-      user:users!tickets_user_id_fkey(id, full_name, email, avatar_url),
-      assigned_user:users!tickets_assigned_to_fkey(id, full_name, email, avatar_url)
-    `)
-    .in('status', ['open', 'in_progress'])
-    .is('assigned_to', null)
-    .order('created_at', { ascending: false })
-
-  if (ticketsError) {
-    console.error('Error fetching queue tickets:', ticketsError)
-  }
-
-  const queueTickets = allTickets || []
 
   // Apply additional filters (priority, search, time period)
   let filteredTickets = queueTickets
@@ -197,14 +201,14 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
         <StatsCard
           title="Unassigned Tickets"
           value={queueTickets.length}
-          icon={Users}
+          icon="Users"
           description="Waiting for assignment"
           trend={queueTickets.length > 10 ? 'up' : 'down'}
         />
         <StatsCard
           title="High Priority"
           value={highPriorityCount}
-          icon={AlertCircle}
+          icon="AlertCircle"
           description="Urgent attention needed"
           trend={highPriorityCount > 5 ? 'up' : 'down'}
           variant={highPriorityCount > 5 ? 'destructive' : 'default'}
@@ -212,14 +216,14 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
         <StatsCard
           title="Medium Priority"
           value={mediumPriorityCount}
-          icon={TrendingUp}
+          icon="TrendingUp"
           description="Normal priority"
           trend="neutral"
         />
         <StatsCard
           title="Oldest Ticket"
           value={oldestTicketDays}
-          icon={Clock}
+          icon="Clock"
           description={oldestTicketDays === 1 ? 'day old' : 'days old'}
           trend={oldestTicketDays > 7 ? 'up' : 'down'}
           variant={oldestTicketDays > 7 ? 'warning' : 'default'}
