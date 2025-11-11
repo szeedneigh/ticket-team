@@ -6,6 +6,14 @@ const nextConfig: NextConfig = {
   // Enable React strict mode
   reactStrictMode: true,
   
+  // Suppress hydration warnings from browser extensions
+  // This prevents console spam from extensions that inject attributes like fdprocessedid
+  onDemandEntries: {
+    // Reduce hydration warning noise in development
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
+  },
+  
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],

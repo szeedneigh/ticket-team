@@ -52,6 +52,16 @@ export function usePresence({
    */
   const updateOnlineStatus = async (isOnline: boolean) => {
     try {
+      // Verify auth session exists before attempting update
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        if (debug) {
+          console.log('[Presence] No active session, skipping status update')
+        }
+        return
+      }
+
       const { error } = await supabase
         .from('users')
         .update({
@@ -61,11 +71,19 @@ export function usePresence({
         .eq('id', userId)
 
       if (error) {
-        logger.error('Failed to update online status', {
-          error: error.message,
-          userId,
-          isOnline
-        })
+        // Only log as warning if it's not an auth issue
+        if (error.code === 'PGRST301' || error.message.includes('JWT')) {
+          if (debug) {
+            console.log('[Presence] Auth session not ready yet, will retry on next heartbeat')
+          }
+        } else {
+          logger.error('Failed to update online status', {
+            error: error.message,
+            code: error.code,
+            userId,
+            isOnline
+          })
+        }
       } else if (debug) {
         console.log(`[Presence] User ${userId} is now ${isOnline ? 'online' : 'offline'}`)
       }
@@ -84,6 +102,16 @@ export function usePresence({
     if (!isActiveRef.current) return
 
     try {
+      // Verify auth session exists before attempting update
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        if (debug) {
+          console.log('[Presence] No active session, skipping heartbeat')
+        }
+        return
+      }
+
       const { error } = await supabase
         .from('users')
         .update({
@@ -93,7 +121,18 @@ export function usePresence({
         .eq('id', userId)
 
       if (error) {
-        logger.error('Heartbeat failed', { error: error.message, userId })
+        // Only log as warning if it's not an auth issue
+        if (error.code === 'PGRST301' || error.message.includes('JWT')) {
+          if (debug) {
+            console.log('[Presence] Auth session not ready for heartbeat, will retry')
+          }
+        } else {
+          logger.error('Heartbeat failed', {
+            error: error.message,
+            code: error.code,
+            userId
+          })
+        }
       } else if (debug) {
         console.log(`[Presence] Heartbeat sent for user ${userId}`)
       }

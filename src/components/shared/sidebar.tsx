@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -90,7 +91,20 @@ const navItems: NavItem[] = [
 export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: SidebarProps) {
   const pathname = usePathname()
 
-  const filteredNavItems = navItems.filter(item => 
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (isMobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isMobileOpen])
+
+  const filteredNavItems = navItems.filter(item =>
     item.roles.includes(user.role)
   )
 
@@ -184,31 +198,62 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
               >
-                <Link 
+                <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center w-full h-12 px-3 rounded-md transition-colors",
-                    isActive 
-                      ? "bg-white text-[#002C64] font-medium" 
-                      : "text-white/90 hover:bg-white/10 hover:text-white",
+                    "group relative flex items-center w-full h-12 px-3 rounded-md overflow-hidden",
+                    "transition-colors duration-200",
+                    isActive
+                      ? "bg-white text-[#002C64] font-medium nav-item-active"
+                      : "text-white/90 hover:text-white",
                     isCollapsed && "justify-center"
                   )}
                   onClick={() => isMobileOpen && setIsMobileOpen(false)}
                 >
-                  <item.icon className={cn("h-5 w-5 flex-shrink-0", !isCollapsed && "mr-3")} />
+                  {/* Hover background with slide effect */}
+                  {!isActive && (
+                    <motion.div
+                      className="absolute inset-0 bg-white/10 rounded-md"
+                      initial={{ x: '-100%', opacity: 0 }}
+                      whileHover={{ x: 0, opacity: 1 }}
+                      transition={{ duration: 0.2, ease: [0.2, 0.7, 0.2, 1] }}
+                    />
+                  )}
+
+                  {/* Icon with hover scale and glow */}
+                  <motion.div
+                    className="relative z-10"
+                    whileHover={{ scale: isActive ? 1 : 1.1, rotate: isActive ? 0 : 5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <item.icon className={cn(
+                      "h-5 w-5 flex-shrink-0 transition-all duration-200",
+                      !isCollapsed && "mr-3",
+                      !isActive && "group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
+                    )} />
+                  </motion.div>
                   <AnimatePresence>
                     {!isCollapsed && (
                       <motion.div
                         initial={{ opacity: 0, width: 0 }}
                         animate={{ opacity: 1, width: 'auto' }}
                         exit={{ opacity: 0, width: 0 }}
-                        className="flex items-center justify-between flex-1 overflow-hidden"
+                        className="relative z-10 flex items-center justify-between flex-1 overflow-hidden"
                       >
                         <span className="truncate">{item.title}</span>
                         {item.badge && (
-                          <span className="ml-2 px-2 py-0.5 text-xs rounded-md bg-white/20 text-white whitespace-nowrap">
+                          <motion.span
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 500,
+                              damping: 25
+                            }}
+                            className="ml-2 px-2 py-0.5 text-xs rounded-md bg-white/20 text-white whitespace-nowrap"
+                          >
                             {item.badge}
-                          </span>
+                          </motion.span>
                         )}
                       </motion.div>
                     )}

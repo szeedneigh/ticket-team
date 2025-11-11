@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: 'Authentication | TicketTeam',
   description: 'Sign in to TicketTeam - La Verdad Christian College IT Support',
   icons: {
-    icon: "logo.svg"
+    icon: "/logo.svg"
   },
 }
 
