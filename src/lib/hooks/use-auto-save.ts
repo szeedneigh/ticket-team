@@ -66,11 +66,18 @@ export function useAutoSave<T>(
     // Debounced save
     timeoutRef.current = setTimeout(async () => {
       try {
+        // Add savedAt timestamp to the data
+        const dataWithTimestamp = {
+          ...(data as object),
+          savedAt: new Date().toISOString()
+        }
+        
         // Save to localStorage
-        localStorage.setItem(key, dataString)
-        previousDataRef.current = dataString
+        const stringifiedData = JSON.stringify(dataWithTimestamp)
+        localStorage.setItem(key, stringifiedData)
+        previousDataRef.current = stringifiedData
 
-        // Call optional save callback
+        // Call optional save callback (with original data, not timestamped version)
         if (onSave) {
           await onSave(data)
         }
