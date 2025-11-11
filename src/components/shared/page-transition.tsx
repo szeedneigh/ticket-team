@@ -15,8 +15,8 @@ const pageVariants = {
 }
 
 const pageTransition = {
-  type: "tween",
-  ease: [0.2, 0.7, 0.2, 1],
+  type: "tween" as const,
+  ease: [0.2, 0.7, 0.2, 1] as const,
   duration: 0.3
 }
 
@@ -62,7 +62,7 @@ export function StaggerItem({ children, className }: PageTransitionProps) {
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0 }
       }}
-      transition={{ duration: 0.3, ease: [0.2, 0.7, 0.2, 1] }}
+      transition={{ duration: 0.3, ease: [0.2, 0.7, 0.2, 1] as const }}
       className={className}
     >
       {children}
