@@ -8,7 +8,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { kbArticleSchema, articleVoteSchema } from '@/lib/validations/kb-articles'
 import { requireAuth } from '@/lib/auth/session'
@@ -55,9 +54,19 @@ export async function createArticle(data: KBArticleInput) {
 
     if (error) throw error
 
-    // 5. Revalidate and redirect
+    // 5. Revalidate cache
     revalidatePath('/kb')
-    redirect(`/kb/${article.id}`)
+    revalidatePath(`/kb/${article.id}`)
+
+    // 6. Return success with article ID (let client handle redirect)
+    return {
+      success: true,
+      data: {
+        id: article.id,
+        title: article.title,
+        status: article.status
+      }
+    }
   } catch (error) {
     console.error('Create article error:', error)
     return {
@@ -172,9 +181,11 @@ export async function deleteArticle(id: string) {
 
     if (deleteError) throw deleteError
 
-    // 3. Revalidate and redirect
+    // 3. Revalidate cache
     revalidatePath('/kb')
-    redirect('/kb')
+
+    // 4. Return success (let client handle redirect)
+    return { success: true }
   } catch (error) {
     console.error('Delete article error:', error)
     return {
