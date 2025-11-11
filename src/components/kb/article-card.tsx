@@ -3,8 +3,10 @@
  *
  * Displays a KB article preview card with glassmorphism styling.
  * Used in the browse page grid layout.
+ * Optimized with React.memo to prevent unnecessary re-renders.
  */
 
+import { memo } from 'react'
 import Link from 'next/link'
 import { Eye, ThumbsUp } from 'lucide-react'
 import { CategoryBadge } from './category-badge'
@@ -47,7 +49,7 @@ function getInitials(name: string): string {
     .slice(0, 2)
 }
 
-export function ArticleCard({ article, className }: ArticleCardProps) {
+export const ArticleCard = memo(function ArticleCard({ article, className }: ArticleCardProps) {
   const helpfulnessPercent = article.total_votes > 0
     ? Math.round((article.helpful_votes / article.total_votes) * 100)
     : 0
@@ -122,4 +124,4 @@ export function ArticleCard({ article, className }: ArticleCardProps) {
       </article>
     </Link>
   )
-}
+})
