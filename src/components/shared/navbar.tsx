@@ -62,9 +62,9 @@ export function Navbar({
       scrolled
         ? "bg-background/80 backdrop-blur-xl shadow-md"
         : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-    )}>
-      <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-        <div className="flex items-center gap-6">
+    )} suppressHydrationWarning>
+      <div className="flex h-16 items-center justify-between px-4 lg:px-6" suppressHydrationWarning>
+        <div className="flex items-center gap-6" suppressHydrationWarning>
           {/* Sidebar toggle button - only show when user is logged in */}
           {user && setIsCollapsed && setIsMobileOpen && (
             <Button
@@ -103,7 +103,7 @@ export function Navbar({
           )}
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" suppressHydrationWarning>
           <ThemeToggle />
           
           {user ? (
