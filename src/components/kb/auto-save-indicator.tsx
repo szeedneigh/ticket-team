@@ -7,6 +7,7 @@
 
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Cloud, CloudOff, Loader2, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SaveStatus } from '@/lib/hooks/use-auto-save'
@@ -23,6 +24,12 @@ export function AutoSaveIndicator({
   lastSaved,
   className
 }: AutoSaveIndicatorProps) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const getStatusConfig = () => {
     switch (status) {
       case 'saving':
@@ -35,7 +42,7 @@ export function AutoSaveIndicator({
       case 'saved':
         return {
           icon: Check,
-          text: lastSaved
+          text: lastSaved && mounted && !isNaN(lastSaved.getTime())
             ? `Saved ${formatDistanceToNow(lastSaved, { addSuffix: true })}`
             : 'Saved',
           className: 'text-green-600 dark:text-green-500',
@@ -72,7 +79,7 @@ export function AutoSaveIndicator({
       aria-live="polite"
     >
       <Icon className={cn('h-4 w-4', config.iconClassName)} />
-      <span>{config.text}</span>
+      <span suppressHydrationWarning>{config.text}</span>
     </div>
   )
 }
