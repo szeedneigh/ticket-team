@@ -42,7 +42,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
-import type { SessionSummary } from '@/lib/types/ai'
+import type { SessionSummary } from '@/lib/chat/queries'
 
 // ============================================================================
 // Types
