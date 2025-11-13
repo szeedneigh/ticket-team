@@ -26,6 +26,7 @@ import { createClient } from '@/lib/supabase/server'
 import { streamRAGResponse } from '@/lib/chat/rag-service'
 import { recordInteraction } from '@/lib/chat/queries'
 import { isAIConfigured } from '@/lib/ai/client'
+import { trackStreamingError } from '@/lib/monitoring/error-tracking'
 
 // ============================================================================
 // Types
@@ -219,6 +220,21 @@ export async function POST(request: NextRequest) {
           controller.close()
         } catch (error) {
           console.error('Streaming error:', error)
+          
+          // Track the error for monitoring with user context
+          if (error instanceof Error) {
+            // Determine stage based on error message
+            let stage: 'embedding' | 'retrieval' | 'generation' | 'parsing' = 'generation'
+            if (error.message.includes('embedding')) {
+              stage = 'embedding'
+            } else if (error.message.includes('retrieve') || error.message.includes('context')) {
+              stage = 'retrieval'
+            } else if (error.message.includes('parse') || error instanceof SyntaxError) {
+              stage = 'parsing'
+            }
+            
+            trackStreamingError(error, user.id, sessionId, message, stage)
+          }
 
           // Send error to client
           const errorData = `data: ${JSON.stringify({
