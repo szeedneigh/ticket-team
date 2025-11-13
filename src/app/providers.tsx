@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from 'next-themes'
 import { AppProgressBar as ProgressBar } from 'next-nprogress-bar'
 import { NavigationLoading } from '@/components/shared/navigation-loading'
+import { ChatWidgetInitializer } from '@/components/chat/chat-widget-initializer'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // Suppress hydration warnings from browser extensions
@@ -54,6 +55,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       
       {children}
       <Toaster richColors position="top-right" />
+
+      {/* Floating Chat Widget */}
+      <ChatWidgetInitializer />
     </ThemeProvider>
   )
 }
