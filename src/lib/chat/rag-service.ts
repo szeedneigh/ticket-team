@@ -28,6 +28,10 @@ import {
   OUT_OF_SCOPE_RESPONSE,
   type KBArticle,
 } from '@/lib/chat/prompts'
+import {
+  trackStreamingError,
+  classifyError,
+} from '@/lib/monitoring/error-tracking'
 import type { RAGContext } from '@/lib/types/ai'
 
 // ============================================================================
@@ -386,11 +390,52 @@ export async function* streamRAGResponse(
     }
   } catch (error) {
     console.error('Streaming RAG error:', error)
+    
+    // Determine which stage failed
+    let stage: 'embedding' | 'retrieval' | 'generation' | 'parsing' = 'generation'
+    if (error instanceof Error) {
+      if (error.message.includes('embedding')) {
+        stage = 'embedding'
+      } else if (error.message.includes('retrieve') || error.message.includes('context')) {
+        stage = 'retrieval'
+      } else if (error.message.includes('parse') || error instanceof SyntaxError) {
+        stage = 'parsing'
+      }
+    }
+    
+    // Track error for monitoring (userId will be added by caller)
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        stage,
+        category: classifyError(error),
+      })
+      
+      // Note: We can't track with userId here since it's not available in this context
+      // The API route will handle user-level tracking
+    }
+
+    // Provide user-friendly error message
+    let errorMessage = "I'm having trouble generating a response. Please try again or create a support ticket."
+    
+    // Provide more specific error messages when possible
+    if (error instanceof Error) {
+      if (error.message.includes('quota') || error.message.includes('429')) {
+        errorMessage = 'Our AI assistant is experiencing high demand. Please try again in a moment.'
+      } else if (error.message.includes('network') || error.message.includes('ENOTFOUND')) {
+        errorMessage = 'Connection issue detected. Please check your internet and try again.'
+      } else if (error.message.includes('Failed to retrieve context')) {
+        errorMessage = 'Having trouble accessing the knowledge base. Please try again or create a support ticket.'
+      } else if (error.message.includes('GEMINI_API_KEY')) {
+        errorMessage = 'AI service configuration error. Please contact support.'
+      }
+    }
 
     yield {
       type: 'error',
-      error:
-        "I'm having trouble generating a response. Please try again or create a support ticket.",
+      error: errorMessage,
     }
   }
 }
