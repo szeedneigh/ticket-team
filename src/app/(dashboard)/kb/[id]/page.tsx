@@ -204,7 +204,7 @@ function addHeadingIds(html: string): string {
   const headings = doc.querySelectorAll('h2, h3')
   const usedIds = new Set<string>()
 
-  headings.forEach((heading: any, index: number) => {
+  headings.forEach((heading, index: number) => {
     const text = heading.text || ''
     // Generate ID from text
     let id = text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')

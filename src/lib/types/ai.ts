@@ -32,6 +32,8 @@ export interface ChatMessage {
   content: string
   timestamp?: string
   metadata?: Record<string, unknown>
+  sources?: RAGContext[]
+  isStreaming?: boolean
 }
 
 export interface ChatSession {
@@ -40,6 +42,31 @@ export interface ChatSession {
   context_articles?: string[]
   created_at: string
   updated_at: string
+}
+
+export interface ChatSessionWithMessages extends ChatSession {
+  user_id: string
+  title?: string
+  last_message_at: string
+}
+
+// ============================================================================
+// Streaming Types
+// ============================================================================
+
+export interface ChatStreamChunk {
+  type: 'content' | 'sources' | 'done' | 'error'
+  text?: string
+  sources?: RAGContext[]
+  responseTime?: number
+  error?: string
+  metadata?: Record<string, unknown>
+}
+
+export interface StreamingChatResponse {
+  stream: ReadableStream<ChatStreamChunk>
+  sessionId: string
+  messageId?: string
 }
 
 // ============================================================================
@@ -78,13 +105,15 @@ export interface RAGResponse {
 
 export interface EmbeddingRequest {
   text: string
-  model?: string // default: 'text-embedding-3-small'
+  model?: string // default: 'text-embedding-004'
+  taskType?: 'RETRIEVAL_QUERY' | 'RETRIEVAL_DOCUMENT' | 'SEMANTIC_SIMILARITY'
+  outputDimensionality?: number // default: 768
 }
 
 export interface EmbeddingResponse {
-  embedding: number[] // 1536 dimensions
+  embedding: number[] // 768 dimensions for text-embedding-004
   model: string
-  usage: {
+  usage?: {
     prompt_tokens: number
     total_tokens: number
   }
