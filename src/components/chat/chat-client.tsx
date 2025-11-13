@@ -29,6 +29,13 @@ import {
   prepareTicketFromChat,
   createTicketFromChat,
 } from '@/app/actions/chat'
+import {
+  trackParsingError,
+  trackNetworkError,
+  classifyError,
+  isRetryableError,
+  recordErrorOccurrence,
+} from '@/lib/monitoring/error-tracking'
 import type { ChatMessage as ChatMessageType, RAGContext } from '@/lib/types/ai'
 import type { TicketPreparation } from '@/lib/chat/escalation-utils'
 
@@ -40,6 +47,7 @@ export interface ChatClientProps {
   sessionId: string
   initialMessages?: ChatMessageType[]
   userName?: string
+  onMessagesChange?: (messages: ChatMessageType[]) => void
 }
 
 interface StreamChunk {
@@ -61,6 +69,7 @@ export function ChatClient({
   sessionId,
   initialMessages = [],
   userName,
+  onMessagesChange,
 }: ChatClientProps) {
   const router = useRouter()
   const [messages, setMessages] = useState<ChatMessageType[]>(initialMessages)
@@ -86,6 +95,13 @@ export function ChatClient({
   useEffect(() => {
     scrollToBottom()
   }, [messages, streamingContent, scrollToBottom])
+
+  // Notify parent of message changes (for widget state management)
+  useEffect(() => {
+    if (onMessagesChange) {
+      onMessagesChange(messages)
+    }
+  }, [messages, onMessagesChange])
 
   // Handle sending a message
   const handleSendMessage = async (message: string) => {
@@ -188,25 +204,92 @@ export function ChatClient({
                 setStreamingContent('')
                 setCurrentSources([])
               } else if (chunk.type === 'error') {
-                // Error occurred
-                throw new Error(chunk.error || 'An error occurred')
+                // Error occurred - throw to be caught by outer catch block
+                throw new Error(chunk.error || 'An error occurred while processing your request')
               }
             } catch (parseError) {
+              // Log parsing errors for debugging
               console.error('Failed to parse chunk:', parseError)
+              console.error('Raw chunk data:', data)
+              
+              // Track parsing error for monitoring
+              if (parseError instanceof Error) {
+                trackParsingError(parseError, data, 'client', sessionId)
+              }
+              
+              // If this is a JSON parse error, throw to outer catch
+              // This will be caught by the outer try-catch and shown to the user
+              if (parseError instanceof SyntaxError) {
+                throw new Error('Received invalid response from server. Please try again.')
+              }
+              
+              // Re-throw other errors (like the Error chunks)
+              throw parseError
             }
           }
         }
       }
     } catch (error) {
       console.error('Chat error:', error)
-      setError(
-        error instanceof Error
-          ? error.message
-          : 'Failed to get response. Please try again.'
-      )
+      
+      // Track error for monitoring
+      if (error instanceof Error) {
+        const errorCategory = classifyError(error)
+        const isRetryable = isRetryableError(error)
+        
+        console.error('Error details:', {
+          message: error.message,
+          name: error.name,
+          category: errorCategory,
+          isRetryable,
+          stack: error.stack,
+        })
+        
+        // Track network errors specifically
+        if (error.message.includes('HTTP error') || error.message.includes('fetch')) {
+          trackNetworkError(error, '/api/v1/ai/chat', 'client')
+        }
+        
+        // Record error occurrence for statistics
+        recordErrorOccurrence(error, {
+          category: errorCategory,
+          sessionId,
+          query: message,
+        })
+      }
+      
+      // Determine user-friendly error message
+      let errorMessage = 'Failed to get response. Please try again.'
+      
+      if (error instanceof Error) {
+        // Use the error message if it's user-friendly
+        if (error.message.includes('trouble generating') ||
+            error.message.includes('high demand') ||
+            error.message.includes('Connection issue') ||
+            error.message.includes('knowledge base') ||
+            error.message.includes('invalid response')) {
+          errorMessage = error.message
+        } else if (error.message.includes('HTTP error')) {
+          errorMessage = 'Server error occurred. Please try again in a moment.'
+        } else if (error.message.includes('No response body')) {
+          errorMessage = 'No response received from server. Please check your connection.'
+        }
+      }
+      
+      setError(errorMessage)
+      
+      // Show toast notification for better visibility
+      toast.error('Chat Error', {
+        description: errorMessage,
+        duration: 5000,
+      })
 
       // Remove optimistic user message on error
       setMessages(prev => prev.slice(0, -1))
+      
+      // Clear any partial streaming content
+      setStreamingContent('')
+      setCurrentSources([])
     } finally {
       setIsStreaming(false)
     }
