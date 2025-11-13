@@ -25,8 +25,11 @@ export const metadata = {
 export default async function ChatPage({
   searchParams,
 }: {
-  searchParams: { session?: string }
+  searchParams: Promise<{ session?: string }>
 }) {
+  // Await searchParams (Next.js 15 requirement)
+  const params = await searchParams
+
   // Authenticate user
   let user
   try {
@@ -61,7 +64,7 @@ export default async function ChatPage({
   const sessions = sessionsResult.data
 
   // Determine active session
-  let activeSessionId = searchParams.session || null
+  let activeSessionId = params.session || null
 
   // If no active session specified, create a new one or use the most recent
   if (!activeSessionId) {
@@ -93,6 +96,25 @@ export default async function ChatPage({
         )
       }
     }
+  }
+
+  // activeSessionId should always be a string at this point
+  // (either from searchParams, most recent session, or newly created session)
+  if (!activeSessionId) {
+    logger.error('No active session ID after session initialization', {
+      userId: user.id,
+    })
+    return (
+      <div className="flex h-full items-center justify-center p-4">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Failed to initialize chat</AlertTitle>
+          <AlertDescription>
+            Unable to create or load a chat session. Please try again.
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
   }
 
   return (
