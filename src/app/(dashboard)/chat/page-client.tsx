@@ -22,7 +22,8 @@ import {
   deleteChatSession,
   getChatSession,
 } from '@/app/actions/chat'
-import type { SessionSummary, ChatMessage } from '@/lib/types/ai'
+import type { SessionSummary } from '@/lib/chat/queries'
+import type { ChatMessage } from '@/lib/types/ai'
 
 // ============================================================================
 // Types
@@ -75,13 +76,13 @@ export function ChatPageClient({
         if (!sessionMessages[sessionId]) {
           const result = await getChatSession(sessionId)
 
-          if (result.success && result.data) {
+          if (!result.success) {
+            toast.error(result.error || 'Failed to load conversation')
+          } else if (result.data) {
             setSessionMessages(prev => ({
               ...prev,
               [sessionId]: result.data!.messages,
             }))
-          } else {
-            toast.error(result.error || 'Failed to load conversation')
           }
         }
       } catch (error) {
