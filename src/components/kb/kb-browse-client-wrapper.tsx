@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { SearchSection } from './search-section'
 import { SemanticSearchResults } from './semantic-search-results'
 import { FilterBar } from './filter-bar'
@@ -54,19 +54,19 @@ export function KBBrowseClientWrapper({
   const [semanticQuery, setSemanticQuery] = useState('')
   const [isSemanticSearchActive, setIsSemanticSearchActive] = useState(false)
 
-  const handleSemanticSearch = (query: string, results: SemanticResult[]) => {
+  const handleSemanticSearch = useCallback((query: string, results: SemanticResult[]) => {
     setSemanticQuery(query)
     setSemanticResults(results)
     setIsSemanticSearchActive(query.length > 0)
-  }
+  }, [])
 
-  const handleSemanticSearchStart = () => {
+  const handleSemanticSearchStart = useCallback(() => {
     setIsSemanticSearchActive(true)
-  }
+  }, [])
 
-  const handleSemanticSearchEnd = () => {
+  const handleSemanticSearchEnd = useCallback(() => {
     // Keep active state based on whether there's a query
-  }
+  }, [])
 
   return (
     <>

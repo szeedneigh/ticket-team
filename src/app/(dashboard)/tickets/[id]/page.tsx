@@ -76,7 +76,7 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
   const userIsStaff = isStaffOrAbove(userData.role)
 
   // 2. Fetch attachments and staff users in parallel (attachments always, staff only if needed)
-  const parallelFetches = [
+  const parallelFetches: Promise<unknown>[] = [
     supabase
       .from('attachments')
       .select(`
@@ -91,7 +91,7 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
       `)
       .eq('ticket_id', params.id)
       .is('deleted_at', null)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: true }) as unknown as Promise<unknown>
   ]
 
   if (userIsStaff) {
@@ -99,7 +99,7 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
   }
 
   const results = await Promise.all(parallelFetches)
-  const { data: attachmentsData } = results[0]
+  const { data: attachmentsData } = results[0] as Awaited<typeof parallelFetches[0]>
   const staffUsers = userIsStaff ? (results[1] as Awaited<ReturnType<typeof getStaffUsers>>) : []
 
   // Transform attachments to match expected type
