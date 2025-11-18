@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
+import path from 'path'
+
+// Path to saved authentication state
+const STORAGE_STATE = path.join(__dirname, 'tests/.auth/user.json')
 
 /**
  * Playwright configuration for Ticket Team
@@ -6,6 +10,9 @@ import { defineConfig, devices } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './tests/e2e',
+
+  // Run global setup to authenticate test user
+  globalSetup: require.resolve('./tests/global-setup'),
 
   // Maximum time one test can run
   timeout: 30 * 1000,
@@ -37,6 +44,9 @@ export default defineConfig({
   use: {
     // Base URL to use in actions like `await page.goto('/')`
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
+
+    // Use saved authentication state for all tests
+    storageState: STORAGE_STATE,
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
