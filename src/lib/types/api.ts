@@ -74,8 +74,9 @@ export interface ValidationResult {
 // Server Action Result Types
 // ============================================================================
 
-export interface ActionResult {
+export interface ActionResult<T = void> {
   success: boolean
+  data?: T
   error?: string
   message?: string
 }
