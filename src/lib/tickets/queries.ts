@@ -495,25 +495,44 @@ export async function getTicketCountByStatus(
   supabase: SupabaseClient,
   userId?: string
 ): Promise<Record<TicketStatus, number>> {
+  // Use single aggregated query instead of multiple queries
   let query = supabase
     .from('tickets')
-    .select('status', { count: 'exact', head: true })
+    .select('status')
 
   if (userId) {
     query = query.eq('user_id', userId)
   }
 
-  const statuses: TicketStatus[] = ['open', 'in_progress', 'on_hold', 'resolved', 'closed', 'canceled']
-  const counts: Record<string, number> = {}
+  const { data, error } = await query
 
-  await Promise.all(
-    statuses.map(async (status) => {
-      const { count, error } = await query.eq('status', status)
-      if (!error) {
-        counts[status] = count || 0
-      }
-    })
-  )
+  if (error) {
+    console.error('Error fetching ticket counts by status:', error)
+    return {
+      open: 0,
+      in_progress: 0,
+      on_hold: 0,
+      resolved: 0,
+      closed: 0,
+      canceled: 0,
+    }
+  }
+
+  // Aggregate counts client-side (more efficient than 6 separate queries)
+  const counts: Record<string, number> = {
+    open: 0,
+    in_progress: 0,
+    on_hold: 0,
+    resolved: 0,
+    closed: 0,
+    canceled: 0,
+  }
+
+  data?.forEach((ticket) => {
+    if (ticket.status in counts) {
+      counts[ticket.status]++
+    }
+  })
 
   return counts as Record<TicketStatus, number>
 }
@@ -525,25 +544,38 @@ export async function getTicketCountByPriority(
   supabase: SupabaseClient,
   userId?: string
 ): Promise<Record<TicketPriority, number>> {
+  // Use single aggregated query instead of multiple queries
   let query = supabase
     .from('tickets')
-    .select('priority', { count: 'exact', head: true })
+    .select('priority')
 
   if (userId) {
     query = query.eq('user_id', userId)
   }
 
-  const priorities: TicketPriority[] = ['low', 'medium', 'high']
-  const counts: Record<string, number> = {}
+  const { data, error } = await query
 
-  await Promise.all(
-    priorities.map(async (priority) => {
-      const { count, error } = await query.eq('priority', priority)
-      if (!error) {
-        counts[priority] = count || 0
-      }
-    })
-  )
+  if (error) {
+    console.error('Error fetching ticket counts by priority:', error)
+    return {
+      low: 0,
+      medium: 0,
+      high: 0,
+    }
+  }
+
+  // Aggregate counts client-side (more efficient than 3 separate queries)
+  const counts: Record<string, number> = {
+    low: 0,
+    medium: 0,
+    high: 0,
+  }
+
+  data?.forEach((ticket) => {
+    if (ticket.priority in counts) {
+      counts[ticket.priority]++
+    }
+  })
 
   return counts as Record<TicketPriority, number>
 }
