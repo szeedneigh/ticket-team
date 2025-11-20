@@ -32,6 +32,14 @@ import {
   trackStreamingError,
   classifyError,
 } from '@/lib/monitoring/error-tracking'
+import {
+  getCachedEmbedding,
+  cacheEmbedding,
+  getCachedRetrieval,
+  cacheRetrieval,
+  getCachedFAQ,
+  cacheFAQ,
+} from '@/lib/chat/cache-service'
 import type { RAGContext } from '@/lib/types/ai'
 
 // ============================================================================
@@ -78,10 +86,26 @@ export async function retrieveContext(
   } = params
 
   try {
-    // Generate embedding for user query
-    const queryEmbedding = await generateEmbedding(query, {
-      taskType: 'RETRIEVAL_QUERY',
-    })
+    // Check cache first
+    const cachedResult = getCachedRetrieval(query, maxArticles, similarityThreshold)
+    if (cachedResult) {
+      console.log('Cache hit: retrieval', query.substring(0, 50))
+      return cachedResult
+    }
+
+    // Check for cached embedding
+    let queryEmbedding = getCachedEmbedding(query)
+
+    if (!queryEmbedding) {
+      // Generate new embedding
+      queryEmbedding = await generateEmbedding(query, {
+        taskType: 'RETRIEVAL_QUERY',
+      })
+      // Cache the embedding
+      cacheEmbedding(query, queryEmbedding)
+    } else {
+      console.log('Cache hit: embedding', query.substring(0, 50))
+    }
 
     // Query Supabase for similar articles
     const supabase = await createClient()
@@ -133,11 +157,16 @@ export async function retrieveContext(
 
     const confidence = calculateConfidenceScore(kbArticles)
 
-    return {
+    const result = {
       articles,
       confidence,
       hadResults: true,
     }
+
+    // Cache the result
+    cacheRetrieval(query, maxArticles, similarityThreshold, result)
+
+    return result
   } catch (error) {
     console.error('Context retrieval error:', error)
     throw error
@@ -199,6 +228,19 @@ export async function generateRAGResponse(
       }
     }
 
+    // Check FAQ cache for exact matches (only if no conversation history)
+    if (conversationHistory.length === 0) {
+      const cachedFAQ = getCachedFAQ(query)
+      if (cachedFAQ) {
+        console.log('Cache hit: FAQ', query.substring(0, 50))
+        return {
+          ...cachedFAQ,
+          shouldEscalate: false,
+          responseTimeMs: Date.now() - startTime,
+        }
+      }
+    }
+
     // Step 1: Retrieve context
     const { articles, confidence } = await retrieveContext({
       query,
@@ -239,7 +281,7 @@ export async function generateRAGResponse(
 
     const responseTimeMs = Date.now() - startTime
 
-    return {
+    const result = {
       answer,
       contextArticles: articles,
       confidence,
@@ -247,6 +289,18 @@ export async function generateRAGResponse(
       responseTimeMs,
       citations,
     }
+
+    // Cache FAQ responses (only for first-time queries)
+    if (conversationHistory.length === 0 && confidence > 0.5) {
+      cacheFAQ(query, {
+        answer,
+        citations,
+        contextArticles: articles,
+        confidence,
+      })
+    }
+
+    return result
   } catch (error) {
     console.error('RAG response generation error:', error)
 

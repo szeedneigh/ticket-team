@@ -12,6 +12,7 @@ export * from './users'
 export * from './tickets'
 export * from './knowledge-base'
 export * from './ai'
+export * from './notifications'
 
 // API types
 export * from './api'
