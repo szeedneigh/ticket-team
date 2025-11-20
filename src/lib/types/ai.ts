@@ -34,6 +34,7 @@ export interface ChatMessage {
   metadata?: Record<string, unknown>
   sources?: RAGContext[]
   isStreaming?: boolean
+  isLoading?: boolean
 }
 
 export interface ChatSession {
