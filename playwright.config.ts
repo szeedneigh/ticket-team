@@ -1,8 +1,12 @@
 import { defineConfig, devices } from '@playwright/test'
 import path from 'path'
+import fs from 'fs'
 
 // Path to saved authentication state
 const STORAGE_STATE = path.join(__dirname, 'tests/.auth/user.json')
+
+// Check if storage state exists
+const hasStorageState = fs.existsSync(STORAGE_STATE)
 
 /**
  * Playwright configuration for Ticket Team
@@ -32,7 +36,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
 
   // Opt out of parallel tests on CI
-  workers: process.env.CI ? 1 : undefined,
+  // Reduced workers to prevent dev server crashes during tests
+  workers: process.env.CI ? 1 : 2,
 
   // Reporter to use
   reporter: [
@@ -45,8 +50,8 @@ export default defineConfig({
     // Base URL to use in actions like `await page.goto('/')`
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
 
-    // Use saved authentication state for all tests
-    storageState: STORAGE_STATE,
+    // Use saved authentication state for all tests (if available)
+    storageState: hasStorageState ? STORAGE_STATE : undefined,
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
