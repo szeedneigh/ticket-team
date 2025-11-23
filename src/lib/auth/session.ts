@@ -10,6 +10,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { cache } from 'react'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { logger } from '@/lib/logger'
 import type { User } from '@/lib/types/users'
 import type { UserRole } from '@/lib/types/database'
@@ -63,15 +64,40 @@ export const getUser = cache(async (): Promise<User | null> => {
 /**
  * Require authentication
  * Redirects to sign-in page if not authenticated
+ *
+ * E2E Test Bypass: If X-E2E-Test-Auth header is present with value 'bypass',
+ * returns a mock user for testing purposes.
+ *
  * @returns The authenticated user
  */
 export async function requireAuth(): Promise<User> {
+  // E2E Test Bypass Mode
+  // Check for bypass header from Playwright tests
+  const headersList = await headers()
+  const bypassHeader = headersList.get('x-e2e-test-auth')
+
+  if (bypassHeader === 'bypass') {
+    console.log('[E2E Test Mode] Auth bypass enabled in requireAuth()')
+    // Return a mock test user for E2E tests
+    return {
+      id: '49a84551-f65c-420a-b5f1-97e1b814e41b',
+      email: 'test@laverdad.edu.ph',
+      full_name: 'Test User',
+      role: 'admin',
+      avatar_url: null,
+      deactivated_at: null,
+      deactivated_by: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    } as User
+  }
+
   const user = await getUser()
-  
+
   if (!user) {
     redirect('/auth/sign-in')
   }
-  
+
   return user
 }
 
