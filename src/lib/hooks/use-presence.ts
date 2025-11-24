@@ -57,7 +57,7 @@ export function usePresence({
 
       if (!session) {
         if (debug) {
-          console.log('[Presence] No active session, skipping status update')
+          logger.debug('No active session, skipping status update')
         }
         return
       }
@@ -74,7 +74,7 @@ export function usePresence({
         // Only log as warning if it's not an auth issue
         if (error.code === 'PGRST301' || error.message.includes('JWT')) {
           if (debug) {
-            console.log('[Presence] Auth session not ready yet, will retry on next heartbeat')
+            logger.debug('Auth session not ready yet, will retry on next heartbeat')
           }
         } else {
           logger.error('Failed to update online status', {
@@ -85,7 +85,7 @@ export function usePresence({
           })
         }
       } else if (debug) {
-        console.log(`[Presence] User ${userId} is now ${isOnline ? 'online' : 'offline'}`)
+        logger.debug(`User ${userId} is now ${isOnline ? 'online' : 'offline'}`)
       }
     } catch (error) {
       logger.error('Error updating presence', {
@@ -107,7 +107,7 @@ export function usePresence({
 
       if (!session) {
         if (debug) {
-          console.log('[Presence] No active session, skipping heartbeat')
+          logger.debug('No active session, skipping heartbeat')
         }
         return
       }
@@ -124,7 +124,7 @@ export function usePresence({
         // Only log as warning if it's not an auth issue
         if (error.code === 'PGRST301' || error.message.includes('JWT')) {
           if (debug) {
-            console.log('[Presence] Auth session not ready for heartbeat, will retry')
+            logger.debug('Auth session not ready for heartbeat, will retry')
           }
         } else {
           logger.error('Heartbeat failed', {
@@ -134,7 +134,7 @@ export function usePresence({
           })
         }
       } else if (debug) {
-        console.log(`[Presence] Heartbeat sent for user ${userId}`)
+        logger.debug(`Heartbeat sent for user ${userId}`)
       }
     } catch (error) {
       logger.error('Heartbeat error', {
@@ -155,7 +155,7 @@ export function usePresence({
     heartbeatRef.current = setInterval(sendHeartbeat, heartbeatInterval)
 
     if (debug) {
-      console.log(`[Presence] Heartbeat started (interval: ${heartbeatInterval}ms)`)
+      logger.debug(`Heartbeat started (interval: ${heartbeatInterval}ms)`)
     }
   }
 
@@ -168,7 +168,7 @@ export function usePresence({
       heartbeatRef.current = null
 
       if (debug) {
-        console.log('[Presence] Heartbeat stopped')
+        logger.debug('Heartbeat stopped')
       }
     }
   }
@@ -181,14 +181,14 @@ export function usePresence({
       isActiveRef.current = false
       stopHeartbeat()
       if (debug) {
-        console.log('[Presence] Tab hidden - heartbeat paused')
+        logger.debug('Tab hidden - heartbeat paused')
       }
     } else {
       isActiveRef.current = true
       updateOnlineStatus(true)
       startHeartbeat()
       if (debug) {
-        console.log('[Presence] Tab visible - heartbeat resumed')
+        logger.debug('Tab visible - heartbeat resumed')
       }
     }
   }
@@ -207,7 +207,7 @@ export function usePresence({
     // Note: This would require an API endpoint to handle the beacon
     // For now, we'll rely on the cleanup in useEffect
     if (debug) {
-      console.log('[Presence] Page unloading - setting offline')
+      logger.debug('Page unloading - setting offline')
     }
 
     // Synchronous update
@@ -232,7 +232,7 @@ export function usePresence({
       window.removeEventListener('beforeunload', handleBeforeUnload)
 
       if (debug) {
-        console.log('[Presence] Cleanup complete - user set offline')
+        logger.debug('Cleanup complete - user set offline')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

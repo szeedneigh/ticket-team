@@ -18,6 +18,7 @@ export interface Department {
   name: string
   description?: string
   is_active: boolean
+  display_order: number
   user_count?: number
   created_at: string
   updated_at: string
@@ -55,7 +56,7 @@ export async function getDepartments(): Promise<{
     const { data, error } = await supabase
       .from('departments')
       .select('*')
-      .order('name')
+      .order('display_order', { ascending: true })
 
     if (error) {
       console.error('Error fetching departments:', error)
@@ -357,4 +358,62 @@ export async function reactivateDepartment(id: string): Promise<{
   error?: string
 }> {
   return updateDepartment({ id, is_active: true })
+}
+
+// ============================================================================
+// Reorder Departments
+// ============================================================================
+
+/**
+ * Update display order for multiple departments at once
+ */
+export async function reorderDepartments(
+  updates: Array<{ id: string; display_order: number }>
+): Promise<{
+  success: boolean
+  error?: string
+}> {
+  try {
+    const user = await requireAuth()
+
+    // Check admin permission
+    if (user.role !== 'admin' && user.role !== 'super_admin') {
+      return {
+        success: false,
+        error: 'Unauthorized. Admin access required.',
+      }
+    }
+
+    const supabase = await createClient()
+
+    // Update each department's display_order
+    // Note: Supabase doesn't support batch updates easily, so we do multiple updates
+    const updatePromises = updates.map(({ id, display_order }) =>
+      supabase
+        .from('departments')
+        .update({ display_order })
+        .eq('id', id)
+    )
+
+    const results = await Promise.all(updatePromises)
+
+    // Check if any updates failed
+    const errors = results.filter((r) => r.error)
+    if (errors.length > 0) {
+      console.error('Error reordering departments:', errors)
+      return {
+        success: false,
+        error: `Failed to update ${errors.length} departments`,
+      }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error reordering departments:', error)
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : 'Failed to reorder departments',
+    }
+  }
 }

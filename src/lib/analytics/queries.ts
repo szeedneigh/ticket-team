@@ -269,7 +269,7 @@ export async function getTicketTrends(
     // Fetch all tickets in date range
     const { data: tickets, error } = await supabase
       .from('tickets')
-      .select('id, created_at, status, resolved_at')
+      .select('id, created_at, status, resolved_at, first_response_at')
       .gte('created_at', range.start.toISOString())
       .lte('created_at', range.end.toISOString())
       .order('created_at', { ascending: true })
@@ -281,6 +281,7 @@ export async function getTicketTrends(
     // Group tickets by time period
     const ticketVolume: Map<string, number> = new Map()
     const resolutionRateMap: Map<string, { total: number; resolved: number }> = new Map()
+    const responseTimeMap: Map<string, { total: number; sum: number }> = new Map()
 
     tickets?.forEach((ticket) => {
       const date = new Date(ticket.created_at)
@@ -312,6 +313,18 @@ export async function getTicketTrends(
         existing.resolved++
       }
       resolutionRateMap.set(key, existing)
+
+      // Calculate average response time
+      if (ticket.first_response_at) {
+        const createdAt = new Date(ticket.created_at)
+        const respondedAt = new Date(ticket.first_response_at)
+        const responseTimeHours = (respondedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60)
+
+        const existingResponse = responseTimeMap.get(key) || { total: 0, sum: 0 }
+        existingResponse.total++
+        existingResponse.sum += responseTimeHours
+        responseTimeMap.set(key, existingResponse)
+      }
     })
 
     // Convert to array format
@@ -326,13 +339,63 @@ export async function getTicketTrends(
       }))
       .sort((a, b) => a.date.localeCompare(b.date))
 
-    // For now, return simplified trend data
-    // TODO: Add avgResponseTime and satisfaction trends
+    const avgResponseTimeData = Array.from(responseTimeMap.entries())
+      .map(([date, { total, sum }]) => ({
+        date,
+        value: total > 0 ? Math.round((sum / total) * 10) / 10 : 0, // Round to 1 decimal
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+
+    // Fetch satisfaction data from ticket_feedback
+    const { data: feedbackData } = await supabase
+      .from('ticket_feedback')
+      .select('rating, created_at')
+      .gte('created_at', range.start.toISOString())
+      .lte('created_at', range.end.toISOString())
+      .order('created_at', { ascending: true })
+
+    // Group satisfaction ratings by time period
+    const satisfactionMap: Map<string, { total: number; sum: number }> = new Map()
+
+    feedbackData?.forEach((feedback) => {
+      const date = new Date(feedback.created_at)
+      let key: string
+
+      switch (granularity) {
+        case 'hourly':
+          key = `${date.toISOString().split('T')[0]}T${date.getHours().toString().padStart(2, '0')}:00`
+          break
+        case 'daily':
+          key = date.toISOString().split('T')[0]
+          break
+        case 'weekly':
+          const weekStart = new Date(date)
+          weekStart.setDate(date.getDate() - date.getDay() + 1)
+          key = weekStart.toISOString().split('T')[0]
+          break
+        case 'monthly':
+          key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`
+          break
+      }
+
+      const existing = satisfactionMap.get(key) || { total: 0, sum: 0 }
+      existing.total++
+      existing.sum += feedback.rating
+      satisfactionMap.set(key, existing)
+    })
+
+    const satisfactionData = Array.from(satisfactionMap.entries())
+      .map(([date, { total, sum }]) => ({
+        date,
+        value: total > 0 ? Math.round((sum / total) * 10) / 10 : 0, // Round to 1 decimal
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+
     return {
       ticketVolume: ticketVolumeData,
       resolutionRate: resolutionRateData,
-      avgResponseTime: [],
-      satisfaction: [],
+      avgResponseTime: avgResponseTimeData,
+      satisfaction: satisfactionData,
       granularity,
       period: {
         start: range.start.toISOString(),

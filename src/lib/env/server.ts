@@ -96,6 +96,13 @@ export const serverEnv = {
   },
 
   /**
+   * Resend email service configuration
+   */
+  resend: {
+    apiKey: getServerEnvVar('RESEND_API_KEY', { required: false }),
+  },
+
+  /**
    * Allowed OAuth redirect origins (server-side validation)
    */
   allowedOrigins: [

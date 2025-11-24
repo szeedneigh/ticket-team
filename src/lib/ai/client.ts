@@ -19,8 +19,8 @@ import type { EmbeddingRequest } from '@/lib/types/ai'
 
 const AI_MODELS = {
   EMBEDDING: 'text-embedding-004',
-  CHAT: 'gemini-2.0-flash-exp',
-  CHAT_PRO: 'gemini-2.0-flash',
+  CHAT: 'gemini-2.0-flash',
+  CHAT_PRO: 'gemini-2.5-flash',
 } as const
 
 const RETRY_CONFIG = {
