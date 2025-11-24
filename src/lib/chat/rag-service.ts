@@ -89,7 +89,6 @@ export async function retrieveContext(
     // Check cache first
     const cachedResult = getCachedRetrieval(query, maxArticles, similarityThreshold)
     if (cachedResult) {
-      console.log('Cache hit: retrieval', query.substring(0, 50))
       return cachedResult
     }
 
@@ -103,8 +102,6 @@ export async function retrieveContext(
       })
       // Cache the embedding
       cacheEmbedding(query, queryEmbedding)
-    } else {
-      console.log('Cache hit: embedding', query.substring(0, 50))
     }
 
     // Query Supabase for similar articles
@@ -232,7 +229,6 @@ export async function generateRAGResponse(
     if (conversationHistory.length === 0) {
       const cachedFAQ = getCachedFAQ(query)
       if (cachedFAQ) {
-        console.log('Cache hit: FAQ', query.substring(0, 50))
         return {
           ...cachedFAQ,
           shouldEscalate: false,

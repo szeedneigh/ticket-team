@@ -349,15 +349,44 @@ export async function getRecentActivity(userId: string, limit: number = 10): Pro
     // Use the real query function from activity-queries which already handles database queries
     const { getUserActivity } = await import('./activity-queries')
     const activities = await getUserActivity(userId, { limit })
-    
-    // Transform DashboardActivityItem to Activity format expected by dashboard types
+
+    if (activities.length === 0) {
+      return []
+    }
+
+    // Get unique actor IDs
+    const actorIds = [...new Set(activities.map(a => a.actorId))]
+
+    // Fetch user names for all actors
+    const supabase = await createClient()
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, full_name')
+      .in('id', actorIds)
+
+    if (usersError) {
+      logger.error('Error fetching user names for activities', {
+        error: usersError.message,
+        actorIds
+      })
+    }
+
+    // Create a map of userId -> userName
+    const userNameMap = new Map<string, string>()
+    if (users) {
+      users.forEach(user => {
+        userNameMap.set(user.id, user.full_name || 'Unknown User')
+      })
+    }
+
+    // Transform DashboardActivityItem to Activity format with actual user names
     return activities.map(activity => ({
       id: activity.id,
       type: activity.type as ActivityType,
       description: activity.description || activity.title,
       timestamp: new Date(activity.createdAt),
       userId: activity.actorId,
-      userName: 'Current User', // TODO: Fetch actual user name from database
+      userName: userNameMap.get(activity.actorId) || 'Unknown User',
     }))
   } catch (error) {
     logger.error('Error fetching recent activity', { error: error instanceof Error ? error.message : 'Unknown error' })

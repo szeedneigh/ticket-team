@@ -232,6 +232,65 @@ export async function createTicket(formData: FormData) {
 }
 ```
 
+**CRITICAL: Server/Client Component Boundary**
+
+**Functions CANNOT be passed from Server Components to Client Components.** This is the #1 cause of runtime errors in Next.js App Router.
+
+❌ **WRONG - Functions passed across boundary:**
+```tsx
+// page.tsx (Server Component)
+export default async function Page() {
+  const data = await fetchData()
+  
+  // ❌ ERROR: Cannot pass functions to Client Components
+  return (
+    <TrendChart 
+      data={data}
+      formatTooltip={(value) => `${value}%`}  // ❌ Function prop
+    />
+  )
+}
+```
+
+✅ **CORRECT - Extract to Client Component:**
+```tsx
+// page-content.tsx (NEW Client Component)
+'use client'
+
+export function PageContent({ data }) {
+  // ✅ Functions defined in Client Component
+  return (
+    <TrendChart 
+      data={data}
+      formatTooltip={(value) => `${value}%`}
+    />
+  )
+}
+
+// page.tsx (Server Component)
+export default async function Page() {
+  const data = await fetchData()
+  return <PageContent data={data} />  // ✅ Only serializable data
+}
+```
+
+**What Cannot Cross the Boundary:**
+- Functions (callbacks, formatters, render functions, event handlers)
+- Class instances with methods
+- React components defined inline
+- Any non-serializable object
+
+**What CAN Cross the Boundary:**
+- Plain objects: `{ name: 'John', count: 5 }`
+- Arrays: `[1, 2, 3]`
+- Primitives: strings, numbers, booleans, null
+- Dates as ISO strings: `date.toISOString()`
+
+**Pattern for Analytics/Charts:**
+- Server Component: Fetch data, pass to Client Component
+- Client Component: Define all functions (formatters, render functions)
+- See: `.cursor/rules/server-client-boundary.mdc` and `docs/07-troubleshooting/server-client-boundary-errors.md`
+
 ## Project Structure
 
 ```
@@ -374,6 +433,7 @@ GEMINI_API_KEY=                   # SERVER-ONLY
 
 | Issue | Cause | Fix |
 |-------|-------|-----|
+| "Functions cannot be passed to Client Components" | Server Component passing function to Client Component | Extract content to Client Component - see `.cursor/rules/server-client-boundary.mdc` |
 | Build errors with "Cannot find module" | Corrupted webpack cache | `npm run clean:cache` then `npm run dev` |
 | "Unauthorized" errors | RLS policy blocking | Check user role, verify policy in migrations |
 | Slow queries | Missing index or no pagination | Add index for WHERE clause, use `.range()` |

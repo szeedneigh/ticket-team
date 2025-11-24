@@ -7,6 +7,8 @@
  * @module lib/chat/rate-limiter
  */
 
+import { logger } from '@/lib/logger'
+
 interface RateLimitEntry {
   tokens: number
   lastRefill: number
@@ -242,7 +244,7 @@ export async function retryWithBackoff<T>(
       config.maxDelayMs
     )
 
-    console.log(`Retry attempt ${attempt + 1}/${config.maxRetries} after ${delay}ms`)
+    logger.debug(`Retry attempt ${attempt + 1}/${config.maxRetries} after ${delay}ms`)
 
     // Wait before retry
     await new Promise((resolve) => setTimeout(resolve, delay))

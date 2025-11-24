@@ -7,6 +7,9 @@ import { test, expect } from '@playwright/test'
  * for unauthenticated users.
  */
 
+// Override storage state for unauthenticated tests
+test.use({ storageState: { cookies: [], origins: [] } })
+
 test.describe('Landing Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
