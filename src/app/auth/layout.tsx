@@ -23,20 +23,9 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">TicketTeam</h1>
-          <p className="text-sm text-muted-foreground">
-            La Verdad Christian College
-          </p>
-          <p className="text-xs text-muted-foreground">
-            IT Support Ticket System
-          </p>
-        </div>
-        {children}
-      </div>
-    </div>
+    <main className="min-h-screen bg-background">
+      {children}
+    </main>
   )
 }
 
