@@ -1,74 +1,53 @@
 /**
- * Profile Page Loading State
+ * Loading state for Profile page
  */
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
-export default function ProfilePageLoading() {
+export default function ProfileLoading() {
   return (
     <div className="space-y-8">
-      {/* Profile Header */}
+      {/* Header */}
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-5 w-96" />
+      </div>
+
+      {/* Profile Card */}
       <Card>
         <CardHeader>
-          <div className="flex items-start gap-6">
-            {/* Avatar */}
-            <Skeleton className="h-24 w-24 rounded-full" />
-            
-            {/* User Info */}
-            <div className="flex-1 space-y-3">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-5 w-64" />
-              <Skeleton className="h-5 w-32" />
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-20 w-20 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-64" />
             </div>
           </div>
         </CardHeader>
-      </Card>
-
-      {/* Ticket Statistics */}
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-40" />
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-10 w-20" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Account Settings */}
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-40" />
-        </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Skeleton className="h-4 w-24 mb-2" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div>
-            <Skeleton className="h-4 w-24 mb-2" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div>
-            <Skeleton className="h-4 w-32 mb-2" />
-            <Skeleton className="h-10 w-full max-w-xs" />
-          </div>
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ))}
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
-      <div className="flex gap-4">
-        <Skeleton className="h-10 w-32" />
-        <Skeleton className="h-10 w-32" />
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-4 w-24" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-16" />
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   )
 }
-
