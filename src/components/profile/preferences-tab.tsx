@@ -12,7 +12,6 @@ import {
   Sun,
   Moon,
   Monitor,
-  Globe,
   Clock,
   Calendar,
   Filter,
@@ -21,12 +20,12 @@ import {
   Sidebar,
   Eye,
   Loader2,
-  MapPin,
   Type
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getUserPreferences, updateUserPreferences, type UserPreferences } from '@/app/actions/preferences'
 import type { User } from '@/lib/types/users'
+import { usePreferences } from '@/providers/preferences-provider'
 
 interface PreferencesTabProps {
   user: User
@@ -65,14 +64,13 @@ function ThemePreviewCard({
 }
 
 export function PreferencesTab({ user }: PreferencesTabProps) {
+  const { refreshPreferences } = usePreferences()
   const [isPending, startTransition] = useTransition()
   const [isLoading, setIsLoading] = useState(true)
   const [preferences, setPreferences] = useState<UserPreferences | null>(null)
 
   // Form state
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system')
-  const [language, setLanguage] = useState('en')
-  const [timezone, setTimezone] = useState('UTC')
   const [dateFormat, setDateFormat] = useState('MM/DD/YYYY')
   const [timeFormat, setTimeFormat] = useState<'12h' | '24h'>('12h')
   const [defaultTicketFilter, setDefaultTicketFilter] = useState('all')
@@ -83,12 +81,6 @@ export function PreferencesTab({ user }: PreferencesTabProps) {
   const [highContrast, setHighContrast] = useState(false)
   const [fontSize, setFontSize] = useState<'small' | 'normal' | 'large' | 'extra-large'>('normal')
 
-  // Detect user's timezone on mount
-  useEffect(() => {
-    const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-    setTimezone(detectedTimezone)
-  }, [])
-
   // Load preferences on mount
   useEffect(() => {
     async function loadPreferences() {
@@ -98,8 +90,6 @@ export function PreferencesTab({ user }: PreferencesTabProps) {
 
         // Populate form with existing preferences
         setTheme(result.data.theme as 'light' | 'dark' | 'system')
-        setLanguage(result.data.language)
-        setTimezone(result.data.timezone)
         setDateFormat(result.data.date_format)
         setTimeFormat(result.data.time_format as '12h' | '24h')
         setDefaultTicketFilter(result.data.default_ticket_filter)
@@ -116,20 +106,11 @@ export function PreferencesTab({ user }: PreferencesTabProps) {
     loadPreferences()
   }, [])
 
-  // Auto-detect timezone
-  const handleAutoDetectTimezone = () => {
-    const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-    setTimezone(detectedTimezone)
-    toast.success(`Timezone detected: ${detectedTimezone}`)
-  }
-
   // Save preferences
   const handleSavePreferences = () => {
     startTransition(async () => {
       const result = await updateUserPreferences({
         theme,
-        language,
-        timezone,
         date_format: dateFormat,
         time_format: timeFormat,
         default_ticket_filter: defaultTicketFilter,
@@ -143,6 +124,8 @@ export function PreferencesTab({ user }: PreferencesTabProps) {
 
       if (result.success) {
         toast.success('Preferences saved successfully')
+        // Refresh preferences to apply changes immediately
+        await refreshPreferences()
       } else {
         toast.error(result.error || 'Failed to save preferences')
       }
@@ -231,60 +214,11 @@ export function PreferencesTab({ user }: PreferencesTabProps) {
           <div>
             <h3 className="text-lg font-semibold text-[var(--brand-primary)]">Localization</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Set your language, timezone, and date/time formats
+              Set your date and time formats
             </p>
           </div>
 
           <div className="space-y-4">
-            {/* Language */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Globe className="h-4 w-4" />
-                Language
-              </Label>
-              <Select value={language} onValueChange={setLanguage}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="fil">Filipino</SelectItem>
-                  <SelectItem value="es">Spanish</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Timezone */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Timezone
-                </Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAutoDetectTimezone}
-                  type="button"
-                >
-                  Auto-detect
-                </Button>
-              </div>
-              <Select value={timezone} onValueChange={setTimezone}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="UTC">UTC (Coordinated Universal Time)</SelectItem>
-                  <SelectItem value="Asia/Manila">Asia/Manila (Philippine Time)</SelectItem>
-                  <SelectItem value="America/New_York">America/New York (EST)</SelectItem>
-                  <SelectItem value="America/Los_Angeles">America/Los Angeles (PST)</SelectItem>
-                  <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
-                  <SelectItem value="Asia/Tokyo">Asia/Tokyo (JST)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Date Format */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
