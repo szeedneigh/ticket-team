@@ -19,6 +19,7 @@ import {
 import { uploadTicketAttachment } from '@/lib/tickets/storage'
 import { ACTIVITY_TYPES } from '@/lib/constants/activity-types'
 import { ERROR_MESSAGES } from '@/lib/constants'
+import { notifyTicketComment } from '@/lib/email/notifications'
 
 // ============================================================================
 // Types
@@ -229,6 +230,24 @@ export async function createComment(
       return {
         success: false,
         error: 'Failed to create comment',
+      }
+    }
+
+    // 7.5. Send email notification for public comments (non-blocking)
+    if (!is_internal) {
+      try {
+        // Get comment author's full name
+        const { data: authorData } = await supabase
+          .from('users')
+          .select('full_name')
+          .eq('id', user.id)
+          .single()
+
+        const authorName = authorData?.full_name || 'Someone'
+        await notifyTicketComment(ticket_id, authorName, validation.data.content)
+      } catch (emailError) {
+        // Log error but don't fail the comment creation
+        console.error('Email notification error:', emailError)
       }
     }
 
