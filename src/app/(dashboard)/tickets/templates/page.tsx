@@ -9,10 +9,13 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, RefreshCw, Search, Edit2, Trash2, Copy, FileText } from 'lucide-react'
+import { Plus, RefreshCw, Search, Edit2, Trash2, Copy, FileText, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useUser } from '@/lib/hooks/use-user'
+import { isStaffOrAbove } from '@/lib/types/database'
 import {
   Dialog,
   DialogContent,
@@ -47,12 +50,25 @@ import type { TicketPriority } from '@/lib/types/database'
 export default function TicketTemplatesPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { user, loading: userLoading } = useUser()
 
   const [templates, setTemplates] = useState<TicketTemplate[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
+
+  // Role-based access control: Only staff and above can access this page
+  useEffect(() => {
+    if (!userLoading && user && !isStaffOrAbove(user.role)) {
+      toast({
+        title: 'Access Denied',
+        description: 'You do not have permission to access ticket templates',
+        variant: 'destructive',
+      })
+      router.push('/dashboard?error=insufficient_permissions')
+    }
+  }, [user, userLoading, router, toast])
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -268,6 +284,38 @@ export default function TicketTemplatesPage() {
       case 'low': return 'bg-green-100 text-green-800'
       default: return 'bg-gray-100 text-gray-800'
     }
+  }
+
+  // Show loading state while checking authentication and role
+  if (userLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-96 w-full" />
+      </div>
+    )
+  }
+
+  // Block access if user is not staff or above
+  if (!user || !isStaffOrAbove(user.role)) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
+        <ShieldAlert className="h-16 w-16 text-destructive" />
+        <div className="text-center">
+          <h2 className="text-2xl font-bold">Access Denied</h2>
+          <p className="text-muted-foreground">
+            You do not have permission to access ticket templates
+          </p>
+        </div>
+        <Button onClick={() => router.push('/dashboard')}>
+          Return to Dashboard
+        </Button>
+      </div>
+    )
   }
 
   return (
