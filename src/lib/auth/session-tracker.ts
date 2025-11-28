@@ -5,7 +5,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
-import UAParser from 'ua-parser-js'
+import { UAParser } from 'ua-parser-js'
 
 interface SessionInfo {
   session_id: string
