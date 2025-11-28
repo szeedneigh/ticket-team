@@ -25,27 +25,32 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clientEnv } from '@/lib/env/client'
 
 export async function updateSession(request: NextRequest) {
-  // E2E Test Bypass Mode
-  // Allow bypassing auth with a special header for automated testing
-  // This enables E2E tests to run authenticated flows without complex auth setup
-  //
-  // Security: This is safe because:
-  // 1. Requires specific non-obvious header value
-  // 2. Only accessed from localhost during tests
-  // 3. Production deployments won't have Playwright tests running
+  // E2E Test Bypass Mode - ONLY FOR DEVELOPMENT/TEST ENVIRONMENTS
+  // SECURITY: Reject all bypass attempts in production
+  if (process.env.NODE_ENV === 'production') {
+    const bypassHeader = request.headers.get('x-e2e-test-auth')
+    if (bypassHeader) {
+      // Log security violation attempt
+      console.error('[SECURITY] E2E bypass attempt in production rejected')
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+  }
 
-  // Debug logging
-  const bypassHeader = request.headers.get('x-e2e-test-auth')
-  console.log('[MIDDLEWARE DEBUG] Path:', request.nextUrl.pathname)
-  console.log('[MIDDLEWARE DEBUG] x-e2e-test-auth header:', bypassHeader)
-  console.log('[MIDDLEWARE DEBUG] All headers:', JSON.stringify(Object.fromEntries(request.headers.entries())))
+  // Only allow E2E bypass in development/test with secret token
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+    const bypassHeader = request.headers.get('x-e2e-test-auth')
+    const bypassSecret = process.env.E2E_BYPASS_SECRET
 
-  const isE2ETest = bypassHeader === 'bypass'
-
-  if (isE2ETest) {
-    // Skip all auth checks for E2E tests
-    console.log('[E2E Test Mode] Auth bypass enabled')
-    return NextResponse.next({ request })
+    if (bypassHeader && bypassHeader === bypassSecret) {
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[E2E Test Mode] Auth bypass enabled')
+      }
+      return NextResponse.next({ request })
+    }
   }
 
   let supabaseResponse = NextResponse.next({
