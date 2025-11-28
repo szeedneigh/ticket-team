@@ -103,3 +103,9 @@ export interface UserListResponse {
   per_page: number
 }
 
+// ============================================================================
+// Re-export UserPreferences from preferences action
+// ============================================================================
+
+export type { UserPreferences } from '@/app/actions/preferences'
+
