@@ -8,10 +8,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, RefreshCw, Search, Edit2, Trash2, Copy, MessageSquare } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Plus, RefreshCw, Search, Edit2, Trash2, Copy, MessageSquare, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useUser } from '@/lib/hooks/use-user'
+import { isStaffOrAbove } from '@/lib/types/database'
 import {
   Dialog,
   DialogContent,
@@ -35,12 +39,26 @@ import { createClient } from '@/lib/supabase/client'
 import type { CannedResponse, CannedResponseInput } from '@/lib/types/templates'
 
 export default function CannedResponsesPage() {
+  const router = useRouter()
   const { toast } = useToast()
+  const { user, loading: userLoading } = useUser()
 
   const [responses, setResponses] = useState<CannedResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
+
+  // Role-based access control: Only staff and above can access this page
+  useEffect(() => {
+    if (!userLoading && user && !isStaffOrAbove(user.role)) {
+      toast({
+        title: 'Access Denied',
+        description: 'You do not have permission to access canned responses',
+        variant: 'destructive',
+      })
+      router.push('/dashboard?error=insufficient_permissions')
+    }
+  }, [user, userLoading, router, toast])
 
   // Get unique categories from responses
   const categories = [...new Set(responses.map(r => r.category).filter(Boolean))] as string[]
@@ -234,6 +252,42 @@ export default function CannedResponsesPage() {
         variant: 'destructive',
       })
     }
+  }
+
+  // Show loading state while checking authentication and role
+  if (userLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <Skeleton className="h-32 w-full" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // Block access if user is not staff or above
+  if (!user || !isStaffOrAbove(user.role)) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
+        <ShieldAlert className="h-16 w-16 text-destructive" />
+        <div className="text-center">
+          <h2 className="text-2xl font-bold">Access Denied</h2>
+          <p className="text-muted-foreground">
+            You do not have permission to access canned responses
+          </p>
+        </div>
+        <Button onClick={() => router.push('/dashboard')}>
+          Return to Dashboard
+        </Button>
+      </div>
+    )
   }
 
   return (

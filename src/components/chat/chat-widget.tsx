@@ -1,12 +1,13 @@
 /**
  * ChatWidget Component
  *
- * Floating chat widget that provides quick access to Timi AI assistant:
- * - Floating button at bottom-right corner
- * - Opens dialog/drawer with full chat interface
- * - Responsive (drawer on mobile, dialog on desktop)
- * - Persists state across navigation
- * - Shows unread indicator
+ * Floating chat widget that provides quick access to Timi AI assistant.
+ * Features:
+ * - Non-modal desktop interface (allows page interaction)
+ * - Brand-aligned gradients and imagery
+ * - Smooth Framer Motion animations
+ * - Responsive mobile drawer
+ * - Persistence across navigation
  *
  * @module components/chat/chat-widget
  */
@@ -15,15 +16,9 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { X, Minus, Maximize2 } from 'lucide-react'
+import { X, Minus, Maximize2, MessageCircle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import {
   Drawer,
   DrawerContent,
@@ -69,6 +64,7 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [hasUnread, setHasUnread] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
 
   // Detect mobile viewport
   useEffect(() => {
@@ -148,37 +144,20 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
   // Handle widget open
   const handleOpen = () => {
     openWidget()
+    if (isMinimized) maximizeWidget()
     setHasUnread(false)
   }
 
   // Handle widget close
   const handleClose = () => {
     closeWidget()
-  }
-
-  // Handle minimize
-  const handleMinimize = () => {
-    minimizeWidget()
-  }
-
-  // Handle maximize
-  const handleMaximize = () => {
+    // Reset minimized state when fully closed
     maximizeWidget()
   }
 
-  // Handle open/close change from Dialog/Drawer
-  const handleOpenChange = (open: boolean) => {
-    if (open) {
-      openWidget()
-      setHasUnread(false)
-    } else {
-      closeWidget()
-    }
-  }
-
-  // Chat content (used in both Dialog and Drawer)
+  // Chat content
   const chatContent = activeSessionId ? (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-white">
       <ChatClient
         key={activeSessionId}
         sessionId={activeSessionId}
@@ -188,160 +167,200 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
       />
     </div>
   ) : (
-    <div className="flex h-full items-center justify-center">
-      <div className="text-center">
+    <div className="flex h-full flex-col items-center justify-center bg-white p-6">
+      <motion.div 
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="relative mb-4 h-24 w-24"
+      >
+        <div className="absolute inset-0 animate-pulse rounded-full bg-blue-100 opacity-50 blur-xl" />
         <Image
           src="/assets/floating-timi.svg"
           alt="Timi Bot"
-          width={48}
-          height={48}
-          className="mx-auto h-12 w-12 opacity-60"
+          fill
+          className="object-contain"
         />
-        <p className="mt-4 text-sm text-muted-foreground">
-          {isLoading ? 'Loading chat...' : 'Initializing chat...'}
-        </p>
+      </motion.div>
+      <p className="text-base font-medium text-[var(--brand-primary)]">
+        {isLoading ? 'Connecting to Timi...' : 'Initializing...'}
+      </p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Preparing your support session
+      </p>
+    </div>
+  )
+
+  // Desktop Header
+  const DesktopHeader = () => (
+    <div 
+      className="relative z-10 flex shrink-0 items-center justify-between px-4 py-3 text-white shadow-md"
+      style={{ background: 'linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-accent) 100%)' }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/15 backdrop-blur-md ring-1 ring-white/20">
+          <Image
+            src="/assets/floating-timi.svg"
+            alt="Timi Bot"
+            width={28}
+            height={28}
+            className="h-7 w-7 object-contain drop-shadow-md"
+          />
+          {/* Status dot */}
+          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-400 ring-2 ring-[#1f3463]" />
+        </div>
+        <div className="flex flex-col">
+          <h3 className="text-sm font-bold leading-none tracking-wide">Timi Assistant</h3>
+          <span className="text-xs text-blue-100/90">AI Support Agent</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <button
+          onClick={minimizeWidget}
+          className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
+          aria-label="Minimize chat"
+        >
+          <Minus className="h-4 w-4" />
+        </button>
+        <button
+          onClick={handleClose}
+          className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
+          aria-label="Close chat"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
     </div>
   )
 
   return (
     <>
-      {/* Floating Button */}
-      <Button
-        onClick={handleOpen}
-        size="lg"
-        className={cn(
-          'fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full transition-all',
-          'bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white',
-          '[box-shadow:var(--elev-3)] hover:[box-shadow:var(--elev-3),0_6px_12px_rgb(0_0_0_/_0.12)]',
-          'hover:scale-110 active:scale-95',
-          '[transition:all_var(--duration-base)_var(--transition-timing)]',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-accent)] focus-visible:ring-offset-2',
-          isOpen && 'scale-0'
-        )}
-        aria-label="Open chat with Timi"
-      >
-        <Image
-          src="/assets/floating-timi.svg"
-          alt="Timi Bot"
-          width={28}
-          height={28}
-          className="h-7 w-7"
-        />
+      <AnimatePresence>
+        {/* Launcher Button (Only visible when closed or minimized on desktop) */}
+        {(!isOpen || (isMinimized && !isMobile)) && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2"
+            onHoverStart={() => setIsHovered(true)}
+            onHoverEnd={() => setIsHovered(false)}
+          >
+            {/* Tooltip Bubble */}
+            <AnimatePresence>
+              {isHovered && (
+                <motion.div
+                  initial={{ opacity: 0, x: 10, scale: 0.9 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: 10, scale: 0.9 }}
+                  className="mr-2 rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-[var(--brand-primary)] shadow-lg ring-1 ring-black/5"
+                >
+                  Chat with Timi
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-        {/* Unread indicator */}
-        {hasUnread && (
-          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-semibold text-white [box-shadow:var(--elev-2)] animate-pulse">
-            !
-          </span>
-        )}
-      </Button>
+            <button
+              onClick={handleOpen}
+              className={cn(
+                "group relative flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-[var(--brand-accent)]/30",
+                isMinimized 
+                  ? "bg-white ring-2 ring-[var(--brand-primary)]" 
+                  : "bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-accent)]"
+              )}
+              aria-label="Open chat"
+            >
+              {/* Pulse effect */}
+              {!isMinimized && (
+                <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-[var(--brand-accent)] opacity-20 duration-3000" />
+              )}
 
-      {/* Mobile: Drawer */}
-      {isMobile ? (
-        <Drawer open={isOpen} onOpenChange={handleOpenChange}>
-          <DrawerContent className="h-[90vh]">
-            <DrawerHeader className="border-b bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary)]/95">
+              <Image
+                src="/assets/floating-timi.svg"
+                alt="Timi Bot"
+                width={40}
+                height={40}
+                className={cn(
+                  "h-10 w-10 object-contain transition-transform duration-300 group-hover:scale-110",
+                  isMinimized && "scale-90"
+                )}
+              />
+
+              {/* Unread Badge */}
+              {hasUnread && (
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white shadow-sm ring-2 ring-white">
+                  !
+                </span>
+              )}
+              
+              {/* Minimized Indicator */}
+              {isMinimized && (
+                <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--brand-primary)] text-white shadow-sm ring-2 ring-white">
+                  <MessageCircle className="h-3 w-3" />
+                </span>
+              )}
+            </button>
+          </motion.div>
+        )}
+
+        {/* Desktop Window */}
+        {isOpen && !isMinimized && !isMobile && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed bottom-24 right-6 z-50 flex h-[600px] w-[380px] max-h-[80vh] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+          >
+            <DesktopHeader />
+            <div className="flex-1 overflow-hidden relative">
+              {/* Subtle background pattern */}
+              <div className="absolute inset-0 opacity-[0.02] pointer-events-none" 
+                   style={{ backgroundImage: 'radial-gradient(#1f3463 1px, transparent 1px)', backgroundSize: '20px 20px' }} 
+              />
+              {chatContent}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Drawer */}
+      {isMobile && (
+        <Drawer open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+          <DrawerContent className="h-[90vh] rounded-t-xl">
+            <DrawerHeader className="border-b px-4 py-3" style={{ background: 'linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-accent) 100%)' }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm [box-shadow:var(--elev-1)]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-sm">
                     <Image
                       src="/assets/floating-timi.svg"
                       alt="Timi Bot"
-                      width={20}
-                      height={20}
-                      className="h-5 w-5"
+                      width={24}
+                      height={24}
+                      className="h-6 w-6 object-contain"
                     />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <DrawerTitle className="text-white">Chat with Timi</DrawerTitle>
-                    <DrawerDescription className="text-white/80">Your AI IT support assistant</DrawerDescription>
+                    <DrawerDescription className="text-white/80">AI Support Assistant</DrawerDescription>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleClose}
-                  aria-label="Close chat"
                   className="text-white hover:bg-white/20 hover:text-white"
                 >
                   <X className="h-5 w-5" />
                 </Button>
               </div>
             </DrawerHeader>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden bg-white">
               {chatContent}
             </div>
           </DrawerContent>
         </Drawer>
-      ) : (
-        /* Desktop: Dialog */
-        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-          <DialogContent
-            className={cn(
-              'flex flex-col gap-0 p-0 [box-shadow:var(--elev-3)] border-0',
-              isMinimized
-                ? 'h-[60px] w-[300px]'
-                : 'h-[600px] w-[450px] max-w-[90vw]'
-            )}
-          >
-            {/* Header */}
-            <DialogHeader className="shrink-0 border-b p-4 bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary)]/95">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm [box-shadow:var(--elev-1)]">
-                    <Image
-                      src="/assets/floating-timi.svg"
-                      alt="Timi Bot"
-                      width={20}
-                      height={20}
-                      className="h-5 w-5"
-                    />
-                  </div>
-                  <div>
-                    <DialogTitle className="text-white">Chat with Timi</DialogTitle>
-                    <DialogDescription className={cn('text-white/80', isMinimized && 'hidden')}>
-                      Your AI IT support assistant
-                    </DialogDescription>
-                  </div>
-                </div>
-
-                {/* Window controls */}
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-white hover:bg-white/20 hover:text-white"
-                    onClick={isMinimized ? handleMaximize : handleMinimize}
-                    aria-label={isMinimized ? 'Maximize' : 'Minimize'}
-                  >
-                    {isMinimized ? (
-                      <Maximize2 className="h-4 w-4" />
-                    ) : (
-                      <Minus className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-white hover:bg-white/20 hover:text-white"
-                    onClick={handleClose}
-                    aria-label="Close chat"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </DialogHeader>
-
-            {/* Chat Content */}
-            {!isMinimized && (
-              <div className="flex-1 overflow-hidden">
-                {chatContent}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       )}
     </>
   )

@@ -11,7 +11,7 @@ export default async function DashboardLayout({
   const user = await requireAuth()
 
   return (
-    <div className="h-screen overflow-hidden bg-gradient-to-br from-[#d4e8f0] via-[#e8f4f8] to-[#0a4d7e] dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       <PresenceTracker user={user} />
       <HydrationBoundary>
         <DashboardLayoutWrapper user={user}>

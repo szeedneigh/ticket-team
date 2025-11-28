@@ -191,8 +191,13 @@ export function KBEditorForm({ article, existingTags = [], mode }: KBEditorFormP
         )
 
         // Redirect after successful submission
-        if (result?.data?.id) {
-          router.push(`/kb/${result.data.id}`)
+        if (mode === 'create' && result && 'data' in result) {
+          const createResult = result as { data: { id: string } }
+          if (createResult.data?.id) {
+            router.push(`/kb/${createResult.data.id}`)
+          } else {
+            router.push('/kb')
+          }
         } else if (mode === 'edit' && article) {
           router.push(`/kb/${article.id}`)
         } else {

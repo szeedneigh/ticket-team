@@ -2,19 +2,25 @@
 
 import { useEffect } from 'react'
 import { Toaster } from '@/components/ui/sonner'
-import { ThemeProvider } from 'next-themes'
 import { AppProgressBar as ProgressBar } from 'next-nprogress-bar'
 import { NavigationLoading } from '@/components/shared/navigation-loading'
 import { ChatWidgetInitializer } from '@/components/chat/chat-widget-initializer'
+import { PreferencesProvider } from '@/providers/preferences-provider'
+import type { UserPreferences } from '@/lib/types/users'
 
-export function Providers({ children }: { children: React.ReactNode }) {
+interface ProvidersProps {
+  children: React.ReactNode
+  initialPreferences?: UserPreferences | null
+}
+
+export function Providers({ children, initialPreferences }: ProvidersProps) {
   // Suppress hydration warnings from browser extensions
   useEffect(() => {
     const originalError = console.error
     console.error = (...args) => {
       // Filter out hydration warnings related to browser extensions
       const message = args[0]?.toString() || ''
-      
+
       // Suppress known browser extension-related hydration errors
       if (
         message.includes('Hydration') &&
@@ -25,23 +31,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
         // Silently ignore these warnings
         return
       }
-      
+
       // Allow all other console errors through
       originalError.apply(console, args)
     }
-    
+
     return () => {
       console.error = originalError
     }
   }, [])
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
+    <PreferencesProvider initialPreferences={initialPreferences}>
       {/* Top Progress Bar for Navigation */}
       <ProgressBar
         height="3px"
@@ -49,16 +50,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
         options={{ showSpinner: false }}
         shallowRouting
       />
-      
+
       {/* Loading Overlay for Slow Navigation (>300ms) */}
       <NavigationLoading />
-      
+
       {children}
       <Toaster richColors position="top-right" />
 
       {/* Floating Chat Widget */}
       <ChatWidgetInitializer />
-    </ThemeProvider>
+    </PreferencesProvider>
   )
 }
-

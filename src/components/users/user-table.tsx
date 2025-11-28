@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback, memo } from 'react'
 import { ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   Table,
@@ -43,7 +43,7 @@ interface UserTableProps {
 type SortColumn = 'full_name' | 'email' | 'role' | 'department' | 'created_at'
 type SortDirection = 'asc' | 'desc'
 
-export function UserTable({
+export const UserTable = memo(function UserTable({
   users,
   total,
   page,
@@ -60,41 +60,48 @@ export function UserTable({
   const [sortColumn, setSortColumn] = useState<SortColumn>('created_at')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
-  const totalPages = Math.ceil(total / perPage)
-  const hasNextPage = page < totalPages
-  const hasPrevPage = page > 1
+  // Memoize pagination calculations
+  const paginationInfo = useMemo(() => ({
+    totalPages: Math.ceil(total / perPage),
+    hasNextPage: page < Math.ceil(total / perPage),
+    hasPrevPage: page > 1,
+  }), [total, perPage, page])
 
-  // Handle select all
-  const handleSelectAll = (checked: boolean) => {
+  // Handle select all - useCallback for stable reference
+  const handleSelectAll = useCallback((checked: boolean) => {
     if (checked) {
       setSelectedUsers(new Set(users.map((u) => u.id)))
     } else {
       setSelectedUsers(new Set())
     }
-  }
+  }, [users])
 
-  // Handle individual row selection
-  const handleSelectUser = (userId: string, checked: boolean) => {
-    const newSelected = new Set(selectedUsers)
-    if (checked) {
-      newSelected.add(userId)
-    } else {
-      newSelected.delete(userId)
-    }
-    setSelectedUsers(newSelected)
-  }
+  // Handle individual row selection - useCallback for stable reference
+  const handleSelectUser = useCallback((userId: string, checked: boolean) => {
+    setSelectedUsers((prev) => {
+      const newSelected = new Set(prev)
+      if (checked) {
+        newSelected.add(userId)
+      } else {
+        newSelected.delete(userId)
+      }
+      return newSelected
+    })
+  }, [])
 
-  // Handle sorting
-  const handleSort = (column: SortColumn) => {
+  // Handle sorting - useCallback for stable reference
+  const handleSort = useCallback((column: SortColumn) => {
     const newDirection = sortColumn === column && sortDirection === 'asc' ? 'desc' : 'asc'
     setSortColumn(column)
     setSortDirection(newDirection)
     onSort?.(column, newDirection)
-  }
+  }, [sortColumn, sortDirection, onSort])
 
-  // Check if all visible users are selected
-  const allSelected = users.length > 0 && users.every((u) => selectedUsers.has(u.id))
-  const someSelected = users.some((u) => selectedUsers.has(u.id)) && !allSelected
+  // Check if all visible users are selected - memoize expensive computation
+  const selectionState = useMemo(() => ({
+    allSelected: users.length > 0 && users.every((u) => selectedUsers.has(u.id)),
+    someSelected: users.some((u) => selectedUsers.has(u.id)) && !(users.length > 0 && users.every((u) => selectedUsers.has(u.id))),
+  }), [users, selectedUsers])
 
   return (
     <div className="space-y-4">
@@ -146,10 +153,10 @@ export function UserTable({
             <TableRow>
               <TableHead className="w-12">
                 <Checkbox
-                  checked={allSelected}
+                  checked={selectionState.allSelected}
                   onCheckedChange={handleSelectAll}
                   aria-label="Select all users"
-                  className={someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
+                  className={selectionState.someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
                 />
               </TableHead>
               <TableHead className="w-12"></TableHead>
@@ -304,7 +311,7 @@ export function UserTable({
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {paginationInfo.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
             Showing {(page - 1) * perPage + 1} to {Math.min(page * perPage, total)} of {total}{' '}
@@ -316,21 +323,21 @@ export function UserTable({
               variant="outline"
               size="sm"
               onClick={() => onPageChange(page - 1)}
-              disabled={!hasPrevPage}
+              disabled={!paginationInfo.hasPrevPage}
             >
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
 
             <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              {Array.from({ length: Math.min(5, paginationInfo.totalPages) }, (_, i) => {
                 let pageNum: number
-                if (totalPages <= 5) {
+                if (paginationInfo.totalPages <= 5) {
                   pageNum = i + 1
                 } else if (page <= 3) {
                   pageNum = i + 1
-                } else if (page >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i
+                } else if (page >= paginationInfo.totalPages - 2) {
+                  pageNum = paginationInfo.totalPages - 4 + i
                 } else {
                   pageNum = page - 2 + i
                 }
@@ -353,7 +360,7 @@ export function UserTable({
               variant="outline"
               size="sm"
               onClick={() => onPageChange(page + 1)}
-              disabled={!hasNextPage}
+              disabled={!paginationInfo.hasNextPage}
             >
               Next
               <ChevronRight className="h-4 w-4" />
@@ -363,4 +370,4 @@ export function UserTable({
       )}
     </div>
   )
-}
+})

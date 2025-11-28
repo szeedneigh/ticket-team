@@ -27,6 +27,12 @@ import { streamRAGResponse } from '@/lib/chat/rag-service'
 import { recordInteraction } from '@/lib/chat/queries'
 import { isAIConfigured } from '@/lib/ai/client'
 import { trackStreamingError } from '@/lib/monitoring/error-tracking'
+import { logger } from '@/lib/logger'
+import {
+  checkRateLimit,
+  retryWithBackoff,
+  withCircuitBreaker,
+} from '@/lib/chat/rate-limiter'
 
 // ============================================================================
 // Types
@@ -77,7 +83,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 2. Check if AI is configured
+    // 2. Check rate limits
+    const rateLimit = checkRateLimit(user.id)
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({
+          type: 'error',
+          error: `Rate limit exceeded. Please wait ${rateLimit.retryAfter} seconds before trying again.`,
+          retryAfter: rateLimit.retryAfter,
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': rateLimit.resetIn.toString(),
+            'Retry-After': (rateLimit.retryAfter || 60).toString(),
+          },
+        }
+      )
+    }
+
+    // 3. Check if AI is configured
     if (!isAIConfigured()) {
       return new Response(
         JSON.stringify({
@@ -91,7 +118,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 3. Parse and validate request body
+    // 4. Parse and validate request body
     let body: ChatRequestBody
     try {
       body = await request.json()
@@ -151,8 +178,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 4. Create streaming response
+    // 5. Create streaming response with abort signal support
     const encoder = new TextEncoder()
+    const abortController = new AbortController()
+
+    // Handle client disconnect
+    request.signal.addEventListener('abort', () => {
+      logger.debug('Client disconnected, aborting stream')
+      abortController.abort()
+    })
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -168,19 +202,32 @@ export async function POST(request: NextRequest) {
           let confidence = 0
           let citations: string[] = []
 
-          // Stream RAG response
-          const ragStream = streamRAGResponse({
-            query: message,
-            conversationHistory,
-            maxArticles: 5,
-            similarityThreshold: 0.7,
-            temperature: 0.7,
-          })
+          // Stream RAG response with circuit breaker protection
+          const ragStream = await withCircuitBreaker(
+            'gemini-chat',
+            async () =>
+              streamRAGResponse({
+                query: message,
+                conversationHistory,
+                maxArticles: 5,
+                similarityThreshold: 0.7,
+                temperature: 0.7,
+              })
+          )
 
           for await (const chunk of ragStream) {
+            // Check if client disconnected
+            if (abortController.signal.aborted) {
+              logger.debug('Stream aborted by client disconnect')
+              break
+            }
+
             // Send chunk to client
             const data = `data: ${JSON.stringify(chunk)}\n\n`
             controller.enqueue(encoder.encode(data))
+
+            // Backpressure handling: yield to event loop
+            await new Promise((resolve) => setTimeout(resolve, 0))
 
             // Collect data for logging
             if (chunk.type === 'context') {
@@ -193,12 +240,13 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // 5. Log interaction to database
+          // 6. Log interaction to database
           const responseTimeMs = Date.now() - startTime
           const articleIds = contextArticles.map(a => a.article_id)
 
+          let interactionId: string | null = null
           try {
-            await recordInteraction({
+            const interaction = await recordInteraction({
               userId: user.id,
               sessionId,
               query: message,
@@ -208,12 +256,22 @@ export async function POST(request: NextRequest) {
               metadata: {
                 confidence,
                 citations,
-                model: 'gemini-2.0-flash-exp',
+                model: 'gemini-2.0-flash',
               },
             })
+            interactionId = interaction.id
           } catch (error) {
             console.error('Failed to log interaction:', error)
             // Don't fail the request if logging fails
+          }
+
+          // Send interaction ID to client for escalation support
+          if (interactionId) {
+            const interactionData = `data: ${JSON.stringify({
+              type: 'interaction',
+              interactionId,
+            })}\n\n`
+            controller.enqueue(encoder.encode(interactionData))
           }
 
           // Close the stream
@@ -250,13 +308,15 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Return streaming response
+    // Return streaming response with rate limit headers
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache, no-transform',
         Connection: 'keep-alive',
         'X-Accel-Buffering': 'no', // Disable nginx buffering
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': rateLimit.resetIn.toString(),
       },
     })
   } catch (error) {

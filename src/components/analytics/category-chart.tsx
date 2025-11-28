@@ -7,6 +7,7 @@
 
 'use client'
 
+import { useMemo, memo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 import { cn } from '@/lib/utils'
@@ -44,7 +45,7 @@ const DEFAULT_COLORS = [
   '#3b82f6',
 ]
 
-export function CategoryChart({
+export const CategoryChart = memo(function CategoryChart({
   title,
   description,
   data,
@@ -56,15 +57,16 @@ export function CategoryChart({
   loading = false,
   colors = DEFAULT_COLORS,
 }: CategoryChartProps) {
-  // Calculate total for percentages
-  const total = data.reduce((sum, item) => sum + item.value, 0)
+  // Memoize chart data calculation
+  const chartData = useMemo(() => {
+    const total = data.reduce((sum, item) => sum + item.value, 0)
 
-  // Prepare data with percentages
-  const chartData = data.map((item, index) => ({
-    ...item,
-    percentage: total > 0 ? ((item.value / total) * 100).toFixed(1) : 0,
-    fill: item.color || colors[index % colors.length],
-  }))
+    return data.map((item, index) => ({
+      ...item,
+      percentage: total > 0 ? ((item.value / total) * 100).toFixed(1) : 0,
+      fill: item.color || colors[index % colors.length],
+    }))
+  }, [data, colors])
 
   // Custom label for pie chart
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -136,7 +138,7 @@ export function CategoryChart({
       </CardContent>
     </Card>
   )
-}
+})
 
 /**
  * Category Legend
@@ -147,8 +149,8 @@ export interface CategoryLegendProps {
   className?: string
 }
 
-export function CategoryLegend({ data, className }: CategoryLegendProps) {
-  const total = data.reduce((sum, item) => sum + item.value, 0)
+export const CategoryLegend = memo(function CategoryLegend({ data, className }: CategoryLegendProps) {
+  const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data])
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -172,4 +174,4 @@ export function CategoryLegend({ data, className }: CategoryLegendProps) {
       })}
     </div>
   )
-}
+})

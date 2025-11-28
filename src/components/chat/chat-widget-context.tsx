@@ -77,13 +77,14 @@ export function ChatWidgetProvider({ children }: ChatWidgetProviderProps) {
       if (persistedState) {
         const state: Partial<ChatWidgetState> = JSON.parse(persistedState)
 
-        // Don't persist isOpen (always start closed)
-        // Only restore session and minimized state
         if (state.activeSessionId) {
           setActiveSessionId(state.activeSessionId)
         }
         if (state.isMinimized !== undefined) {
           setIsMinimized(state.isMinimized)
+        }
+        if (state.isOpen !== undefined) {
+          setIsOpen(state.isOpen)
         }
       }
     } catch (error) {
@@ -97,13 +98,14 @@ export function ChatWidgetProvider({ children }: ChatWidgetProviderProps) {
       const state: Partial<ChatWidgetState> = {
         activeSessionId,
         isMinimized,
-        // Don't persist isOpen, sessions, or messages
+        isOpen,
+        // Don't persist sessions or messages (too large)
       }
       localStorage.setItem('chatWidgetState', JSON.stringify(state))
     } catch (error) {
       console.error('Failed to persist widget state:', error)
     }
-  }, [activeSessionId, isMinimized])
+  }, [activeSessionId, isMinimized, isOpen])
 
   // Actions
   const openWidget = useCallback(() => {

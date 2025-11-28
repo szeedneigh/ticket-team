@@ -99,7 +99,7 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
   }
 
   const results = await Promise.all(parallelFetches)
-  const { data: attachmentsData } = results[0] as Awaited<typeof parallelFetches[0]>
+  const { data: attachmentsData } = results[0] as { data: unknown }
   const staffUsers = userIsStaff ? (results[1] as Awaited<ReturnType<typeof getStaffUsers>>) : []
 
   // Transform attachments to match expected type

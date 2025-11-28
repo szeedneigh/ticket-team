@@ -15,6 +15,7 @@
 'use client'
 
 import { useState, useRef, useEffect, KeyboardEvent } from 'react'
+import { motion } from 'framer-motion'
 import { Send, Loader2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -161,8 +162,9 @@ export function ChatInput({
             disabled={disabled || isStreaming}
             rows={rows}
             className={cn(
-              'min-h-[48px] resize-none pr-12 transition-all',
-              'focus-visible:ring-2 focus-visible:ring-primary',
+              'min-h-[48px] resize-none pr-12',
+              'focus-visible:ring-2 focus-visible:ring-[#2cafdd]/50',
+              'focus-visible:border-[#2cafdd]',
               disabled && 'cursor-not-allowed opacity-50'
             )}
             aria-label="Chat message input"
@@ -191,7 +193,12 @@ export function ChatInput({
           onClick={handleSend}
           disabled={isSendDisabled}
           size="icon"
-          className="h-12 w-12 shrink-0"
+          className={cn(
+            'h-12 w-12 shrink-0',
+            'bg-gradient-to-br from-[#1f3463] to-[#2cafdd]',
+            'hover:opacity-90',
+            'transition-opacity'
+          )}
           aria-label="Send message"
         >
           {isStreaming ? (

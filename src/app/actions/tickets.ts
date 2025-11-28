@@ -20,6 +20,10 @@ import { uploadTicketAttachment } from '@/lib/tickets/storage'
 import { ACTIVITY_TYPES } from '@/lib/constants/activity-types'
 import { ERROR_MESSAGES } from '@/lib/constants'
 import type { TicketStatus, TicketPriority } from '@/lib/types/database'
+import {
+  notifyTicketAssignment,
+  notifyTicketStatusChange,
+} from '@/lib/email/notifications'
 
 // ============================================================================
 // Types
@@ -344,6 +348,31 @@ export async function updateTicketStatus(
       }
     }
 
+    // 3.5. Send email notification (non-blocking)
+    try {
+      // Get current user's name for email
+      const { data: currentUserData } = await supabase
+        .from('users')
+        .select('full_name')
+        .eq('id', user.id)
+        .single()
+
+      const changedByName = currentUserData?.full_name || 'Staff'
+
+      // Determine appropriate message based on status
+      let message: string | undefined
+      if (newStatus === 'resolved') {
+        message = 'Your ticket has been resolved. Please review and provide feedback if satisfied.'
+      } else if (newStatus === 'closed') {
+        message = 'Your ticket has been closed.'
+      }
+
+      await notifyTicketStatusChange(ticketId, newStatus, changedByName, message)
+    } catch (emailError) {
+      // Log error but don't fail the status update
+      console.error('Email notification error:', emailError)
+    }
+
     // 4. Log activity
     try {
       const serviceClient = createServiceClient()
@@ -477,6 +506,24 @@ export async function assignTicket(
 
       if (assigneeData) {
         assigneeName = assigneeData.full_name
+      }
+    }
+
+    // 5.5. Send email notification (non-blocking)
+    if (newAssignedTo) {
+      try {
+        // Get current user's name for email
+        const { data: currentUserData } = await supabase
+          .from('users')
+          .select('full_name')
+          .eq('id', user.id)
+          .single()
+
+        const assignedByName = currentUserData?.full_name || 'Staff'
+        await notifyTicketAssignment(ticketId, newAssignedTo, assignedByName)
+      } catch (emailError) {
+        // Log error but don't fail the assignment
+        console.error('Email notification error:', emailError)
       }
     }
 

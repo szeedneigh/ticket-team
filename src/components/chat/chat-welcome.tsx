@@ -11,6 +11,8 @@
 
 'use client'
 
+import Image from 'next/image'
+import { motion } from 'framer-motion'
 import { Bot, Mail, Printer, Wifi, Lock, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -63,18 +65,30 @@ export function ChatWelcome({
       {/* Header */}
       <div className="flex flex-col items-center gap-4 text-center">
         {/* Timi Avatar */}
-        <div className="relative">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-primary/20 bg-gradient-to-br from-primary/20 to-primary/5">
-            <Bot className="h-10 w-10 text-primary" />
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="relative"
+        >
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#2cafdd]/20 to-[#1f3463]/10 border-2 border-[#2cafdd]/30 shadow-[0_0_20px_rgba(44,175,221,0.2)]">
+            <Image
+              src="/assets/timi-bot1.svg"
+              alt="Timi AI Assistant"
+              width={64}
+              height={64}
+              className="h-16 w-16 object-contain"
+              priority
+            />
           </div>
           {/* Pulse Animation */}
           <span className="absolute -right-1 -top-1 flex h-5 w-5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-            <span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary">
-              <MessageSquare className="h-3 w-3 text-primary-foreground" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2cafdd] opacity-75" />
+            <span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2cafdd]">
+              <MessageSquare className="h-3 w-3 text-white" />
             </span>
           </span>
-        </div>
+        </motion.div>
 
         {/* Welcome Text */}
         <div className="space-y-2">
@@ -107,11 +121,11 @@ export function ChatWelcome({
               <Button
                 key={index}
                 variant="outline"
-                className="h-auto justify-start gap-3 p-4 text-left transition-all hover:border-primary hover:bg-primary/5"
+                className="h-auto w-full justify-start gap-3 p-4 text-left transition-colors hover:border-[#2cafdd] hover:bg-[#2cafdd]/5"
                 onClick={() => onPromptClick(prompt.text)}
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Icon className="h-5 w-5 text-primary" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#2cafdd]/20 to-[#1f3463]/10">
+                  <Icon className="h-5 w-5 text-[#2cafdd]" />
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="font-medium">{prompt.text}</span>

@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -26,7 +26,7 @@ import {
   BookOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,9 +70,8 @@ interface NotificationListProps {
   initialUnreadCount: number
 }
 
-export function NotificationList({
+export const NotificationList = memo(function NotificationList({
   initialNotifications,
-  initialPagination,
   initialUnreadCount,
 }: NotificationListProps) {
   const router = useRouter()
@@ -81,8 +80,8 @@ export function NotificationList({
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
   const [isLoading, setIsLoading] = useState(false)
 
-  // Refresh notifications
-  const refreshNotifications = async () => {
+  // Refresh notifications - useCallback for stable reference
+  const refreshNotifications = useCallback(async () => {
     setIsLoading(true)
     const supabase = createClient()
 
@@ -117,10 +116,10 @@ export function NotificationList({
 
     setUnreadCount(count || 0)
     setIsLoading(false)
-  }
+  }, [filter])
 
-  // Mark as read
-  const handleMarkAsRead = async (id: string) => {
+  // Mark as read - useCallback for stable reference
+  const handleMarkAsRead = useCallback(async (id: string) => {
     const supabase = createClient()
     await supabase
       .from('notifications')
@@ -128,10 +127,10 @@ export function NotificationList({
       .eq('id', id)
 
     refreshNotifications()
-  }
+  }, [refreshNotifications])
 
-  // Mark all as read
-  const handleMarkAllAsRead = async () => {
+  // Mark all as read - useCallback for stable reference
+  const handleMarkAllAsRead = useCallback(async () => {
     const supabase = createClient()
     await supabase
       .from('notifications')
@@ -139,10 +138,10 @@ export function NotificationList({
       .is('read_at', null)
 
     refreshNotifications()
-  }
+  }, [refreshNotifications])
 
-  // Archive notification
-  const handleArchive = async (id: string) => {
+  // Archive notification - useCallback for stable reference
+  const handleArchive = useCallback(async (id: string) => {
     const supabase = createClient()
     await supabase
       .from('notifications')
@@ -150,18 +149,18 @@ export function NotificationList({
       .eq('id', id)
 
     refreshNotifications()
-  }
+  }, [refreshNotifications])
 
-  // Delete notification
-  const handleDelete = async (id: string) => {
+  // Delete notification - useCallback for stable reference
+  const handleDelete = useCallback(async (id: string) => {
     const supabase = createClient()
     await supabase.from('notifications').delete().eq('id', id)
 
     refreshNotifications()
-  }
+  }, [refreshNotifications])
 
-  // Navigate to notification link
-  const handleClick = (notification: NotificationWithActor) => {
+  // Navigate to notification link - useCallback for stable reference
+  const handleClick = useCallback((notification: NotificationWithActor) => {
     const link = getNotificationLink(notification)
     if (link) {
       if (!notification.read_at) {
@@ -169,18 +168,20 @@ export function NotificationList({
       }
       router.push(link)
     }
-  }
+  }, [router, handleMarkAsRead])
 
-  // Filter change
-  const handleFilterChange = (value: string) => {
+  // Filter change - useCallback for stable reference
+  const handleFilterChange = useCallback((value: string) => {
     setFilter(value as 'all' | 'unread')
     setTimeout(refreshNotifications, 0)
-  }
+  }, [refreshNotifications])
 
-  const filteredNotifications =
+  // Memoize filtered notifications to avoid re-filtering on every render
+  const filteredNotifications = useMemo(() =>
     filter === 'unread'
       ? notifications.filter((n) => !n.read_at)
       : notifications
+  , [filter, notifications])
 
   return (
     <div className="space-y-4">
@@ -346,4 +347,4 @@ export function NotificationList({
       )}
     </div>
   )
-}
+})
