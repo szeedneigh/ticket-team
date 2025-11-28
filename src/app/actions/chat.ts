@@ -17,6 +17,7 @@ import {
   linkInteractionToTicket,
   getSessionsByUserId,
   getSessionWithMessages,
+  type SessionSummary,
 } from '@/lib/chat/queries'
 import {
   detectCategory,
@@ -28,7 +29,6 @@ import {
   type StaffSuggestion,
 } from '@/lib/chat/escalation-utils'
 import type {
-  SessionSummary,
   ChatSessionWithMessages,
   ChatMessage,
   RAGContext,
