@@ -48,29 +48,40 @@ export default async function AuthErrorPage({ searchParams }: PageProps) {
   const errorInfo = errorMessages[error] || errorMessages.auth_failed
   
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <AlertCircle className="h-5 w-5 text-destructive" />
-          <CardTitle>{errorInfo.title}</CardTitle>
-        </div>
-        <CardDescription>{errorInfo.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Button asChild className="w-full">
-          <Link href="/auth/sign-in">Try Again</Link>
-        </Button>
-        
-        <div className="text-center">
+    <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--brand-primary)]">TicketTeam</h1>
           <p className="text-sm text-muted-foreground">
-            Need help?{' '}
-            <Link href="mailto:sidneyjohnsarcia@student.laverdad.edu.ph" className="text-foreground hover:underline">
-              Contact IT Support
-            </Link>
+            La Verdad Christian College
           </p>
         </div>
-      </CardContent>
-    </Card>
+        
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <CardTitle>{errorInfo.title}</CardTitle>
+            </div>
+            <CardDescription>{errorInfo.description}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button asChild className="w-full">
+              <Link href="/auth/sign-in">Try Again</Link>
+            </Button>
+            
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                Need help?{' '}
+                <Link href="mailto:sidneyjohnsarcia@student.laverdad.edu.ph" className="text-foreground hover:underline">
+                  Contact IT Support
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   )
 }
 
