@@ -722,7 +722,7 @@ export async function getStaffPerformanceMetrics(
     }
 
     // Fetch satisfaction scores for tickets
-    let ticketSatisfactionMap = new Map<string, number>() // ticketId -> rating
+    const ticketSatisfactionMap = new Map<string, number>() // ticketId -> rating
     if (ticketIds.length > 0) {
       const { data: feedback, error: feedbackError } = await supabase
         .from('ticket_feedback')
