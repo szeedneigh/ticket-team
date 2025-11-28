@@ -83,7 +83,7 @@ export function QuickActions({ user }: QuickActionsProps) {
         title: 'Analytics',
         description: 'View system reports',
         icon: BarChart3,
-        href: '/admin/analytics',
+        href: '/analytics',
         color: 'bg-[#0693D2] hover:bg-[#0693D2]/90'
       },
       {
