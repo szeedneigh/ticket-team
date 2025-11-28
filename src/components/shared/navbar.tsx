@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from './theme-toggle'
 import { Button } from '@/components/ui/button'
@@ -15,7 +14,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { Bell, Search, PanelLeft } from 'lucide-react'
+import { Search, PanelLeft } from 'lucide-react'
+import { NotificationBell } from '@/components/notifications/notification-bell'
 import type { User } from '@/lib/types/users'
 
 interface NavbarProps {
@@ -88,16 +88,10 @@ export function Navbar({
           {!user && (
             <nav className="hidden md:flex items-center gap-6 text-sm">
               <Link
-                href="/kb"
+                href="/help"
                 className="text-muted-foreground transition-colors hover:text-primary"
               >
-                Knowledge Base
-              </Link>
-              <Link
-                href="/about"
-                className="text-muted-foreground transition-colors hover:text-primary"
-              >
-                About
+                Help
               </Link>
             </nav>
           )}
@@ -113,26 +107,8 @@ export function Navbar({
                 <Search className="h-4 w-4" />
               </Button>
               
-              {/* Notifications with premium animation */}
-              <motion.div
-                whileHover={{ rotate: [0, -15, 15, -15, 0] }}
-                transition={{ duration: 0.5 }}
-              >
-                <Button variant="ghost" size="sm" className="relative">
-                  <Bell className="h-4 w-4" />
-                  {/* Notification badge - will appear when there are notifications */}
-                  {/* Uncomment and set hasNotifications when implementing notification system
-                  {hasNotifications && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                      className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full"
-                    />
-                  )}
-                  */}
-                </Button>
-              </motion.div>
+              {/* Notifications */}
+              <NotificationBell />
               
               {/* User menu */}
               <DropdownMenu>
@@ -155,7 +131,7 @@ export function Navbar({
                     <Link href="/profile">Profile</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/settings">Settings</Link>
+                    <Link href="/help">Help Center</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="p-0">
