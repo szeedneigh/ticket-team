@@ -1,22 +1,31 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   LayoutDashboard,
   Ticket,
-  BookOpen,
-  MessageSquare,
+  Library,
+  Bot,
+  Inbox,
   Users,
-  BarChart3,
-  Settings,
+  TrendingUp,
+  Settings2,
   X,
-  PanelLeft
+  LogOut,
+  ChevronRight,
+  MoreVertical
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { User } from '@/lib/types/users'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface SidebarProps {
   user: User
@@ -49,19 +58,19 @@ const navItems: NavItem[] = [
   {
     title: 'Knowledge Base',
     href: '/kb',
-    icon: BookOpen,
+    icon: Library,
     roles: ['employee', 'staff', 'admin', 'super_admin']
   },
   {
     title: 'AI Chat',
     href: '/chat',
-    icon: MessageSquare,
+    icon: Bot,
     roles: ['employee', 'staff', 'admin', 'super_admin']
   },
   {
     title: 'Ticket Queue',
     href: '/tickets/queue',
-    icon: Users,
+    icon: Inbox,
     roles: ['staff', 'admin', 'super_admin'],
     badge: 'Staff+'
   },
@@ -74,24 +83,42 @@ const navItems: NavItem[] = [
   },
   {
     title: 'Analytics',
-    href: '/admin/analytics',
-    icon: BarChart3,
+    href: '/analytics',
+    icon: TrendingUp,
     roles: ['admin', 'super_admin'],
     badge: 'Admin+'
   },
   {
     title: 'Settings',
     href: '/admin/settings',
-    icon: Settings,
+    icon: Settings2,
     roles: ['super_admin'],
     badge: 'Super Admin'
   }
 ]
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 1024)
+    }
+    
+    checkIsMobile()
+    window.addEventListener('resize', checkIsMobile)
+    
+    return () => window.removeEventListener('resize', checkIsMobile)
+  }, [])
+
+  return isMobile
+}
+
 export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: SidebarProps) {
   const pathname = usePathname()
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+  const isMobile = useIsMobile()
 
-  // Lock body scroll when mobile sidebar is open
   useEffect(() => {
     if (isMobileOpen) {
       document.body.style.overflow = 'hidden'
@@ -104,12 +131,19 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
     }
   }, [isMobileOpen])
 
+  // Auto-close mobile sidebar on route change
+  useEffect(() => {
+    if (isMobile && isMobileOpen) {
+      setIsMobileOpen(false)
+    }
+  }, [pathname, isMobile, isMobileOpen, setIsMobileOpen])
+
   const filteredNavItems = navItems.filter(item =>
     item.roles.includes(user.role)
   )
 
   return (
-    <>
+    <TooltipProvider delayDuration={0}>
       {/* Mobile overlay */}
       <AnimatePresence>
         {isMobileOpen && (
@@ -117,197 +151,222 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="lg:hidden fixed inset-0 z-40 bg-black/50"
+            className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
             onClick={() => setIsMobileOpen(false)}
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar - Fixed blue gradient, isolated from shadcn theme */}
+      {/* Sidebar */}
       <motion.aside
-        initial={false}
+        key={isMobile ? 'mobile' : 'desktop'}
+        initial={isMobile ? { x: isMobileOpen ? 0 : "-100%" } : false}
         animate={{
-          width: isMobileOpen ? 280 : (isCollapsed ? 80 : 280),
+          width: isMobile ? 280 : (isCollapsed ? 80 : 280),
+          x: isMobile ? (isMobileOpen ? 0 : "-100%") : 0,
+        }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 30 
         }}
         className={cn(
-          // Desktop: always visible, animated width, full height
-          "hidden lg:flex flex-col flex-shrink-0 bg-[linear-gradient(180deg,#002C64_48.56%,#0693D2_100%)] backdrop-blur-sm border-r border-white/10",
-          "transition-all duration-100 ease-out",
-          // Mobile: show as fixed overlay when open
-          isMobileOpen && "!flex fixed left-0 top-0 z-50 h-screen"
+          "flex flex-col flex-shrink-0 z-50",
+          "bg-[linear-gradient(180deg,#002C64_48.56%,#0693D2_100%)]",
+          "backdrop-blur-md border-r border-white/10",
+          "h-screen",
+          "fixed lg:relative",
+          isMobile ? "flex left-0 top-0 shadow-2xl" : "hidden lg:flex"
         )}
       >
         {/* Mobile close button */}
-        {isMobileOpen && (
-          <div className="lg:hidden p-4 border-b border-white/10 flex justify-end">
-            <button
-              onClick={() => setIsMobileOpen(false)}
-              className="flex items-center justify-center h-8 w-8 rounded-md text-white hover:bg-white/10 transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
+        <div className="lg:hidden absolute right-4 top-4 z-50">
+          <button
+            onClick={() => setIsMobileOpen(false)}
+            className="p-2 rounded-full text-white/80 hover:bg-white/10 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
         {/* Logo Section */}
-        <div className="p-4 border-b border-white/10">
+        <div className="p-6 pb-2">
           <Link 
             href="/dashboard"
             className={cn(
-              "flex items-center transition-colors hover:opacity-80",
-              isCollapsed ? "justify-center" : "gap-3"
+              "flex items-center group",
+              isCollapsed && !isMobile ? "justify-center" : "gap-3"
             )}
           >
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 border border-white/20 shadow-inner overflow-hidden group-hover:bg-white/20 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="text-white font-bold text-lg relative z-10">TT</span>
+            </div>
+            
             <AnimatePresence mode="wait">
-              {isCollapsed ? (
+              {(!isCollapsed || isMobile) && (
                 <motion.div
-                  key="collapsed-logo"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#002C64] text-sm font-bold flex-shrink-0"
-                >
-                  TT
-                </motion.div>
-              ) : (
-                <motion.span
-                  key="expanded-logo"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="text-xl font-bold text-white"
+                  transition={{ duration: 0.2 }}
+                  className="flex flex-col whitespace-nowrap overflow-hidden"
                 >
-                  TicketTeam
-                </motion.span>
+                  <span className="text-lg font-bold text-white tracking-tight">TicketTeam</span>
+                  <span className="text-[10px] text-white/60 uppercase tracking-wider font-medium">Enterprise</span>
+                </motion.div>
               )}
             </AnimatePresence>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2 mt-4 overflow-y-auto min-h-0">
+        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto min-h-0 scrollbar-none">
           {filteredNavItems.map((item, index) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
             
-            return (
-              <motion.div
-                key={item.href}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
+            const LinkContent = (
+              <Link
+                href={item.href}
+                onClick={() => isMobileOpen && setIsMobileOpen(false)}
+                className={cn(
+                  "relative flex items-center w-full h-11 px-3 rounded-xl transition-all duration-300 group",
+                  isCollapsed && !isMobile ? "justify-center" : "",
+                  isActive 
+                    ? "bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.05)] border border-white/10" 
+                    : "text-white/70 hover:text-white hover:bg-white/5"
+                )}
               >
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "group relative flex items-center w-full h-12 px-3 rounded-md overflow-hidden",
-                    "transition-colors duration-200",
-                    isActive
-                      ? "bg-white text-[#002C64] font-medium nav-item-active"
-                      : "text-white/90 hover:text-white",
-                    isCollapsed && "justify-center"
-                  )}
-                  onClick={() => isMobileOpen && setIsMobileOpen(false)}
-                >
-                  {/* Hover background with slide effect */}
-                  {!isActive && (
-                    <motion.div
-                      className="absolute inset-0 bg-white/10 rounded-md"
-                      initial={{ x: '-100%', opacity: 0 }}
-                      whileHover={{ x: 0, opacity: 1 }}
-                      transition={{ duration: 0.2, ease: [0.2, 0.7, 0.2, 1] }}
-                    />
-                  )}
-
-                  {/* Icon with hover scale and glow */}
+                {/* Active Indicator (Left Border Glow) */}
+                {isActive && (
                   <motion.div
-                    className="relative z-10"
-                    whileHover={{ scale: isActive ? 1 : 1.1, rotate: isActive ? 0 : 5 }}
+                    layoutId="activeIndicator"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-400 rounded-r-full shadow-[0_0_10px_#22d3ee]"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 24 }}
                     transition={{ duration: 0.2 }}
-                  >
-                    <item.icon className={cn(
-                      "h-5 w-5 flex-shrink-0 transition-all duration-200",
-                      !isCollapsed && "mr-3",
-                      !isActive && "group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
-                    )} />
-                  </motion.div>
-                  <AnimatePresence>
-                    {!isCollapsed && (
-                      <motion.div
-                        initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: 'auto' }}
-                        exit={{ opacity: 0, width: 0 }}
-                        className="relative z-10 flex items-center justify-between flex-1 overflow-hidden"
-                      >
-                        <span className="truncate">{item.title}</span>
-                        {item.badge && (
-                          <motion.span
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 500,
-                              damping: 25
-                            }}
-                            className="ml-2 px-2 py-0.5 text-xs rounded-md bg-white/20 text-white whitespace-nowrap"
-                          >
-                            {item.badge}
-                          </motion.span>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </Link>
-              </motion.div>
+                  />
+                )}
+
+                {/* Icon */}
+                <div className={cn(
+                  "relative z-10 flex items-center justify-center transition-transform duration-300",
+                  isActive ? "scale-110 text-cyan-300" : "group-hover:scale-110",
+                  (!isCollapsed || isMobile) && "mr-3"
+                )}>
+                  <item.icon className="h-5 w-5" />
+                </div>
+
+                {/* Label */}
+                <AnimatePresence>
+                  {(!isCollapsed || isMobile) && (
+                    <motion.div
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: 'auto' }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex-1 flex items-center justify-between overflow-hidden whitespace-nowrap"
+                    >
+                      <span className={cn(
+                        "text-sm font-medium transition-colors",
+                        isActive ? "text-white" : "text-white/80 group-hover:text-white"
+                      )}>
+                        {item.title}
+                      </span>
+                      
+                      {/* Badge */}
+                      {item.badge && (
+                        <span className="ml-2 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-white/20 text-white/90 border border-white/10">
+                          {item.badge}
+                        </span>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Hover Glow Effect */}
+                {hoveredItem === item.href && !isActive && (
+                  <motion.div
+                    layoutId="hoverGlow"
+                    className="absolute inset-0 bg-white/5 rounded-xl z-0"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                )}
+              </Link>
+            )
+
+            return (
+              <div
+                key={item.href}
+                onMouseEnter={() => setHoveredItem(item.href)}
+                onMouseLeave={() => setHoveredItem(null)}
+                className="relative"
+              >
+                {isCollapsed && !isMobile ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      {LinkContent}
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="right" 
+                      sideOffset={5}
+                      className="bg-[#002C64]/90 backdrop-blur-md text-white border-white/10 shadow-xl text-xs font-medium px-3 py-1.5 rounded-lg"
+                    >
+                      <p>{item.title}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  LinkContent
+                )}
+              </div>
             )
           })}
         </nav>
 
-        {/* User info */}
-        <div className={cn(
-          "p-4 border-t border-white/10",
-          isCollapsed && "flex justify-center"
-        )}>
-          <AnimatePresence mode="wait">
-            {isCollapsed ? (
-              <motion.div
-                key="collapsed-user"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#002C64] text-sm font-medium flex-shrink-0"
-              >
-                {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="expanded-user"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className="overflow-hidden"
-              >
-                <div className="flex items-center gap-3 p-3 rounded-[12px] bg-white/10">
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#002C64] text-sm font-medium flex-shrink-0">
-                    {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
-                      {user.full_name || 'User'}
-                    </p>
-                    <p className="text-xs text-white/70 truncate capitalize">
-                      {user.role.replace('_', ' ')}
-                    </p>
-                  </div>
+        {/* User Profile Section */}
+        <div className="p-4 mt-auto">
+          <div className={cn(
+            "relative rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md overflow-hidden transition-all duration-300 group",
+            isCollapsed && !isMobile ? "p-2" : "p-3",
+            "hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-black/10"
+          )}>
+            <div className={cn(
+              "flex items-center",
+              isCollapsed && !isMobile ? "justify-center" : "gap-3"
+            )}>
+              {/* Avatar */}
+              <div className="relative flex-shrink-0">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white/10">
+                  {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#002C64] rounded-full" />
+              </div>
+
+              {/* User Info */}
+              {(!isCollapsed || isMobile) && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">
+                    {user.full_name || 'User'}
+                  </p>
+                  <p className="text-xs text-white/60 truncate capitalize">
+                    {user.role.replace('_', ' ')}
+                  </p>
+                </div>
+              )}
+
+              {/* Settings/Logout Action */}
+              {(!isCollapsed || isMobile) && (
+                <button className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors">
+                  <LogOut className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </motion.aside>
-    </>
+    </TooltipProvider>
   )
 }
