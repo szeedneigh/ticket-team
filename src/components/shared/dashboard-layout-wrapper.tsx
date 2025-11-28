@@ -7,6 +7,7 @@ import { Navbar } from './navbar'
 import { BackToTop } from './back-to-top'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { User } from '@/lib/types/users'
+import { usePreferences } from '@/providers/preferences-provider'
 
 // Dynamically import Sidebar with framer-motion to reduce initial bundle size
 const Sidebar = dynamic(() => import('./sidebar').then(mod => ({ default: mod.Sidebar })), {
@@ -28,20 +29,27 @@ interface DashboardLayoutWrapperProps {
 }
 
 export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrapperProps) {
+  const { preferences } = usePreferences()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [scrollState, setScrollState] = useState({ atTop: true, atBottom: false })
   const [isHydrated, setIsHydrated] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
 
-  // Load collapsed state from localStorage on mount (after hydration)
+  // Load collapsed state from preferences or localStorage on mount (after hydration)
   useEffect(() => {
     setIsHydrated(true)
-    const saved = localStorage.getItem('sidebar-collapsed')
-    if (saved !== null) {
-      setIsCollapsed(saved === 'true')
+    
+    // Priority: user preferences > localStorage
+    if (preferences && preferences.sidebar_collapsed !== undefined) {
+      setIsCollapsed(preferences.sidebar_collapsed)
+    } else {
+      const saved = localStorage.getItem('sidebar-collapsed')
+      if (saved !== null) {
+        setIsCollapsed(saved === 'true')
+      }
     }
-  }, [])
+  }, [preferences])
 
   // Save collapsed state to localStorage whenever it changes (after hydration)
   useEffect(() => {
@@ -110,9 +118,8 @@ export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrappe
             )}
           />
         </div>
+        <BackToTop target={mainRef} />
       </div>
-      <BackToTop />
     </div>
   )
 }
-
