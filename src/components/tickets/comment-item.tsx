@@ -1,5 +1,3 @@
-'use client'
-
 import { formatDistanceToNow } from 'date-fns'
 import { Lock, Paperclip } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
