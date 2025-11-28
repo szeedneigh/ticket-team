@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback, memo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -42,7 +42,7 @@ export interface DataTableProps {
 
 type SortDirection = 'asc' | 'desc' | null
 
-export function DataTable({
+export const DataTable = memo(function DataTable({
   title,
   description,
   columns,
@@ -57,51 +57,60 @@ export function DataTable({
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
   const [currentPage, setCurrentPage] = useState(1)
 
-  // Handle sorting
-  const handleSort = (key: string) => {
-    if (sortKey === key) {
-      // Cycle through: asc -> desc -> null
-      if (sortDirection === 'asc') {
-        setSortDirection('desc')
-      } else if (sortDirection === 'desc') {
-        setSortDirection(null)
-        setSortKey(null)
+  // Handle sorting - useCallback for stable reference
+  const handleSort = useCallback((key: string) => {
+    setSortKey((prevKey) => {
+      if (prevKey === key) {
+        // Cycle through: asc -> desc -> null
+        setSortDirection((prevDir) => {
+          if (prevDir === 'asc') return 'desc'
+          if (prevDir === 'desc') {
+            setSortKey(null)
+            return null
+          }
+          return 'asc'
+        })
+        return prevKey
       } else {
         setSortDirection('asc')
+        setCurrentPage(1) // Reset to first page on sort
+        return key
       }
-    } else {
-      setSortKey(key)
-      setSortDirection('asc')
-    }
-    setCurrentPage(1) // Reset to first page on sort
-  }
+    })
+  }, [])
 
-  // Sort data
-  const sortedData = [...data].sort((a, b) => {
-    if (!sortKey || !sortDirection) return 0
+  // Sort data - memoize expensive sort operation
+  const sortedData = useMemo(() => {
+    if (!sortKey || !sortDirection) return data
 
-    const aValue = a[sortKey]
-    const bValue = b[sortKey]
+    return [...data].sort((a, b) => {
+      const aValue = a[sortKey]
+      const bValue = b[sortKey]
 
-    if (aValue === bValue) return 0
+      if (aValue === bValue) return 0
 
-    // Cast to string for comparison (handles strings, numbers converted to strings)
-    const aStr = String(aValue ?? '')
-    const bStr = String(bValue ?? '')
-    const comparison = aStr > bStr ? 1 : -1
-    return sortDirection === 'asc' ? comparison : -comparison
-  })
+      // Cast to string for comparison (handles strings, numbers converted to strings)
+      const aStr = String(aValue ?? '')
+      const bStr = String(bValue ?? '')
+      const comparison = aStr > bStr ? 1 : -1
+      return sortDirection === 'asc' ? comparison : -comparison
+    })
+  }, [data, sortKey, sortDirection])
 
-  // Paginate data
-  const totalPages = Math.ceil(sortedData.length / pageSize)
-  const startIndex = (currentPage - 1) * pageSize
-  const endIndex = startIndex + pageSize
-  const paginatedData = showPagination
-    ? sortedData.slice(startIndex, endIndex)
-    : sortedData
+  // Paginate data - memoize pagination calculation
+  const paginationInfo = useMemo(() => {
+    const totalPages = Math.ceil(sortedData.length / pageSize)
+    const startIndex = (currentPage - 1) * pageSize
+    const endIndex = startIndex + pageSize
+    const paginatedData = showPagination
+      ? sortedData.slice(startIndex, endIndex)
+      : sortedData
 
-  // Render sort icon
-  const renderSortIcon = (columnKey: string) => {
+    return { totalPages, startIndex, endIndex, paginatedData }
+  }, [sortedData, currentPage, pageSize, showPagination])
+
+  // Render sort icon - useCallback for stable reference
+  const renderSortIcon = useCallback((columnKey: string) => {
     if (sortKey !== columnKey) {
       return <ArrowUpDownIcon className="ml-2 h-4 w-4" />
     }
@@ -110,7 +119,7 @@ export function DataTable({
     ) : (
       <ArrowDownIcon className="ml-2 h-4 w-4" />
     )
-  }
+  }, [sortKey, sortDirection])
 
   return (
     <Card className={className}>
@@ -156,7 +165,7 @@ export function DataTable({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedData.length === 0 ? (
+                  {paginationInfo.paginatedData.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={columns.length}
@@ -166,7 +175,7 @@ export function DataTable({
                       </TableCell>
                     </TableRow>
                   ) : (
-                    paginatedData.map((row, rowIndex) => (
+                    paginationInfo.paginatedData.map((row, rowIndex) => (
                       <TableRow key={rowIndex}>
                         {columns.map((column) => (
                           <TableCell
@@ -189,10 +198,10 @@ export function DataTable({
             </div>
 
             {/* Pagination */}
-            {showPagination && totalPages > 1 && (
+            {showPagination && paginationInfo.totalPages > 1 && (
               <div className="mt-4 flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  Showing {startIndex + 1} to {Math.min(endIndex, sortedData.length)} of{' '}
+                  Showing {paginationInfo.startIndex + 1} to {Math.min(paginationInfo.endIndex, sortedData.length)} of{' '}
                   {sortedData.length} results
                 </p>
                 <div className="flex items-center gap-2">
@@ -205,13 +214,13 @@ export function DataTable({
                     Previous
                   </Button>
                   <span className="text-sm">
-                    Page {currentPage} of {totalPages}
+                    Page {currentPage} of {paginationInfo.totalPages}
                   </span>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(paginationInfo.totalPages, p + 1))}
+                    disabled={currentPage === paginationInfo.totalPages}
                   >
                     Next
                   </Button>
@@ -223,4 +232,4 @@ export function DataTable({
       </CardContent>
     </Card>
   )
-}
+})

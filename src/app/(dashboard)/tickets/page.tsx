@@ -21,6 +21,11 @@ import type { TicketStatus } from '@/lib/types/database'
 import { isStaffOrAbove } from '@/lib/types/database'
 import { PAGINATION } from '@/lib/constants'
 
+export const metadata = {
+  title: 'My Tickets | Ticket Team',
+  description: 'View and manage your support tickets',
+}
+
 interface PageProps {
   searchParams: Promise<{
     status?: string

@@ -19,164 +19,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getAnalyticsReport } from '@/lib/analytics/queries'
 import { ERROR_MESSAGES } from '@/lib/constants'
 import { logger } from '@/lib/logger'
-import type { AnalyticsFilters, ExportFormat, AnalyticsReport } from '@/lib/types/analytics'
-import Papa from 'papaparse'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
+import type { AnalyticsFilters, ExportFormat } from '@/lib/types/analytics'
 import { format as formatDate } from 'date-fns'
-
-// ============================================================================
-// CSV Export Helper
-// ============================================================================
-
-function generateCSVReport(report: AnalyticsReport, filters?: AnalyticsFilters): string {
-  const sections: string[] = []
-
-  // Header
-  sections.push('Analytics Report')
-  if (filters?.dateRange) {
-    sections.push(`Period: ${formatDate(filters.dateRange.start, 'MMM dd, yyyy')} - ${formatDate(filters.dateRange.end, 'MMM dd, yyyy')}`)
-  }
-  sections.push(`Generated: ${formatDate(new Date(), 'MMM dd, yyyy HH:mm')}`)
-  sections.push('')
-
-  // Summary
-  sections.push('SUMMARY')
-  sections.push(Papa.unparse([
-    ['Metric', 'Value'],
-    ['Total Tickets', report.summary.totalTickets],
-    ['Open Tickets', report.summary.openTickets],
-    ['Resolved', report.summary.resolvedTickets],
-    ['Closed', report.summary.closedTickets],
-    ['Overdue', report.summary.overdueTickets],
-    ['Avg Resolution Time', report.summary.avgResolutionTime],
-    ['Avg Response Time', report.summary.avgResponseTime],
-    ['Satisfaction Score', report.summary.satisfactionScore.toFixed(2)],
-  ]))
-  sections.push('')
-
-  // Category Distribution
-  sections.push('CATEGORY DISTRIBUTION')
-  sections.push(Papa.unparse([
-    ['Category', 'Count', 'Percentage'],
-    ...report.categoryDistribution.map(c => [c.category, c.count, `${c.percentage.toFixed(1)}%`])
-  ]))
-  sections.push('')
-
-  // Priority Distribution
-  sections.push('PRIORITY DISTRIBUTION')
-  sections.push(Papa.unparse([
-    ['Priority', 'Count', 'Percentage'],
-    ...report.priorityDistribution.map(p => [p.priority, p.count, `${p.percentage.toFixed(1)}%`])
-  ]))
-  sections.push('')
-
-  // Status Distribution
-  sections.push('STATUS DISTRIBUTION')
-  sections.push(Papa.unparse([
-    ['Status', 'Count', 'Percentage'],
-    ...report.statusDistribution.map(s => [s.status, s.count, `${s.percentage.toFixed(1)}%`])
-  ]))
-  sections.push('')
-
-  // Staff Performance
-  sections.push('STAFF PERFORMANCE')
-  sections.push(Papa.unparse([
-    ['Staff', 'Assigned', 'Resolved', 'Avg Resolution', 'Satisfaction'],
-    ...report.staffPerformance.map(s => [
-      s.userName,
-      s.ticketsAssigned,
-      s.ticketsResolved,
-      s.avgResolutionTime,
-      s.satisfactionScore ? s.satisfactionScore.toFixed(1) : 'N/A'
-    ])
-  ]))
-  sections.push('')
-
-  // Satisfaction
-  sections.push('SATISFACTION BREAKDOWN')
-  sections.push(Papa.unparse([
-    ['Overall Score', report.satisfactionBreakdown.overallScore.toFixed(2)],
-    ['Total Responses', report.satisfactionBreakdown.totalResponses],
-    [''],
-    ['Rating', 'Count', 'Percentage'],
-    ...report.satisfactionBreakdown.distribution.map(d => [`${d.rating} stars`, d.count, `${d.percentage.toFixed(1)}%`])
-  ]))
-  sections.push('')
-
-  // SLA Compliance
-  sections.push('SLA COMPLIANCE')
-  sections.push(Papa.unparse([
-    ['Metric', 'Value'],
-    ['Overall Compliance', `${report.slaCompliance.overall.toFixed(1)}%`],
-    ['Within SLA', report.slaCompliance.withinSLA],
-    ['Breached SLA', report.slaCompliance.breachedSLA],
-    ['Avg Breach Time', report.slaCompliance.averageBreachTime],
-  ]))
-
-  return sections.join('\n')
-}
-
-// ============================================================================
-// PDF Export Helper
-// ============================================================================
-
-function generatePDFReport(report: AnalyticsReport, filters?: AnalyticsFilters): ArrayBuffer {
-  const doc = new jsPDF()
-  let yPos = 20
-
-  // Title
-  doc.setFontSize(20)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Analytics Report', 105, yPos, { align: 'center' })
-  yPos += 10
-
-  // Date range
-  if (filters?.dateRange) {
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`Period: ${formatDate(filters.dateRange.start, 'MMM dd, yyyy')} - ${formatDate(filters.dateRange.end, 'MMM dd, yyyy')}`, 105, yPos, { align: 'center' })
-    yPos += 15
-  }
-
-  // Summary
-  doc.setFontSize(14)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Summary', 14, yPos)
-  yPos += 5
-
-  autoTable(doc, {
-    startY: yPos,
-    head: [['Metric', 'Value']],
-    body: [
-      ['Total Tickets', report.summary.totalTickets.toString()],
-      ['Open', report.summary.openTickets.toString()],
-      ['Resolved', report.summary.resolvedTickets.toString()],
-      ['Avg Resolution', report.summary.avgResolutionTime],
-      ['Satisfaction', report.summary.satisfactionScore.toFixed(2)],
-    ],
-    theme: 'grid',
-    headStyles: { fillColor: [41, 128, 185] },
-  })
-
-  yPos = (doc as any).lastAutoTable.finalY + 10
-
-  // Category Distribution
-  doc.setFontSize(14)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Categories', 14, yPos)
-  yPos += 5
-
-  autoTable(doc, {
-    startY: yPos,
-    head: [['Category', 'Count', 'Percentage']],
-    body: report.categoryDistribution.map(c => [c.category, c.count.toString(), `${c.percentage.toFixed(1)}%`]),
-    theme: 'striped',
-    headStyles: { fillColor: [41, 128, 185] },
-  })
-
-  return doc.output('arraybuffer')
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -292,6 +136,8 @@ export async function GET(request: NextRequest) {
         })
 
       case 'csv': {
+        // Dynamically import CSV generator only when needed
+        const { generateCSVReport } = await import('@/lib/exports/csv-generator')
         const csvContent = generateCSVReport(report, filters)
         const filename = `analytics-report-${formatDate(new Date(), 'yyyy-MM-dd')}.csv`
         return new NextResponse(csvContent, {
@@ -304,6 +150,8 @@ export async function GET(request: NextRequest) {
       }
 
       case 'pdf': {
+        // Dynamically import PDF generator only when needed
+        const { generatePDFReport } = await import('@/lib/exports/pdf-generator')
         const pdfBuffer = generatePDFReport(report, filters)
         const filename = `analytics-report-${formatDate(new Date(), 'yyyy-MM-dd')}.pdf`
         return new NextResponse(pdfBuffer, {

@@ -1,7 +1,12 @@
 import { requireAuth } from '@/lib/auth/session'
 import { createClient } from '@/lib/supabase/server'
-import { ProfileClient } from '@/components/profile/profile-client'
+import { ProfileTabs } from '@/components/profile/profile-tabs'
 import { logger } from '@/lib/logger'
+
+export const metadata = {
+  title: 'Profile | Ticket Team',
+  description: 'Manage your profile and account settings',
+}
 
 export default async function ProfilePage() {
   const user = await requireAuth()
@@ -39,8 +44,8 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="space-y-8">
-      <ProfileClient user={user} ticketStats={ticketStats} />
+    <div className="container mx-auto py-8 px-4 max-w-7xl">
+      <ProfileTabs user={user} ticketStats={ticketStats} />
     </div>
   )
 }

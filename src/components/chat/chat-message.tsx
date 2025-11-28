@@ -15,9 +15,11 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import rehypeHighlight from 'rehype-highlight'
 import { formatDistanceToNow } from 'date-fns'
+import { motion } from 'framer-motion'
 import { Copy, Check, Bot, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FeedbackButtons } from './feedback-buttons'
@@ -71,9 +73,13 @@ export function ChatMessage({
   }
 
   return (
-    <div
+    <motion.div
+      initial={{ y: 10, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.2, ease: [0.2, 0.7, 0.2, 1] }}
       className={cn(
-        'group flex gap-3 px-4 py-6 transition-colors hover:bg-muted/50',
+        'group flex gap-4 px-4 md:px-6 py-6',
+        'border-b border-border/30',
         isUser && 'justify-end'
       )}
       role="article"
@@ -81,34 +87,47 @@ export function ChatMessage({
     >
       {/* Avatar */}
       {!isUser && (
-        <div
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.2 }}
           className={cn(
-            'flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full border',
-            isAssistant ? 'border-primary/20 bg-primary/10' : 'border-border bg-muted'
+            'flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full',
+            isAssistant
+              ? 'bg-gradient-to-br from-[#2cafdd]/20 to-[#1f3463]/10 border-2 border-[#2cafdd]/30 shadow-[0_0_12px_rgba(44,175,221,0.15)]'
+              : 'border border-border bg-muted'
           )}
           aria-hidden="true"
         >
           {isAssistant ? (
-            <Bot className="h-4 w-4 text-primary" />
+            <Image
+              src="/assets/timi-bot1.svg"
+              alt="Timi AI Assistant"
+              width={32}
+              height={32}
+              className="h-8 w-8 object-contain"
+              priority
+            />
           ) : (
             <User className="h-4 w-4 text-muted-foreground" />
           )}
-        </div>
+        </motion.div>
       )}
 
       {/* Message Content */}
       <div
         className={cn(
-          'flex flex-1 flex-col gap-2',
+          'flex flex-1 flex-col gap-3',
           isUser && 'items-end'
         )}
       >
         {/* Message Bubble */}
         <div
           className={cn(
-            'relative max-w-[85%] rounded-2xl px-4 py-3',
+            'relative rounded-xl px-4 py-3',
+            'max-w-[90%] sm:max-w-[80%] md:max-w-[75%]',
             isUser
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-gradient-to-r from-[#1f3463] to-[#2cafdd] text-white'
               : 'bg-muted text-foreground',
             isStreaming && 'animate-pulse'
           )}
@@ -128,55 +147,61 @@ export function ChatMessage({
               {/* Markdown Content */}
               <div
                 className={cn(
-                  'prose prose-sm max-w-none',
+                  'prose prose-sm max-w-none break-words leading-7',
                   isUser
-                    ? 'prose-invert prose-headings:text-primary-foreground prose-p:text-primary-foreground prose-strong:text-primary-foreground prose-a:text-primary-foreground/90 prose-code:text-primary-foreground'
-                    : 'prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground dark:prose-invert'
+                    ? 'prose-invert prose-headings:text-primary-foreground prose-p:text-primary-foreground prose-strong:text-primary-foreground prose-a:text-primary-foreground/90 prose-code:text-primary-foreground prose-li:text-primary-foreground'
+                    : 'text-foreground prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-a:text-primary prose-li:text-foreground prose-code:text-foreground dark:prose-invert'
                 )}
               >
-                <ReactMarkdown
-                  rehypePlugins={[rehypeHighlight]}
-                  components={{
-                    // Customize code blocks
-                    code: ({ inline, className, children, ...props }) => {
-                      const match = /language-(\w+)/.exec(className || '')
-                      return !inline && match ? (
-                        <code className={className} {...props}>
-                          {children}
-                        </code>
-                      ) : (
-                        <code
-                          className={cn(
-                            'rounded bg-muted px-1.5 py-0.5 text-sm',
-                            isUser && 'bg-primary-foreground/20'
-                          )}
+{content && content.trim() ? (
+                  <ReactMarkdown
+                    rehypePlugins={[rehypeHighlight]}
+                    components={{
+                      // Customize code blocks
+                      code: ({ className, children, ...props }) => {
+                        const match = /language-(\w+)/.exec(className || '')
+                        // Check if it's a code block (has language class) or inline code
+                        const isBlock = match && className
+                        return isBlock ? (
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        ) : (
+                          <code
+                            className={cn(
+                              'rounded bg-muted px-1.5 py-0.5 text-sm',
+                              isUser && 'bg-primary-foreground/20'
+                            )}
+                            {...props}
+                          >
+                            {children}
+                          </code>
+                        )
+                      },
+                      // Customize links
+                      a: ({ children, ...props }) => (
+                        <a
                           {...props}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline underline-offset-2 hover:no-underline"
                         >
                           {children}
-                        </code>
-                      )
-                    },
-                    // Customize links
-                    a: ({ children, ...props }) => (
-                      <a
-                        {...props}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline underline-offset-2 hover:no-underline"
-                      >
-                        {children}
-                      </a>
-                    ),
-                    // Customize paragraphs
-                    p: ({ children, ...props }) => (
-                      <p className="mb-2 last:mb-0" {...props}>
-                        {children}
-                      </p>
-                    ),
-                  }}
-                >
-                  {content}
-                </ReactMarkdown>
+                        </a>
+                      ),
+                      // Customize paragraphs
+                      p: ({ children, ...props }) => (
+                        <p className="mb-2 last:mb-0" {...props}>
+                          {children}
+                        </p>
+                      ),
+                    }}
+                  >
+                    {content}
+                  </ReactMarkdown>
+                ) : (
+                  <span className="text-muted-foreground italic">No content</span>
+                )}
               </div>
 
               {/* Copy Button (AI messages only) */}
@@ -206,7 +231,7 @@ export function ChatMessage({
             isUser && 'items-end'
           )}
         >
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70">
             {/* Timestamp */}
             {timestamp && (
               <time
@@ -253,19 +278,19 @@ export function ChatMessage({
                     href={`/kb/${source.article_id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group/source flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm transition-colors hover:border-primary hover:bg-muted"
+                    className="group/source flex items-center gap-2 rounded-lg bg-background border border-border px-3 py-2 text-sm transition-colors hover:border-[#2cafdd]"
                   >
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-medium group-hover/source:text-primary">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-semibold text-sm group-hover/source:text-[#2cafdd] transition-colors">
                         {source.title}
                       </span>
                       {category && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">
                           {category}
                         </span>
                       )}
-                      <span className="text-xs text-muted-foreground">
-                        {(source.similarity * 100).toFixed(0)}% relevance
+                      <span className="text-xs font-medium text-[#2cafdd]">
+                        {(source.similarity * 100).toFixed(0)}% match
                       </span>
                     </div>
                   </a>
@@ -285,6 +310,6 @@ export function ChatMessage({
           <User className="h-4 w-4 text-primary" />
         </div>
       )}
-    </div>
+    </motion.div>
   )
 }

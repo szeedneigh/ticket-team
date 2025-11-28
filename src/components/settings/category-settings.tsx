@@ -29,6 +29,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import Link from 'next/link'
+import {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from '@/app/actions/categories'
 
 interface Category {
   id: string
@@ -49,7 +55,6 @@ export function CategorySettings() {
     parent_id: null as string | null,
   })
   const [isLoading, setIsLoading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     loadCategories()
@@ -58,51 +63,16 @@ export function CategorySettings() {
   const loadCategories = async () => {
     setIsLoading(true)
     try {
-      // TODO: Fetch from Supabase categories table
-      const saved = localStorage.getItem('categories')
-      if (saved) {
-        setCategories(JSON.parse(saved))
+      const result = await getCategories()
+
+      if (result.success && result.data) {
+        setCategories(result.data as Category[])
       } else {
-        // Default categories from database seed
-        const defaultCategories: Category[] = [
-          {
-            id: '1',
-            name: 'Hardware',
-            type: 'ticket',
-            is_active: true,
-            ticket_count: 15,
-          },
-          {
-            id: '2',
-            name: 'Software',
-            type: 'ticket',
-            is_active: true,
-            ticket_count: 22,
-          },
-          {
-            id: '3',
-            name: 'Network',
-            type: 'ticket',
-            is_active: true,
-            ticket_count: 8,
-          },
-          {
-            id: '4',
-            name: 'Getting Started',
-            type: 'knowledge_base',
-            is_active: true,
-            article_count: 5,
-          },
-          {
-            id: '5',
-            name: 'Troubleshooting',
-            type: 'both',
-            is_active: true,
-            ticket_count: 10,
-            article_count: 12,
-          },
-        ]
-        setCategories(defaultCategories)
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to load categories',
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error('Error loading categories:', error)
@@ -116,7 +86,7 @@ export function CategorySettings() {
     }
   }
 
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (!newCategory.name.trim()) {
       toast({
         title: 'Validation Error',
@@ -126,85 +96,108 @@ export function CategorySettings() {
       return
     }
 
-    const category: Category = {
-      id: Date.now().toString(),
-      name: newCategory.name.trim(),
-      type: newCategory.type,
-      parent_id: newCategory.parent_id,
-      is_active: true,
-      article_count: 0,
-      ticket_count: 0,
-    }
-
-    setCategories([...categories, category])
-    setNewCategory({ name: '', type: 'both', parent_id: null })
-
-    toast({
-      title: 'Success',
-      description: `Category "${category.name}" added`,
-    })
-  }
-
-  const handleDeleteCategory = (id: string) => {
-    const category = categories.find((c) => c.id === id)
-    if (!category) return
-
-    const totalUsage = (category.ticket_count || 0) + (category.article_count || 0)
-    if (totalUsage > 0) {
-      toast({
-        title: 'Cannot Delete',
-        description: `Cannot delete category with ${totalUsage} items. Reassign items first.`,
-        variant: 'destructive',
-      })
-      return
-    }
-
-    // Check if it's a parent category
-    const hasChildren = categories.some((c) => c.parent_id === id)
-    if (hasChildren) {
-      toast({
-        title: 'Cannot Delete',
-        description: 'Cannot delete category with subcategories. Delete subcategories first.',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    setCategories(categories.filter((c) => c.id !== id))
-
-    toast({
-      title: 'Success',
-      description: 'Category deleted',
-    })
-  }
-
-  const handleToggleActive = (id: string) => {
-    setCategories(
-      categories.map((c) =>
-        c.id === id ? { ...c, is_active: !c.is_active } : c
-      )
-    )
-  }
-
-  const handleSave = async () => {
-    setIsSaving(true)
+    setIsLoading(true)
     try {
-      // TODO: Save to Supabase categories table via API
-      localStorage.setItem('categories', JSON.stringify(categories))
-
-      toast({
-        title: 'Success',
-        description: 'Categories saved successfully',
+      const result = await createCategory({
+        name: newCategory.name.trim(),
+        type: newCategory.type,
+        parent_id: newCategory.parent_id,
+        is_active: true,
+        display_order: 0, // Will be auto-assigned by server action
       })
+
+      if (result.success && result.data) {
+        toast({
+          title: 'Success',
+          description: `Category "${result.data.name}" created`,
+        })
+        setNewCategory({ name: '', type: 'both', parent_id: null })
+        // Reload categories to get updated list
+        await loadCategories()
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to create category',
+          variant: 'destructive',
+        })
+      }
     } catch (error) {
-      console.error('Error saving categories:', error)
+      console.error('Error creating category:', error)
       toast({
         title: 'Error',
-        description: 'Failed to save categories',
+        description: 'Failed to create category',
         variant: 'destructive',
       })
     } finally {
-      setIsSaving(false)
+      setIsLoading(false)
+    }
+  }
+
+  const handleDeleteCategory = async (id: string) => {
+    setIsLoading(true)
+    try {
+      const result = await deleteCategory(id, false) // Soft delete by default
+
+      if (result.success) {
+        toast({
+          title: 'Success',
+          description: 'Category deactivated',
+        })
+        // Reload categories to get updated list
+        await loadCategories()
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to delete category',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete category',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleToggleActive = async (id: string) => {
+    const category = categories.find((c) => c.id === id)
+    if (!category) return
+
+    setIsLoading(true)
+    try {
+      const result = await updateCategory({
+        id,
+        is_active: !category.is_active,
+      })
+
+      if (result.success) {
+        toast({
+          title: 'Success',
+          description: `Category ${!category.is_active ? 'activated' : 'deactivated'}`,
+        })
+        // Reload categories to get updated list
+        await loadCategories()
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to update category',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      console.error('Error updating category:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to update category',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -364,15 +357,11 @@ export function CategorySettings() {
         )}
       </div>
 
-      {/* Save Button */}
+      {/* Refresh Button - Categories are saved immediately on each action */}
       <div className="flex justify-end gap-2 pt-4 border-t">
-        <Button variant="outline" onClick={loadCategories} disabled={isSaving}>
+        <Button variant="outline" onClick={loadCategories} disabled={isLoading}>
           <RefreshCw className="mr-2 h-4 w-4" />
-          Reset
-        </Button>
-        <Button onClick={handleSave} disabled={isSaving}>
-          <Save className="mr-2 h-4 w-4" />
-          {isSaving ? 'Saving...' : 'Save Changes'}
+          Refresh
         </Button>
       </div>
     </div>

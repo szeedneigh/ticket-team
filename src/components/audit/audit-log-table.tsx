@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useCallback, memo } from 'react'
 import Link from 'next/link'
 import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, FileText, User } from 'lucide-react'
 import {
@@ -41,7 +41,7 @@ interface AuditLogTableProps {
   onPageChange: (page: number) => void
 }
 
-export function AuditLogTable({
+export const AuditLogTable = memo(function AuditLogTable({
   logs,
   pagination,
   sortField,
@@ -49,7 +49,8 @@ export function AuditLogTable({
   onSort,
   onPageChange,
 }: AuditLogTableProps) {
-  const renderSortIcon = (field: AuditLogSortField) => {
+  // Memoize render sort icon function
+  const renderSortIcon = useCallback((field: AuditLogSortField) => {
     if (sortField !== field) {
       return <ArrowUpDown className="ml-2 h-3 w-3" />
     }
@@ -58,18 +59,20 @@ export function AuditLogTable({
     ) : (
       <ArrowDown className="ml-2 h-3 w-3" />
     )
-  }
+  }, [sortField, sortOrder])
 
-  const formatDate = (dateString: string) => {
+  // Memoize format date function
+  const formatDate = useCallback((dateString: string) => {
     const date = new Date(dateString)
     return {
       date: date.toLocaleDateString(),
       time: date.toLocaleTimeString(),
       relative: formatDistanceToNow(date, { addSuffix: true }),
     }
-  }
+  }, [])
 
-  const renderValue = (value: string | null) => {
+  // Memoize render value function
+  const renderValue = useCallback((value: string | null) => {
     if (!value || value === 'null') return <span className="text-muted-foreground">—</span>
     if (value.length > 50) {
       return (
@@ -79,10 +82,10 @@ export function AuditLogTable({
       )
     }
     return <span className="text-xs">{value}</span>
-  }
+  }, [])
 
-  // Generate page numbers
-  const generatePageNumbers = () => {
+  // Generate page numbers - memoize expensive computation
+  const pageNumbers = useMemo(() => {
     const pages: (number | 'ellipsis')[] = []
     const { page, totalPages } = pagination
 
@@ -116,7 +119,7 @@ export function AuditLogTable({
     }
 
     return pages
-  }
+  }, [pagination])
 
   if (logs.length === 0) {
     return (
@@ -260,7 +263,7 @@ export function AuditLogTable({
                 />
               </PaginationItem>
 
-              {generatePageNumbers().map((pageNum, idx) => (
+              {pageNumbers.map((pageNum, idx) => (
                 <PaginationItem key={idx}>
                   {pageNum === 'ellipsis' ? (
                     <PaginationEllipsis />
@@ -292,5 +295,5 @@ export function AuditLogTable({
       )}
     </div>
   )
-}
+})
 

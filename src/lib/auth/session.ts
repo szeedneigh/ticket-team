@@ -65,31 +65,36 @@ export const getUser = cache(async (): Promise<User | null> => {
  * Require authentication
  * Redirects to sign-in page if not authenticated
  *
- * E2E Test Bypass: If X-E2E-Test-Auth header is present with value 'bypass',
- * returns a mock user for testing purposes.
+ * E2E Test Bypass: Only works in development/test with secret token
  *
  * @returns The authenticated user
  */
 export async function requireAuth(): Promise<User> {
-  // E2E Test Bypass Mode
-  // Check for bypass header from Playwright tests
-  const headersList = await headers()
-  const bypassHeader = headersList.get('x-e2e-test-auth')
+  // E2E Test Bypass Mode - ONLY FOR DEVELOPMENT/TEST
+  // SECURITY: Production never allows bypass
+  if (process.env.NODE_ENV !== 'production') {
+    const headersList = await headers()
+    const bypassHeader = headersList.get('x-e2e-test-auth')
+    const bypassSecret = process.env.E2E_BYPASS_SECRET
 
-  if (bypassHeader === 'bypass') {
-    console.log('[E2E Test Mode] Auth bypass enabled in requireAuth()')
-    // Return a mock test user for E2E tests
-    return {
-      id: '49a84551-f65c-420a-b5f1-97e1b814e41b',
-      email: 'test@laverdad.edu.ph',
-      full_name: 'Test User',
-      role: 'admin',
-      avatar_url: null,
-      deactivated_at: null,
-      deactivated_by: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    } as User
+    if (bypassHeader && bypassHeader === bypassSecret) {
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[E2E Test Mode] Auth bypass enabled in requireAuth()')
+      }
+      // Return a mock test user for E2E tests
+      return {
+        id: '49a84551-f65c-420a-b5f1-97e1b814e41b',
+        email: 'test@laverdad.edu.ph',
+        full_name: 'Test User',
+        role: 'admin',
+        avatar_url: null,
+        deactivated_at: null,
+        deactivated_by: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as User
+    }
   }
 
   const user = await getUser()

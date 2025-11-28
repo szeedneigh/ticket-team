@@ -16,15 +16,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
 import { ChatMessage } from './chat-message'
 import { ChatInput } from './chat-input'
 import { ChatWelcome } from './chat-welcome'
 import { ChatSources } from './chat-sources'
 import { EscalateButton } from './escalate-button'
 import { TicketReviewModal } from './ticket-review-modal'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Headset } from 'lucide-react'
 import {
   prepareTicketFromChat,
   createTicketFromChat,
@@ -51,7 +50,7 @@ export interface ChatClientProps {
 }
 
 interface StreamChunk {
-  type: 'context' | 'content' | 'done' | 'error'
+  type: 'context' | 'content' | 'done' | 'error' | 'interaction'
   text?: string
   contextArticles?: RAGContext[]
   confidence?: number
@@ -59,6 +58,7 @@ interface StreamChunk {
   citations?: string[]
   shouldEscalate?: boolean
   error?: string
+  interactionId?: string
 }
 
 // ============================================================================
@@ -76,6 +76,7 @@ export function ChatClient({
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [currentSources, setCurrentSources] = useState<RAGContext[]>([])
+  const [currentInteractionId, setCurrentInteractionId] = useState<string | null>(null)
   const [shouldShowEscalate, setShouldShowEscalate] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -84,17 +85,9 @@ export function ChatClient({
   const [ticketPreparation, setTicketPreparation] = useState<TicketPreparation | null>(null)
   const [isPreparingTicket, setIsPreparingTicket] = useState(false)
 
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  // Auto-scroll to bottom when messages change
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [])
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages, streamingContent, scrollToBottom])
+  const virtuosoRef = useRef<VirtuosoHandle>(null)
+  const streamingContentRef = useRef<string>('')
+  const currentInteractionIdRef = useRef<string | null>(null)
 
   // Notify parent of message changes (for widget state management)
   useEffect(() => {
@@ -120,7 +113,10 @@ export function ChatClient({
     // Start streaming
     setIsStreaming(true)
     setStreamingContent('')
+    streamingContentRef.current = ''
+    currentInteractionIdRef.current = null
     setCurrentSources([])
+    setCurrentInteractionId(null)
 
     try {
       // Build conversation history (last 10 messages for context)
@@ -180,16 +176,40 @@ export function ChatClient({
                 // Received context articles
                 setCurrentSources(chunk.contextArticles || [])
               } else if (chunk.type === 'content' && chunk.text) {
-                // Received text chunk
-                setStreamingContent(prev => prev + chunk.text)
+                // Received text chunk - update both state and ref
+                streamingContentRef.current += chunk.text
+                setStreamingContent(streamingContentRef.current)
+              } else if (chunk.type === 'interaction') {
+                // Received interaction ID for escalation support
+                // Update the last assistant message with the interaction ID
+                if (chunk.interactionId) {
+                  currentInteractionIdRef.current = chunk.interactionId
+                  setMessages(prev => {
+                    const newMessages = [...prev]
+                    // Find the last assistant message and update its metadata
+                    for (let i = newMessages.length - 1; i >= 0; i--) {
+                      if (newMessages[i].role === 'assistant') {
+                        newMessages[i] = {
+                          ...newMessages[i],
+                          metadata: {
+                            ...newMessages[i].metadata,
+                            interaction_id: chunk.interactionId,
+                          },
+                        }
+                        break
+                      }
+                    }
+                    return newMessages
+                  })
+                }
               } else if (chunk.type === 'done') {
-                // Stream complete
-                const finalContent = streamingContent + (chunk.text || '')
+                // Stream complete - use ref for accurate content
+                const finalContent = streamingContentRef.current + (chunk.text || '')
 
-                // Add assistant message
+                // Add assistant message (interaction ID will be added by 'interaction' chunk)
                 const assistantMessage: ChatMessageType = {
                   role: 'assistant',
-                  content: finalContent || streamingContent,
+                  content: finalContent,
                   timestamp: new Date().toISOString(),
                   sources: currentSources,
                 }
@@ -202,6 +222,7 @@ export function ChatClient({
 
                 // Clear streaming state
                 setStreamingContent('')
+                streamingContentRef.current = ''
                 setCurrentSources([])
               } else if (chunk.type === 'error') {
                 // Error occurred - throw to be caught by outer catch block
@@ -289,6 +310,8 @@ export function ChatClient({
       
       // Clear any partial streaming content
       setStreamingContent('')
+      streamingContentRef.current = ''
+      currentInteractionIdRef.current = null
       setCurrentSources([])
     } finally {
       setIsStreaming(false)
@@ -399,26 +422,52 @@ export function ChatClient({
     handleSendMessage(prompt)
   }, [])
 
+  // Prepare items for virtualized list (messages + streaming + escalation)
+  const displayItems = [...messages]
+
+  // Add streaming message
+  if (isStreaming && streamingContent) {
+    displayItems.push({
+      role: 'assistant' as const,
+      content: streamingContent,
+      timestamp: new Date().toISOString(),
+      isStreaming: true,
+    })
+  } else if (isStreaming && !streamingContent) {
+    displayItems.push({
+      role: 'assistant' as const,
+      content: '',
+      timestamp: new Date().toISOString(),
+      isLoading: true,
+    })
+  }
+
   return (
     <div className="flex h-full flex-col">
       {/* Messages Area */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1">
-        <div className="mx-auto max-w-4xl">
+      <div className="flex-1 overflow-hidden">
+        <div className="mx-auto h-full max-w-4xl">
           {messages.length === 0 && !isStreaming ? (
             <ChatWelcome
               onPromptClick={handlePromptClick}
               userName={userName}
             />
           ) : (
-            <div className="flex flex-col">
-              {/* Existing Messages */}
-              {messages.map((message, index) => (
+            <Virtuoso
+              ref={virtuosoRef}
+              style={{ height: '100%' }}
+              data={displayItems}
+              followOutput="smooth"
+              alignToBottom
+              itemContent={(index, message) => (
                 <div key={index}>
                   <ChatMessage
                     role={message.role}
                     content={message.content}
                     timestamp={message.timestamp}
                     sources={message.sources}
+                    isStreaming={message.isStreaming}
+                    isLoading={message.isLoading}
                   />
 
                   {/* Show sources if available */}
@@ -427,53 +476,49 @@ export function ChatClient({
                       <ChatSources sources={message.sources} />
                     </div>
                   )}
+
+                  {/* Escalation Prompt after last message */}
+                  {index === displayItems.length - 1 &&
+                    shouldShowEscalate &&
+                    !isStreaming && (
+                      <div className="px-4 pb-6 pt-2">
+                        <div className="relative overflow-hidden rounded-xl border border-indigo-100 bg-gradient-to-b from-white to-indigo-50/30 p-5 shadow-sm dark:border-indigo-900/30 dark:from-slate-900 dark:to-indigo-950/30">
+                          {/* Decorative background element */}
+                          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-indigo-50/80 blur-3xl dark:bg-indigo-900/10" />
+                          
+                          <div className="relative z-10 flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-400 dark:ring-indigo-900">
+                                <Headset className="h-5 w-5" />
+                              </div>
+                              <div className="space-y-0.5">
+                                <h4 className="text-sm font-semibold text-foreground">
+                                  Need human support?
+                                </h4>
+                                <p className="text-xs text-muted-foreground">
+                                  Our team is ready to help resolve this issue.
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <EscalateButton
+                              onClick={handleEscalateClick}
+                              variant="default"
+                              size="sm"
+                              className="w-full shrink-0 bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 sm:w-auto"
+                            >
+                              Create Ticket
+                            </EscalateButton>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                 </div>
-              ))}
-
-              {/* Streaming Message */}
-              {isStreaming && streamingContent && (
-                <ChatMessage
-                  role="assistant"
-                  content={streamingContent}
-                  isStreaming={true}
-                />
               )}
-
-              {/* Loading Indicator */}
-              {isStreaming && !streamingContent && (
-                <ChatMessage
-                  role="assistant"
-                  content=""
-                  isLoading={true}
-                />
-              )}
-
-              {/* Escalation Button */}
-              {shouldShowEscalate && !isStreaming && (
-                <div className="px-4 pb-4">
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="flex items-center justify-between">
-                      <span>
-                        Can&apos;t find what you need? Create a support ticket for
-                        personalized assistance.
-                      </span>
-                      <EscalateButton
-                        onClick={handleEscalateClick}
-                        variant="default"
-                        size="sm"
-                      />
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              )}
-
-              {/* Scroll anchor */}
-              <div ref={messagesEndRef} />
-            </div>
+            />
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Input Area */}
       <div className="border-t border-border bg-background p-4">

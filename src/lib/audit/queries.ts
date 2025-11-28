@@ -51,15 +51,13 @@ export async function getAuditLogs(
         `
         id,
         ticket_id,
-        activity_type,
-        performed_by,
-        performed_at,
-        field_name,
+        action,
+        user_id,
+        created_at,
         old_value,
         new_value,
-        comment,
         metadata,
-        user:users!ticket_activities_performed_by_fkey(
+        user:users!ticket_activities_user_id_fkey(
           id,
           full_name,
           email,
@@ -76,22 +74,22 @@ export async function getAuditLogs(
 
     // Apply filters
     if (filters.startDate) {
-      query = query.gte('performed_at', filters.startDate)
+      query = query.gte('created_at', filters.startDate)
     }
 
     if (filters.endDate) {
-      query = query.lte('performed_at', filters.endDate)
+      query = query.lte('created_at', filters.endDate)
     }
 
     if (filters.userId) {
-      query = query.eq('performed_by', filters.userId)
+      query = query.eq('user_id', filters.userId)
     }
 
     if (filters.activityType) {
       if (Array.isArray(filters.activityType)) {
-        query = query.in('activity_type', filters.activityType)
+        query = query.in('action', filters.activityType)
       } else {
-        query = query.eq('activity_type', filters.activityType)
+        query = query.eq('action', filters.activityType)
       }
     }
 
@@ -100,15 +98,22 @@ export async function getAuditLogs(
     }
 
     if (filters.search) {
-      // Search in field_name, old_value, new_value, or comment
+      // Search in action, old_value, new_value
       const searchTerm = `%${filters.search}%`
       query = query.or(
-        `field_name.ilike.${searchTerm},old_value.ilike.${searchTerm},new_value.ilike.${searchTerm},comment.ilike.${searchTerm}`
+        `action.ilike.${searchTerm},old_value.ilike.${searchTerm},new_value.ilike.${searchTerm}`
       )
     }
 
-    // Apply sorting
-    query = query.order(sort.field, { ascending: sort.order === 'asc' })
+    // Apply sorting - map sort field to actual DB column
+    const sortFieldMap: Record<string, string> = {
+      'performed_at': 'created_at',
+      'activity_type': 'action',
+      'performed_by': 'user_id',
+      'ticket_id': 'ticket_id'
+    }
+    const dbSortField = sortFieldMap[sort.field] || 'created_at'
+    query = query.order(dbSortField, { ascending: sort.order === 'asc' })
 
     // Apply pagination
     const from = (page - 1) * perPage
@@ -123,31 +128,31 @@ export async function getAuditLogs(
       throw error
     }
 
-    // Transform data
-    const logs: AuditLogEntry[] = (data || []).map((row) => ({
+    // Transform data - map DB columns to expected interface
+    const logs: AuditLogEntry[] = (data || []).map((row: any) => ({
       id: row.id,
       ticket_id: row.ticket_id,
-      activity_type: row.activity_type as ActivityType,
-      performed_by: row.performed_by,
-      performed_at: row.performed_at,
-      field_name: row.field_name,
+      activity_type: row.action as ActivityType,
+      performed_by: row.user_id,
+      performed_at: row.created_at,
+      field_name: null, // Not in current schema
       old_value: row.old_value,
       new_value: row.new_value,
-      comment: row.comment,
+      comment: null, // Not in current schema
       metadata: row.metadata as Record<string, unknown> | null,
       user: row.user
         ? {
-            id: (row.user as any).id,
-            full_name: (row.user as any).full_name,
-            email: (row.user as any).email,
-            role: (row.user as any).role,
+            id: row.user.id,
+            full_name: row.user.full_name,
+            email: row.user.email,
+            role: row.user.role,
           }
         : null,
       ticket: row.ticket
         ? {
-            id: (row.ticket as any).id,
-            title: (row.ticket as any).title,
-            ticket_number: (row.ticket as any).ticket_number,
+            id: row.ticket.id,
+            title: row.ticket.title,
+            ticket_number: row.ticket.ticket_number,
           }
         : null,
     }))
@@ -190,11 +195,11 @@ export async function getAuditLogStats(
 
     // Apply filters
     if (filters.startDate) {
-      query = query.gte('performed_at', filters.startDate)
+      query = query.gte('created_at', filters.startDate)
     }
 
     if (filters.endDate) {
-      query = query.lte('performed_at', filters.endDate)
+      query = query.lte('created_at', filters.endDate)
     }
 
     // Get total count
@@ -203,61 +208,61 @@ export async function getAuditLogStats(
     // Get unique users count
     const { data: uniqueUsersData } = await supabase
       .from('ticket_activities')
-      .select('performed_by')
-    
-    const uniqueUsers = new Set(uniqueUsersData?.map((row) => row.performed_by) || []).size
+      .select('user_id')
+
+    const uniqueUsers = new Set(uniqueUsersData?.map((row: any) => row.user_id) || []).size
 
     // Get earliest and latest activity dates
     let dateQuery = supabase
       .from('ticket_activities')
-      .select('performed_at')
-      .order('performed_at', { ascending: true })
+      .select('created_at')
+      .order('created_at', { ascending: true })
       .limit(1)
 
     if (filters.startDate) {
-      dateQuery = dateQuery.gte('performed_at', filters.startDate)
+      dateQuery = dateQuery.gte('created_at', filters.startDate)
     }
     if (filters.endDate) {
-      dateQuery = dateQuery.lte('performed_at', filters.endDate)
+      dateQuery = dateQuery.lte('created_at', filters.endDate)
     }
 
     const { data: earliestData } = await dateQuery
-    const earliestActivity = earliestData?.[0]?.performed_at || null
+    const earliestActivity = (earliestData as any)?.[0]?.created_at || null
 
     dateQuery = supabase
       .from('ticket_activities')
-      .select('performed_at')
-      .order('performed_at', { ascending: false })
+      .select('created_at')
+      .order('created_at', { ascending: false })
       .limit(1)
 
     if (filters.startDate) {
-      dateQuery = dateQuery.gte('performed_at', filters.startDate)
+      dateQuery = dateQuery.gte('created_at', filters.startDate)
     }
     if (filters.endDate) {
-      dateQuery = dateQuery.lte('performed_at', filters.endDate)
+      dateQuery = dateQuery.lte('created_at', filters.endDate)
     }
 
     const { data: latestData } = await dateQuery
-    const latestActivity = latestData?.[0]?.performed_at || null
+    const latestActivity = (latestData as any)?.[0]?.created_at || null
 
     // Get activity type breakdown
     let activityQuery = supabase
       .from('ticket_activities')
-      .select('activity_type')
+      .select('action')
 
     if (filters.startDate) {
-      activityQuery = activityQuery.gte('performed_at', filters.startDate)
+      activityQuery = activityQuery.gte('created_at', filters.startDate)
     }
     if (filters.endDate) {
-      activityQuery = activityQuery.lte('performed_at', filters.endDate)
+      activityQuery = activityQuery.lte('created_at', filters.endDate)
     }
 
     const { data: activityData } = await activityQuery
 
     const activityBreakdown = Object.entries(
       (activityData || []).reduce(
-        (acc, row) => {
-          const type = row.activity_type as ActivityType
+        (acc: any, row: any) => {
+          const type = row.action as ActivityType
           acc[type] = (acc[type] || 0) + 1
           return acc
         },
@@ -266,7 +271,7 @@ export async function getAuditLogStats(
     )
       .map(([type, count]) => ({
         type: type as ActivityType,
-        count,
+        count: count as number,
       }))
       .sort((a, b) => b.count - a.count)
 
@@ -275,8 +280,8 @@ export async function getAuditLogStats(
       .from('ticket_activities')
       .select(
         `
-        performed_by,
-        user:users!ticket_activities_performed_by_fkey(
+        user_id,
+        user:users!ticket_activities_user_id_fkey(
           id,
           full_name,
           email
@@ -285,22 +290,22 @@ export async function getAuditLogStats(
       )
 
     if (filters.startDate) {
-      userActivityQuery = userActivityQuery.gte('performed_at', filters.startDate)
+      userActivityQuery = userActivityQuery.gte('created_at', filters.startDate)
     }
     if (filters.endDate) {
-      userActivityQuery = userActivityQuery.lte('performed_at', filters.endDate)
+      userActivityQuery = userActivityQuery.lte('created_at', filters.endDate)
     }
 
     const { data: userActivityData } = await userActivityQuery
 
     const userActivityMap = (userActivityData || []).reduce(
-      (acc, row) => {
-        const userId = row.performed_by
+      (acc: any, row: any) => {
+        const userId = row.user_id
         if (!acc[userId]) {
           acc[userId] = {
             userId,
-            userName: (row.user as any)?.full_name || 'Unknown User',
-            userEmail: (row.user as any)?.email || '',
+            userName: row.user?.full_name || 'Unknown User',
+            userEmail: row.user?.email || '',
             activityCount: 0,
           }
         }
