@@ -11,8 +11,9 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback, memo } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowUpDown, ExternalLink, Eye, ThumbsUp } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -51,51 +52,56 @@ interface ArticleDataTableProps {
 type SortField = 'title' | 'view_count' | 'helpfulness_rate' | 'published_at'
 type SortDirection = 'asc' | 'desc'
 
-export function ArticleDataTable({ data, title, description }: ArticleDataTableProps) {
+export const ArticleDataTable = memo(function ArticleDataTable({ data, title, description }: ArticleDataTableProps) {
   const [sortField, setSortField] = useState<SortField>('view_count')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
-  // Sort data
-  const sortedData = [...data].sort((a, b) => {
-    let aVal: string | number | null = a[sortField]
-    let bVal: string | number | null = b[sortField]
+  // Sort data - memoize expensive sort operation
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => {
+      let aVal: string | number | null = a[sortField]
+      let bVal: string | number | null = b[sortField]
 
-    // Handle null values
-    if (aVal === null) aVal = sortDirection === 'asc' ? Infinity : -Infinity
-    if (bVal === null) bVal = sortDirection === 'asc' ? Infinity : -Infinity
+      // Handle null values
+      if (aVal === null) aVal = sortDirection === 'asc' ? Infinity : -Infinity
+      if (bVal === null) bVal = sortDirection === 'asc' ? Infinity : -Infinity
 
-    // Handle dates
-    if (sortField === 'published_at') {
-      aVal = aVal ? new Date(aVal as string).getTime() : 0
-      bVal = bVal ? new Date(bVal as string).getTime() : 0
-    }
+      // Handle dates
+      if (sortField === 'published_at') {
+        aVal = aVal ? new Date(aVal as string).getTime() : 0
+        bVal = bVal ? new Date(bVal as string).getTime() : 0
+      }
 
-    if (sortDirection === 'asc') {
-      return (aVal as number) > (bVal as number) ? 1 : -1
-    } else {
-      return (aVal as number) < (bVal as number) ? 1 : -1
-    }
-  })
+      if (sortDirection === 'asc') {
+        return (aVal as number) > (bVal as number) ? 1 : -1
+      } else {
+        return (aVal as number) < (bVal as number) ? 1 : -1
+      }
+    })
+  }, [data, sortField, sortDirection])
 
-  // Handle sort
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDirection('desc')
-    }
-  }
+  // Handle sort - useCallback for stable reference
+  const handleSort = useCallback((field: SortField) => {
+    setSortField((prevField) => {
+      if (prevField === field) {
+        setSortDirection((prevDir) => prevDir === 'asc' ? 'desc' : 'asc')
+        return prevField
+      } else {
+        setSortDirection('desc')
+        return field
+      }
+    })
+  }, [])
 
-  // Format date
-  const formatDate = (dateStr: string | null) => {
+  // Format date - useCallback for stable reference
+  const formatDate = useCallback((dateStr: string | null) => {
     if (!dateStr) return 'N/A'
     return new Date(dateStr).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     })
-  }
+  }, [])
 
   // Render sort icon
   const SortIcon = ({ field }: { field: SortField }) => {
@@ -217,9 +223,12 @@ export function ArticleDataTable({ data, title, description }: ArticleDataTableP
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
-                        <img
+                        <Image
                           src={article.author.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${article.author.full_name}`}
                           alt={article.author.full_name}
+                          width={24}
+                          height={24}
+                          className="rounded-full"
                         />
                       </Avatar>
                       <span className="text-sm">{article.author.full_name}</span>
@@ -278,9 +287,12 @@ export function ArticleDataTable({ data, title, description }: ArticleDataTableP
                   <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-5 w-5">
-                        <img
+                        <Image
                           src={article.author.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${article.author.full_name}`}
                           alt={article.author.full_name}
+                          width={20}
+                          height={20}
+                          className="rounded-full"
                         />
                       </Avatar>
                       <span>{article.author.full_name}</span>
@@ -295,4 +307,4 @@ export function ArticleDataTable({ data, title, description }: ArticleDataTableP
       </CardContent>
     </Card>
   )
-}
+})
