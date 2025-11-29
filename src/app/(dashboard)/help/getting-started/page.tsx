@@ -15,6 +15,10 @@ export const metadata = {
   description: 'Quick start guide for new Ticket Team users',
 }
 
+// Static generation - tutorial content doesn't change frequently
+export const dynamic = 'force-static'
+export const revalidate = 3600 // Revalidate every hour
+
 export default function GettingStartedPage() {
   return (
     <div className="container max-w-4xl py-8 space-y-8">
