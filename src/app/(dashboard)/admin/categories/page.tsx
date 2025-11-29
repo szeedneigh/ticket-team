@@ -18,6 +18,13 @@ import { CategoryTree } from '@/components/categories/category-tree'
 import { CategoryForm } from '@/components/categories/category-form'
 import { CategoryList } from '@/components/categories/category-list'
 import { createClient } from '@/lib/supabase/client'
+import {
+  getCategories,
+  reorderCategories,
+  createCategory as createCategoryAction,
+  updateCategory as updateCategoryAction,
+  deleteCategory as deleteCategoryAction,
+} from '@/app/actions/categories'
 
 interface Category {
   id: string
@@ -176,12 +183,40 @@ export default function CategoriesPage() {
   }
 
   const handleReorderCategories = async (reorderedCategories: Category[]) => {
-    // TODO: Implement category reordering with display_order column
-    setCategories(reorderedCategories)
-    toast({
-      title: 'Reorder',
-      description: 'Category reordering not yet implemented',
-    })
+    setIsLoading(true)
+    try {
+      // Map categories to { id, display_order } format
+      const updates = reorderedCategories.map((cat, index) => ({
+        id: cat.id,
+        display_order: (index + 1) * 10, // Use multiples of 10
+      }))
+
+      const result = await reorderCategories(updates)
+
+      if (result.success) {
+        toast({
+          title: 'Success',
+          description: 'Categories reordered successfully',
+        })
+        // Reload categories to get updated order from DB
+        await fetchCategories()
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to reorder categories',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      console.error('Error reordering categories:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to reorder categories',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
