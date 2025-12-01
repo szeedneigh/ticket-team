@@ -161,22 +161,25 @@ export function ChatHistory({
               className={cn(
                 'flex h-full flex-col',
                 'w-full md:w-80',
-                'bg-background',
-                'border-l border-border',
+                'bg-background/80 backdrop-blur-md',
+                'border-l border-border/50',
                 'fixed right-0 top-0 z-50 md:relative',
-                'shadow-lg',
+                'shadow-xl md:shadow-none',
                 className
               )}
             >
               {/* Header */}
-              <div className="flex flex-col gap-3 border-b border-border/50 p-4">
+              <div className="flex flex-col gap-4 border-b border-border/50 p-5">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">Chat History</h2>
+                  <h2 className="text-xl font-bold tracking-tight bg-gradient-to-r from-[#1f3463] to-[#2cafdd] bg-clip-text text-transparent">
+                    History
+                  </h2>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={onToggle}
                     aria-label="Close chat history"
+                    className="md:hidden"
                   >
                     <X className="h-5 w-5" />
                   </Button>
@@ -185,7 +188,7 @@ export function ChatHistory({
                 {/* New Chat Button */}
                 <Button
                   onClick={handleNewChat}
-                  className="w-full gap-2"
+                  className="w-full gap-2 bg-gradient-to-r from-[#1f3463] to-[#2cafdd] text-white shadow-md hover:opacity-90 transition-all hover:shadow-lg hover:-translate-y-0.5"
                   disabled={isLoading}
                 >
                   <Plus className="h-4 w-4" />
@@ -193,20 +196,20 @@ export function ChatHistory({
                 </Button>
 
                 {/* Search Input */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="relative group">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-[#2cafdd]" />
                   <Input
                     type="search"
                     placeholder="Search conversations..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 bg-background/50 border-border/50 focus-visible:ring-[#2cafdd]/50 transition-all"
                   />
                 </div>
               </div>
 
               {/* Sessions List */}
-              <ScrollArea className="flex-1">
+              <ScrollArea className="flex-1 px-3 py-2">
                 {isLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -226,7 +229,7 @@ export function ChatHistory({
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-1 p-2">
+                  <div className="space-y-2">
                     {filteredSessions.map(session => {
                       const isActive = session.session_id === activeSessionId
                       const title =
@@ -245,34 +248,41 @@ export function ChatHistory({
                           role="button"
                           tabIndex={0}
                           className={cn(
-                            'group relative w-full cursor-pointer rounded-lg p-3 text-left',
-                            'bg-background border border-transparent',
-                            'hover:bg-muted hover:border-[#2cafdd]/30',
-                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2cafdd]/50',
-                            'transition-colors',
-                            isActive && 'bg-muted border-[#2cafdd]/50'
+                            'group relative w-full cursor-pointer rounded-xl p-3 text-left transition-all duration-200',
+                            'border',
+                            isActive 
+                              ? 'bg-gradient-to-r from-[#2cafdd]/10 to-transparent border-[#2cafdd]/30 shadow-sm' 
+                              : 'bg-transparent border-transparent hover:bg-muted/50 hover:border-border/50',
                           )}
                           aria-current={isActive ? 'page' : undefined}
                         >
+                          {/* Active Indicator Line */}
+                          {isActive && (
+                            <div className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full bg-[#2cafdd]" />
+                          )}
+
                           {/* Session Content */}
-                          <div className="flex flex-col gap-1.5 pr-8">
+                          <div className={cn("flex flex-col gap-1.5 pr-8", isActive && "pl-2")}>
                             {/* Title */}
                             <div className="flex items-center gap-2">
                               {session.escalated && (
                                 <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-yellow-600" />
                               )}
-                              <h3 className="line-clamp-1 text-sm font-medium">
+                              <h3 className={cn(
+                                "line-clamp-1 text-sm font-medium transition-colors",
+                                isActive ? "text-[#2cafdd]" : "text-foreground group-hover:text-foreground/90"
+                              )}>
                                 {title}
                               </h3>
                             </div>
 
                             {/* Last Message Preview */}
-                            <p className="line-clamp-2 text-xs text-muted-foreground">
+                            <p className="line-clamp-2 text-xs text-muted-foreground/80 group-hover:text-muted-foreground transition-colors">
                               {session.last_message}
                             </p>
 
                             {/* Metadata */}
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
                               <time
                                 dateTime={session.last_message_at}
                                 title={new Date(session.last_message_at).toLocaleString()}
@@ -284,7 +294,7 @@ export function ChatHistory({
                               {session.message_count > 1 && (
                                 <>
                                   <span>•</span>
-                                  <span>{session.message_count} messages</span>
+                                  <span>{session.message_count} msgs</span>
                                 </>
                               )}
                             </div>
@@ -294,11 +304,11 @@ export function ChatHistory({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="absolute right-2 top-2 h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                            className="absolute right-2 top-2 h-7 w-7 opacity-0 transition-all group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
                             onClick={e => handleDeleteClick(session.session_id, e)}
                             aria-label="Delete conversation"
                           >
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       )
