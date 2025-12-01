@@ -27,7 +27,7 @@ export interface Activity {
   metadata?: Record<string, unknown>
 }
 
-export type ActivityType = 
+export type ActivityType =
   | 'ticket_created'
   | 'ticket_updated'
   | 'ticket_assigned'
@@ -102,4 +102,16 @@ export interface DashboardPreferences {
   defaultView: 'grid' | 'list'
   itemsPerPage: number
   refreshInterval: number
+}
+
+export interface ChartDataPoint {
+  name: string
+  value: number
+  [key: string]: string | number
+}
+
+export interface DashboardCharts {
+  ticketVolume: ChartDataPoint[]
+  ticketsByPriority: ChartDataPoint[]
+  ticketsByStatus: ChartDataPoint[]
 }
