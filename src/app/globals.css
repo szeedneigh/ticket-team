@@ -43,16 +43,52 @@
     --brand-accent: #2cafdd;
     --brand-tint: #a9ddf6;
 
-    /* Elevation tokens (no blur) */
-    --elev-1: 0 1px 2px rgb(0 0 0 / 0.06);
-    --elev-2: 0 2px 4px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.04);
-    --elev-3: 0 4px 8px rgb(0 0 0 / 0.1), 0 2px 4px rgb(0 0 0 / 0.06);
+    /* Status color tokens - Modern Tech palette */
+    --status-success: #10b981;
+    --status-success-light: #d1fae5;
+    --status-warning: #f59e0b;
+    --status-warning-light: #fef3c7;
+    --status-danger: #ef4444;
+    --status-danger-light: #fee2e2;
+    --status-info: #3b82f6;
+    --status-info-light: #dbeafe;
+    --status-purple: #8b5cf6;
+    --status-purple-light: #ede9fe;
+
+    /* Gradient definitions for modern tech aesthetic */
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-accent: linear-gradient(135deg, #2cafdd 0%, #667eea 100%);
+    --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --gradient-warning: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    --gradient-danger: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+    --gradient-mesh: radial-gradient(at 40% 20%, hsla(211, 100%, 56%, 0.15) 0px, transparent 50%),
+                     radial-gradient(at 80% 0%, hsla(189, 100%, 56%, 0.15) 0px, transparent 50%),
+                     radial-gradient(at 0% 50%, hsla(355, 100%, 93%, 0.15) 0px, transparent 50%);
+
+    /* Glass effect variables */
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --glass-blur: 12px;
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+
+    /* Elevation tokens with modern shadows */
+    --elev-1: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.1);
+    --elev-2: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
+    --elev-3: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+    --elev-4: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
+
+    /* Glow effects for interactive elements */
+    --glow-primary: 0 0 20px rgba(102, 126, 234, 0.4);
+    --glow-accent: 0 0 20px rgba(44, 175, 221, 0.4);
+    --glow-success: 0 0 20px rgba(16, 185, 129, 0.4);
+    --glow-danger: 0 0 20px rgba(239, 68, 68, 0.4);
 
     /* Micro-animation timing */
     --transition-timing: cubic-bezier(0.2, 0.7, 0.2, 1);
+    --transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --duration-fast: 120ms;
     --duration-base: 200ms;
-    --duration-slow: 220ms;
+    --duration-slow: 300ms;
   }
 
   .dark {
@@ -88,10 +124,35 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
 
-    /* Dark mode elevation adjustments */
-    --elev-1: 0 1px 2px rgb(0 0 0 / 0.2);
-    --elev-2: 0 2px 4px rgb(0 0 0 / 0.3), 0 1px 2px rgb(0 0 0 / 0.15);
-    --elev-3: 0 4px 8px rgb(0 0 0 / 0.4), 0 2px 4px rgb(0 0 0 / 0.2);
+    /* Dark mode status colors - slightly brighter for visibility */
+    --status-success: #34d399;
+    --status-success-light: rgba(16, 185, 129, 0.15);
+    --status-warning: #fbbf24;
+    --status-warning-light: rgba(245, 158, 11, 0.15);
+    --status-danger: #f87171;
+    --status-danger-light: rgba(239, 68, 68, 0.15);
+    --status-info: #60a5fa;
+    --status-info-light: rgba(59, 130, 246, 0.15);
+    --status-purple: #a78bfa;
+    --status-purple-light: rgba(139, 92, 246, 0.15);
+
+    /* Dark mode glass effect */
+    --glass-bg: rgba(30, 30, 30, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-blur: 16px;
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+    /* Dark mode elevation with enhanced shadows */
+    --elev-1: 0 1px 2px rgb(0 0 0 / 0.3), 0 1px 3px rgb(0 0 0 / 0.2);
+    --elev-2: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -1px rgb(0 0 0 / 0.3);
+    --elev-3: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -2px rgb(0 0 0 / 0.3);
+    --elev-4: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 10px 10px -5px rgb(0 0 0 / 0.4);
+
+    /* Dark mode glows - more pronounced */
+    --glow-primary: 0 0 25px rgba(139, 92, 246, 0.5);
+    --glow-accent: 0 0 25px rgba(96, 165, 250, 0.5);
+    --glow-success: 0 0 25px rgba(52, 211, 153, 0.5);
+    --glow-danger: 0 0 25px rgba(248, 113, 113, 0.5);
   }
 
   /* Reduced motion support */
