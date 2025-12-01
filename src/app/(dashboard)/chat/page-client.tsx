@@ -183,29 +183,31 @@ export function ChatPageClient({
   return (
     <>
       {/* Chat Area - NOW FIRST */}
-      <div className="flex flex-1 flex-col relative">
+      <div className="flex flex-1 flex-col relative h-full overflow-hidden bg-background/50 backdrop-blur-sm">
         {/* History Toggle Button */}
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
           className={cn(
             'fixed z-50',
-            'top-20 right-4',
-            'md:top-24 md:right-6',
-            'lg:top-6 lg:right-6'
+            'top-4 right-4',
+            'md:top-6 md:right-6',
+            'hover:bg-muted/50'
           )}
           onClick={() => setIsHistoryOpen(!isHistoryOpen)}
           aria-label={isHistoryOpen ? 'Close chat history' : 'Open chat history'}
         >
-          <History className="h-5 w-5" />
+          <History className="h-5 w-5 text-muted-foreground" />
         </Button>
 
-        <ChatClient
-          key={activeSessionId} // Re-mount on session change
-          sessionId={activeSessionId}
-          initialMessages={sessionMessages[activeSessionId] || []}
-          userName={userName}
-        />
+        <div className="flex-1 w-full flex flex-col h-full">
+            <ChatClient
+            key={activeSessionId} // Re-mount on session change
+            sessionId={activeSessionId}
+            initialMessages={sessionMessages[activeSessionId] || []}
+            userName={userName}
+            />
+        </div>
       </div>
 
       {/* Chat History - NOW SECOND (renders on right) */}
