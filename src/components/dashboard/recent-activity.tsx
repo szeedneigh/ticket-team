@@ -64,19 +64,23 @@ export function RecentActivity({ items }: RecentActivityProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut', delay: 0.4 }}
     >
-      <Card className="p-6 bg-card/90 backdrop-blur-sm shadow-lg rounded-[20px]">
+      <Card className="p-6 bg-card/40 backdrop-blur-xl border-white/10 shadow-lg rounded-[24px] h-full flex flex-col">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-primary">Recent Activity</h2>
-          <Button variant="ghost" size="sm" asChild>
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+            <span className="w-1 h-6 bg-purple-500 rounded-full" />
+            Recent Activity
+          </h2>
+          <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary">
             <Link href="/tickets">View All</Link>
           </Button>
         </div>
         
-        <div className="space-y-4">
+        <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
           {items.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Clock className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p>No recent activity</p>
+            <div className="text-center py-12 text-muted-foreground bg-accent/5 rounded-[16px] border border-dashed border-border">
+              <Clock className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+              <p className="font-medium">No recent activity</p>
+              <p className="text-xs mt-1">Actions you take will appear here</p>
             </div>
           ) : (
             items.map((activity, index) => {
@@ -86,26 +90,28 @@ export function RecentActivity({ items }: RecentActivityProps) {
               return (
                 <motion.div
                   key={activity.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, ease: 'easeOut', delay: 0.5 + index * 0.1 }}
-                  className="flex items-start gap-3 p-3 rounded-[12px] hover:bg-accent/50 transition-colors"
+                  transition={{ duration: 0.3, ease: 'easeOut', delay: 0.2 + index * 0.05 }}
+                  className="group flex items-start gap-4 p-4 rounded-[16px] hover:bg-white/5 dark:hover:bg-white/5 border border-transparent hover:border-white/10 transition-all duration-200"
                 >
-                  <div className="p-2 rounded-[8px] bg-accent">
+                  <div className={`p-2.5 rounded-[12px] bg-accent/50 group-hover:bg-accent transition-colors`}>
                     <IconComponent className={`h-4 w-4 ${iconColor}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm">
-                      <strong className="font-medium text-foreground">
+                    <div className="flex justify-between items-start gap-2">
+                      <strong className="text-sm font-semibold text-foreground truncate block">
                         {activity.title}
                       </strong>
-                      {activity.description && (
-                        <span className="text-muted-foreground"> - {activity.description}</span>
-                      )}
+                      <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap bg-accent/30 px-2 py-0.5 rounded-full">
+                        {formatTimeAgo(activity.createdAt)}
+                      </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatTimeAgo(activity.createdAt)}
-                    </p>
+                    {activity.description && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                        {activity.description}
+                      </p>
+                    )}
                   </div>
                 </motion.div>
               )
