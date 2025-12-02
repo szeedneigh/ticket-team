@@ -59,65 +59,70 @@ export const ArticleCard = memo(function ArticleCard({ article, className }: Art
     : formatRelativeTime(article.created_at)
 
   return (
-    <Link href={`/kb/${article.id}`}>
+    <Link href={`/kb/${article.id}`} className="block h-full group/card">
       <article
         className={cn(
-          'group relative p-6 rounded-lg border border-border bg-card',
-          'hover:shadow-lg hover:-translate-y-1',
-          'transition-all duration-200',
-          'flex flex-col gap-4 h-full',
+          'relative p-6 rounded-2xl h-full flex flex-col gap-4',
+          'bg-background/40 backdrop-blur-md',
+          'border border-white/10 dark:border-white/5',
+          'transition-all duration-300 ease-out',
+          'hover:border-[#2cafdd]/50 hover:bg-[#2cafdd]/5 hover:shadow-lg hover:shadow-[#2cafdd]/10 hover:-translate-y-1',
           className
         )}
       >
-        {/* Category Badge */}
-        <div className="flex items-start justify-between gap-2">
+        {/* Header: Category & Stats */}
+        <div className="flex items-start justify-between gap-2 relative z-10">
           <CategoryBadge
             category={article.category}
             subcategory={article.subcategory}
           />
           {article.total_votes > 0 && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <ThumbsUp className="h-3 w-3" />
+            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-background/50 px-2.5 py-1 rounded-full border border-white/10 group-hover/card:border-[#2cafdd]/30 group-hover/card:text-[#2cafdd] transition-colors">
+              <ThumbsUp className="h-3 w-3 group-hover/card:text-[#2cafdd] transition-colors" />
               <span>{helpfulnessPercent}%</span>
             </div>
           )}
         </div>
 
-        {/* Title */}
-        <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
-          {article.title}
-        </h3>
-
-        {/* Summary */}
-        <p className="text-sm text-muted-foreground line-clamp-3 flex-grow">
-          {article.summary || 'No summary available'}
-        </p>
+        {/* Content */}
+        <div className="flex-grow space-y-3 relative z-10">
+          <h3 className="font-bold text-xl leading-snug group-hover/card:text-[#2cafdd] transition-colors duration-300">
+            {article.title}
+          </h3>
+          
+          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+            {article.summary || 'No summary available'}
+          </p>
+        </div>
 
         {/* Tags */}
         {article.tags.length > 0 && (
-          <TagList tags={article.tags} maxDisplay={3} />
+          <div className="relative z-10 pt-1">
+            <TagList tags={article.tags} maxDisplay={3} />
+          </div>
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-2 border-t border-border/50">
+        <div className="flex items-center justify-between pt-4 mt-auto border-t border-white/10 group-hover/card:border-[#2cafdd]/20 transition-colors relative z-10">
           {/* Author */}
-          <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarFallback className="text-xs bg-muted">
+          <div className="flex items-center gap-2.5">
+            <Avatar className="h-8 w-8 ring-2 ring-background/20 group-hover/card:ring-[#2cafdd]/20 transition-all">
+              <AvatarFallback className="text-[10px] font-bold bg-gradient-to-br from-[#1f3463] to-[#2cafdd] text-white">
                 {getInitials(article.author.full_name)}
               </AvatarFallback>
             </Avatar>
-            <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+            <span className="text-xs font-medium text-muted-foreground truncate max-w-[120px] group-hover/card:text-foreground transition-colors">
               {article.author.full_name}
             </span>
           </div>
 
           {/* Metadata */}
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Eye className="h-3 w-3" />
+          <div className="flex items-center gap-3 text-xs text-muted-foreground/70">
+            <div className="flex items-center gap-1.5" title={`${article.view_count} views`}>
+              <Eye className="h-3.5 w-3.5 group-hover/card:text-[#2cafdd] transition-colors" />
               <span>{article.view_count}</span>
             </div>
+            <span className="w-1 h-1 rounded-full bg-border group-hover/card:bg-[#2cafdd]/50 transition-colors" />
             <span>{publishedDate}</span>
           </div>
         </div>
