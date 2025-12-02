@@ -24,6 +24,7 @@ import {
   notifyTicketAssignment,
   notifyTicketStatusChange,
 } from '@/lib/email/notifications'
+import { logger } from '@/lib/logger'
 
 // ============================================================================
 // Types
@@ -147,7 +148,7 @@ export async function createTicket(
       .single()
 
     if (ticketError || !ticket) {
-      console.error('Ticket creation error:', ticketError)
+      logger.error('Ticket creation error', { error: ticketError?.message })
       return {
         success: false,
         error: 'Failed to create ticket',
@@ -168,7 +169,7 @@ export async function createTicket(
           )
 
           if (!uploadResult.success || !uploadResult.path) {
-            console.error('File upload failed:', uploadResult.error)
+            logger.error('File upload failed', { error: uploadResult.error })
             // Continue with other files even if one fails
             continue
           }
@@ -189,14 +190,16 @@ export async function createTicket(
             .single()
 
           if (attachmentError) {
-            console.error('Attachment record creation error:', attachmentError)
+            logger.error('Attachment record creation error', { error: attachmentError.message })
             continue
           }
 
           attachmentRecords.push(attachment)
         }
       } catch (uploadError) {
-        console.error('File upload process error:', uploadError)
+        logger.error('File upload process error', { 
+          error: uploadError instanceof Error ? uploadError.message : 'Unknown error' 
+        })
         // Don't fail ticket creation if uploads fail
       }
     }
@@ -233,7 +236,9 @@ export async function createTicket(
       }
     } catch (activityError) {
       // Log error but don't fail ticket creation
-      console.error('Activity logging error:', activityError)
+      logger.error('Activity logging error', { 
+        error: activityError instanceof Error ? activityError.message : 'Unknown error' 
+      })
     }
 
     // 7. Revalidate relevant paths
@@ -249,7 +254,9 @@ export async function createTicket(
       },
     }
   } catch (error) {
-    console.error('Unexpected error in createTicket:', error)
+    logger.error('Unexpected error in createTicket', { 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    })
     return {
       success: false,
       error: ERROR_MESSAGES.GENERIC,
@@ -341,7 +348,7 @@ export async function updateTicketStatus(
       .eq('id', ticketId)
 
     if (updateError) {
-      console.error('Ticket status update error:', updateError)
+      logger.error('Ticket status update error', { error: updateError.message, ticketId })
       return {
         success: false,
         error: 'Failed to update ticket status',
@@ -370,7 +377,10 @@ export async function updateTicketStatus(
       await notifyTicketStatusChange(ticketId, newStatus, changedByName, message)
     } catch (emailError) {
       // Log error but don't fail the status update
-      console.error('Email notification error:', emailError)
+      logger.error('Email notification error', { 
+        error: emailError instanceof Error ? emailError.message : 'Unknown error',
+        ticketId
+      })
     }
 
     // 4. Log activity
@@ -402,7 +412,10 @@ export async function updateTicketStatus(
       success: true,
     }
   } catch (error) {
-    console.error('Unexpected error in updateTicketStatus:', error)
+    logger.error('Unexpected error in updateTicketStatus', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      ticketId
+    })
     return {
       success: false,
       error: ERROR_MESSAGES.GENERIC,
@@ -488,7 +501,7 @@ export async function assignTicket(
       .eq('id', ticketId)
 
     if (updateError) {
-      console.error('Ticket assignment error:', updateError)
+      logger.error('Ticket assignment error', { error: updateError.message, ticketId })
       return {
         success: false,
         error: 'Failed to assign ticket',
@@ -523,7 +536,10 @@ export async function assignTicket(
         await notifyTicketAssignment(ticketId, newAssignedTo, assignedByName)
       } catch (emailError) {
         // Log error but don't fail the assignment
-        console.error('Email notification error:', emailError)
+        logger.error('Email notification error', { 
+          error: emailError instanceof Error ? emailError.message : 'Unknown error',
+          ticketId
+        })
       }
     }
 
@@ -548,7 +564,10 @@ export async function assignTicket(
         },
       })
     } catch (activityError) {
-      console.error('Activity logging error:', activityError)
+      logger.error('Activity logging error', { 
+        error: activityError instanceof Error ? activityError.message : 'Unknown error',
+        ticketId
+      })
       // Don't fail the assignment
     }
 
@@ -562,7 +581,10 @@ export async function assignTicket(
       success: true,
     }
   } catch (error) {
-    console.error('Unexpected error in assignTicket:', error)
+    logger.error('Unexpected error in assignTicket', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      ticketId
+    })
     return {
       success: false,
       error: ERROR_MESSAGES.GENERIC,
@@ -645,7 +667,7 @@ export async function updateTicketPriority(
       .eq('id', ticketId)
 
     if (updateError) {
-      console.error('Ticket priority update error:', updateError)
+      logger.error('Ticket priority update error', { error: updateError.message, ticketId })
       return {
         success: false,
         error: 'Failed to update ticket priority',
@@ -681,7 +703,10 @@ export async function updateTicketPriority(
       success: true,
     }
   } catch (error) {
-    console.error('Unexpected error in updateTicketPriority:', error)
+    logger.error('Unexpected error in updateTicketPriority', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      ticketId
+    })
     return {
       success: false,
       error: ERROR_MESSAGES.GENERIC,
@@ -781,7 +806,7 @@ export async function reopenTicket(
       .eq('id', ticketId)
 
     if (updateError) {
-      console.error('Ticket reopen error:', updateError)
+      logger.error('Ticket reopen error', { error: updateError.message, ticketId })
       return {
         success: false,
         error: 'Failed to reopen ticket',
@@ -804,7 +829,10 @@ export async function reopenTicket(
         },
       })
     } catch (activityError) {
-      console.error('Activity logging error:', activityError)
+      logger.error('Activity logging error', { 
+        error: activityError instanceof Error ? activityError.message : 'Unknown error',
+        ticketId
+      })
       // Don't fail the reopen
     }
 
@@ -817,7 +845,10 @@ export async function reopenTicket(
       success: true,
     }
   } catch (error) {
-    console.error('Unexpected error in reopenTicket:', error)
+    logger.error('Unexpected error in reopenTicket', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      ticketId
+    })
     return {
       success: false,
       error: ERROR_MESSAGES.GENERIC,
@@ -878,7 +909,7 @@ export async function getAttachmentDownloadUrl(
       .createSignedUrl(attachment.storage_path, 3600)
 
     if (signedError || !signedData) {
-      console.error('Error creating signed URL:', signedError)
+      logger.error('Error creating signed URL', { error: signedError?.message, attachmentId })
       return { success: false, error: 'Failed to generate download URL' }
     }
 
@@ -895,7 +926,10 @@ export async function getAttachmentDownloadUrl(
       data: { url: signedData.signedUrl },
     }
   } catch (error) {
-    console.error('Download attachment error:', error)
+    logger.error('Download attachment error', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      attachmentId
+    })
     return { success: false, error: 'An unexpected error occurred' }
   }
 }
