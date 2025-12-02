@@ -15,13 +15,25 @@ const LandingAnimatedContent = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="relative z-10 grid place-content-center min-h-[100svh] p-6 md:ml-8">
-        <div className="w-full max-w-[600px] rounded-[40px] bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] p-10 md:p-14">
-          <Skeleton className="h-20 w-20 rounded-full mx-auto mb-6" />
-          <Skeleton className="h-8 w-full mb-4" />
-          <Skeleton className="h-10 w-full mb-6" />
-          <Skeleton className="h-16 w-full mb-10" />
-          <Skeleton className="h-12 w-full" />
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-[100svh] p-4 md:p-6 md:ml-8">
+        <div className="w-full max-w-[600px] rounded-[40px] bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] p-8 md:p-14">
+          {/* Logo Skeleton */}
+          <Skeleton className="h-20 w-20 rounded-full mx-auto mb-6 bg-gray-200" />
+          
+          {/* Heading Skeleton */}
+          <Skeleton className="h-8 md:h-10 w-3/4 mx-auto mb-2 rounded-lg bg-gray-200" />
+          
+          {/* Subheading Skeleton */}
+          <Skeleton className="h-10 md:h-12 w-full mx-auto mb-6 rounded-lg bg-gray-200" />
+          
+          {/* Description Skeleton */}
+          <div className="space-y-2 mb-10">
+            <Skeleton className="h-4 w-5/6 mx-auto bg-gray-200" />
+            <Skeleton className="h-4 w-2/3 mx-auto bg-gray-200" />
+          </div>
+          
+          {/* Button Skeleton */}
+          <Skeleton className="h-14 w-full rounded-[20px] bg-gray-200" />
         </div>
       </div>
     )
