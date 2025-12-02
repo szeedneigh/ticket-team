@@ -79,18 +79,18 @@ export function TicketTable({ tickets }: TicketTableProps) {
             >
               <Link
                 href={`/tickets/${ticket.id}`}
-                className="block p-5 rounded-xl border bg-card/50 backdrop-blur-sm hover:bg-accent/50 transition-all active:scale-[0.98] shadow-sm hover:shadow-md"
+                className="block p-5 rounded-2xl border border-white/10 bg-background/40 backdrop-blur-md hover:bg-[#2cafdd]/5 hover:border-[#2cafdd]/30 transition-all active:scale-[0.98] shadow-sm hover:shadow-lg hover:shadow-[#2cafdd]/10 group"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <p className="font-medium text-xs text-muted-foreground tracking-wider uppercase">{ticketNumber}</p>
-                    <h3 className="font-semibold mt-1 text-lg leading-tight">{ticket.title}</h3>
+                    <p className="font-medium text-xs text-muted-foreground tracking-wider uppercase group-hover:text-[#2cafdd] transition-colors">{ticketNumber}</p>
+                    <h3 className="font-semibold mt-1 text-lg leading-tight group-hover:text-foreground transition-colors">{ticket.title}</h3>
                   </div>
                   <StatusCell status={ticket.status} />
                 </div>
-                <div className="flex items-center justify-between text-sm text-muted-foreground mt-4 pt-4 border-t border-border/50">
+                <div className="flex items-center justify-between text-sm text-muted-foreground mt-4 pt-4 border-t border-white/10 group-hover:border-[#2cafdd]/20 transition-colors">
                   <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-500/50" />
+                    <span className="w-2 h-2 rounded-full bg-[#2cafdd]/50" />
                     {ticket.category}
                   </span>
                   <span>{formattedDate}</span>
@@ -102,15 +102,15 @@ export function TicketTable({ tickets }: TicketTableProps) {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block w-full overflow-hidden rounded-xl border bg-card/30 backdrop-blur-sm shadow-sm">
+      <div className="hidden md:block w-full overflow-hidden rounded-2xl border border-white/10 bg-background/40 backdrop-blur-md shadow-xl shadow-[#1f3463]/5">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/50">
-              <TableHead className="font-semibold w-[180px] h-12">Ticket No.</TableHead>
-              <TableHead className="font-semibold min-w-[200px] h-12">Concern</TableHead>
-              <TableHead className="font-semibold w-[160px] h-12">Category</TableHead>
-              <TableHead className="font-semibold w-[160px] h-12">Status</TableHead>
-              <TableHead className="font-semibold w-[140px] h-12 text-right pr-6">Date</TableHead>
+            <TableRow className="bg-white/5 hover:bg-white/5 border-b border-white/10">
+              <TableHead className="font-semibold w-[180px] h-14 text-muted-foreground">Ticket No.</TableHead>
+              <TableHead className="font-semibold min-w-[200px] h-14 text-muted-foreground">Concern</TableHead>
+              <TableHead className="font-semibold w-[160px] h-14 text-muted-foreground">Category</TableHead>
+              <TableHead className="font-semibold w-[160px] h-14 text-muted-foreground">Status</TableHead>
+              <TableHead className="font-semibold w-[140px] h-14 text-right pr-6 text-muted-foreground">Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -131,26 +131,28 @@ export function TicketTable({ tickets }: TicketTableProps) {
                   tabIndex={0}
                   role="button"
                   aria-label={`View ticket ${ticketNumber} - ${ticket.title}`}
-                  className="cursor-pointer transition-all hover:bg-muted/50 border-b border-border/40 last:border-0 group"
+                  className="cursor-pointer transition-all hover:bg-[#2cafdd]/5 border-b border-white/5 last:border-0 group"
                 >
-                  <TableCell className="font-medium text-muted-foreground group-hover:text-foreground transition-colors py-4">
-                    <span className="font-mono text-xs">{ticketNumber}</span>
+                  <TableCell className="font-medium text-muted-foreground group-hover:text-[#2cafdd] transition-colors py-5">
+                    <span className="font-mono text-xs bg-white/5 px-2 py-1 rounded-md border border-white/10 group-hover:border-[#2cafdd]/30 transition-colors">
+                      {ticketNumber}
+                    </span>
                   </TableCell>
-                  <TableCell className="font-medium py-4">
-                    <span className="line-clamp-1 group-hover:text-blue-500 transition-colors">
+                  <TableCell className="font-medium py-5">
+                    <span className="line-clamp-1 group-hover:text-foreground transition-colors text-base">
                       {ticket.title}
                     </span>
                   </TableCell>
-                  <TableCell className="py-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                  <TableCell className="py-5">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-muted-foreground border border-white/10 group-hover:border-[#2cafdd]/20 group-hover:text-[#2cafdd] transition-colors">
                       {ticket.category}
                     </span>
                   </TableCell>
-                  <TableCell className="py-4">
+                  <TableCell className="py-5">
                     <StatusCell status={ticket.status} />
                   </TableCell>
-                  <TableCell className="text-right pr-6 py-4">
-                    <span className="text-sm text-muted-foreground">{formattedDate}</span>
+                  <TableCell className="text-right pr-6 py-5">
+                    <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">{formattedDate}</span>
                   </TableCell>
                 </TableRow>
               )
