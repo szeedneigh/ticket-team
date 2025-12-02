@@ -102,11 +102,6 @@ export function Navbar({
           
           {user ? (
             <>
-              {/* Search placeholder */}
-              <Button variant="ghost" size="sm" className="hidden md:flex">
-                <Search className="h-4 w-4" />
-              </Button>
-              
               {/* Notifications */}
               <NotificationBell />
               
