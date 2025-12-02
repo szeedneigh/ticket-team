@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { useTheme } from 'next-themes'
 import { getUserPreferences } from '@/app/actions/preferences'
 import type { UserPreferences } from '@/lib/types/users'
 
@@ -20,13 +21,21 @@ interface PreferencesProviderProps {
 export function PreferencesProvider({ children, initialPreferences }: PreferencesProviderProps) {
   const [preferences, setPreferences] = useState<UserPreferences | null>(initialPreferences || null)
   const [isLoading, setIsLoading] = useState(!initialPreferences)
+  const { setTheme } = useTheme()
+  const [themeInitialized, setThemeInitialized] = useState(false)
 
   const loadPreferences = async () => {
     setIsLoading(true)
     const result = await getUserPreferences()
     if (result.success && result.data) {
       setPreferences(result.data)
-      applyPreferencesToDOM(result.data)
+      // Only set theme on the very first load, never override after that
+      if (!themeInitialized && result.data.theme) {
+        setTheme(result.data.theme)
+        setThemeInitialized(true)
+      }
+      // Apply other preferences (font, contrast, etc.) but NOT theme
+      applyNonThemePreferences(result.data)
     }
     setIsLoading(false)
   }
@@ -35,20 +44,25 @@ export function PreferencesProvider({ children, initialPreferences }: Preference
     await loadPreferences()
   }
 
+  // Initial load - set theme only once
   useEffect(() => {
-    if (!initialPreferences) {
+    if (initialPreferences?.theme && !themeInitialized) {
+      setTheme(initialPreferences.theme)
+      setThemeInitialized(true)
+      applyNonThemePreferences(initialPreferences)
+    } else if (!initialPreferences) {
       loadPreferences()
     } else {
-      applyPreferencesToDOM(initialPreferences)
+      applyNonThemePreferences(initialPreferences)
     }
   }, [])
 
-  // Apply preferences whenever they change
+  // Apply non-theme preferences when they change
   useEffect(() => {
-    if (preferences) {
-      applyPreferencesToDOM(preferences)
+    if (preferences && themeInitialized) {
+      applyNonThemePreferences(preferences)
     }
-  }, [preferences])
+  }, [preferences, themeInitialized])
 
   return (
     <PreferencesContext.Provider value={{ preferences, isLoading, refreshPreferences }}>
@@ -66,22 +80,13 @@ export function usePreferences() {
 }
 
 /**
- * Apply user preferences to the DOM
+ * Apply non-theme preferences to the DOM
+ * (Theme is handled separately by next-themes to avoid conflicts)
  */
-function applyPreferencesToDOM(preferences: UserPreferences) {
+function applyNonThemePreferences(preferences: UserPreferences) {
   if (typeof window === 'undefined') return
 
   const html = document.documentElement
-
-  // Apply theme (light/dark/system)
-  if (preferences.theme === 'system') {
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    html.setAttribute('data-theme', systemTheme)
-    html.classList.toggle('dark', systemTheme === 'dark')
-  } else {
-    html.setAttribute('data-theme', preferences.theme)
-    html.classList.toggle('dark', preferences.theme === 'dark')
-  }
 
   // Apply font size
   html.setAttribute('data-font-size', preferences.font_size || 'normal')
@@ -99,17 +104,5 @@ function applyPreferencesToDOM(preferences: UserPreferences) {
     html.style.removeProperty('--duration-base')
     html.style.removeProperty('--duration-fast')
     html.style.removeProperty('--duration-slow')
-  }
-
-  // Listen for system theme changes if using system preference
-  if (preferences.theme === 'system') {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleChange = (e: MediaQueryListEvent) => {
-      const systemTheme = e.matches ? 'dark' : 'light'
-      html.setAttribute('data-theme', systemTheme)
-      html.classList.toggle('dark', systemTheme === 'dark')
-    }
-    mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
   }
 }
