@@ -22,8 +22,11 @@ import { ArrowLeft } from 'lucide-react'
 function SignInSkeleton() {
   return (
     <div className="space-y-4 w-full">
-      <Skeleton className="h-11 w-full rounded-md" />
-      <div className="space-y-2 text-center">
+      {/* Google Sign In Button Skeleton */}
+      <Skeleton className="h-10 w-full rounded-md" />
+      
+      {/* Helper Text Skeleton */}
+      <div className="space-y-1 text-center">
         <Skeleton className="h-4 w-3/4 mx-auto" />
         <Skeleton className="h-3 w-1/2 mx-auto" />
       </div>
@@ -33,28 +36,29 @@ function SignInSkeleton() {
 
 export default function SignInPage() {
   return (
-    <div className="relative min-h-screen flex flex-col md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+    <div className="relative min-h-[100svh] flex flex-col md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       
-      {/* Mobile Back Button (Top Left) */}
-      <Button asChild variant="ghost" className="absolute left-4 top-4 z-20 lg:hidden">
-        <Link href="/">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Link>
-      </Button>
+      {/* Mobile Header */}
+      <div className="relative flex items-center justify-between p-4 z-20 lg:hidden">
+        <Button asChild variant="ghost" className="-ml-2">
+          <Link href="/">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Link>
+        </Button>
 
-      {/* Mobile/Tablet Header (Centered on mobile) */}
-      <div className="flex items-center justify-center p-6 z-10 lg:hidden">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1f3463] text-white shadow-sm">
-           <Image
-              src="/logo.svg"
-              alt="TicketTeam Logo"
-              width={20}
-              height={20}
-              className="h-5 w-5 invert brightness-0"
-            />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1f3463] text-white shadow-sm">
+             <Image
+                src="/logo.svg"
+                alt="TicketTeam Logo"
+                width={16}
+                height={16}
+                className="h-4 w-4 invert brightness-0"
+              />
+          </div>
+          <span className="font-bold text-[#1f3463] text-lg tracking-tight">TicketTeam</span>
         </div>
-        <span className="ml-2 font-bold text-[#1f3463] text-lg tracking-tight">TicketTeam</span>
       </div>
 
       {/* Left Side: Brand Panel (Desktop Only) */}
