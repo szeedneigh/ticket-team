@@ -1,11 +1,14 @@
 import { requireAuth } from '@/lib/auth/session'
 import { getDashboardStats } from '@/lib/dashboard/queries'
 import { getUserActivity } from '@/lib/dashboard/activity-queries'
+import { getTicketVolumeTrend, getTicketsByPriority } from '@/lib/dashboard/chart-queries'
 import { formatStatValue, formatSatisfactionValue } from '@/lib/format'
 import { WelcomeBanner } from '@/components/dashboard/welcome-banner'
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { RecentActivity } from '@/components/dashboard/recent-activity'
+import { TrendChart } from '@/components/analytics/trend-chart'
+import { CategoryChart } from '@/components/analytics/category-chart'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle, AlertTriangle } from 'lucide-react'
 import { logger } from '@/lib/logger'
@@ -20,10 +23,14 @@ export default async function DashboardPage() {
     throw error
   }
 
-  // Fetch stats and activity in parallel
-  const [statsResult, activityResult] = await Promise.allSettled([
+  const isStaff = ['staff', 'admin', 'super_admin'].includes(user.role)
+
+  // Fetch stats, activity, and chart data in parallel
+  const [statsResult, activityResult, volumeResult, priorityResult] = await Promise.allSettled([
     getDashboardStats(user.id),
     getUserActivity(user.id, { limit: 10 }),
+    getTicketVolumeTrend(user.id, isStaff),
+    getTicketsByPriority(user.id, isStaff),
   ])
 
   const stats = statsResult.status === 'fulfilled' ? statsResult.value : null
@@ -31,6 +38,9 @@ export default async function DashboardPage() {
   
   const activity = activityResult.status === 'fulfilled' ? activityResult.value : []
   const activityError = activityResult.status === 'rejected' ? activityResult.reason : null
+
+  const ticketVolume = volumeResult.status === 'fulfilled' ? volumeResult.value : []
+  const ticketsByPriority = priorityResult.status === 'fulfilled' ? priorityResult.value : []
 
   // Log errors for debugging
   if (statsError) {
@@ -48,84 +58,138 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Banner */}
-      <WelcomeBanner user={user} />
+    <div className="space-y-6 p-1">
+      {/* Welcome Banner - Full Width */}
+      <div className="w-full">
+        <WelcomeBanner user={user} />
+      </div>
       
       {/* Error Alerts */}
-      {statsError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error Loading Statistics</AlertTitle>
-          <AlertDescription>
-            {statsError instanceof Error ? statsError.message : 'Failed to load statistics'}
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {activityError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error Loading Activity</AlertTitle>
-          <AlertDescription>
-            {activityError instanceof Error ? activityError.message : 'Failed to load recent activity'}
-          </AlertDescription>
-        </Alert>
-      )}
+      <div className="space-y-4">
+        {statsError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error Loading Statistics</AlertTitle>
+            <AlertDescription>
+              {statsError instanceof Error ? statsError.message : 'Failed to load statistics'}
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {activityError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error Loading Activity</AlertTitle>
+            <AlertDescription>
+              {activityError instanceof Error ? activityError.message : 'Failed to load recent activity'}
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {/* Overdue Tickets Alert */}
-      {stats && stats.overdueTickets > 0 && (
-        <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
-          <AlertTriangle className="h-4 w-4 text-orange-600" />
-          <AlertTitle className="text-orange-800 dark:text-orange-200">
-            Overdue Tickets
-          </AlertTitle>
-          <AlertDescription className="text-orange-700 dark:text-orange-300">
-            You have {stats.overdueTickets} ticket{stats.overdueTickets > 1 ? 's' : ''} past
-            {stats.overdueTickets > 1 ? ' their' : ' its'} SLA deadline.
-            <Link
-              href="/tickets?status=open&status=in_progress"
-              className="ml-2 underline font-medium hover:text-orange-900 dark:hover:text-orange-100"
-            >
-              Review now →
-            </Link>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard
-          title="Open Tickets"
-          value={formatStatValue(stats?.openTickets)}
-          icon="Ticket"
-          loading={!stats && !statsError}
-        />
-        <StatsCard
-          title="Resolved Today"
-          value={formatStatValue(stats?.resolvedTickets)}
-          icon="CheckCircle"
-          loading={!stats && !statsError}
-        />
-        <StatsCard
-          title="Avg Response Time"
-          value={stats?.avgResponseTime || '-'}
-          icon="Clock"
-          loading={!stats && !statsError}
-        />
-        <StatsCard
-          title="Satisfaction"
-          value={formatSatisfactionValue(stats?.satisfaction)}
-          icon="Star"
-          loading={!stats && !statsError}
-        />
+        {/* Overdue Tickets Alert */}
+        {stats && stats.overdueTickets > 0 && (
+          <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950/50 backdrop-blur-sm">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertTitle className="text-orange-800 dark:text-orange-200">
+              Overdue Tickets
+            </AlertTitle>
+            <AlertDescription className="text-orange-700 dark:text-orange-300">
+              You have {stats.overdueTickets} ticket{stats.overdueTickets > 1 ? 's' : ''} past
+              {stats.overdueTickets > 1 ? ' their' : ' its'} SLA deadline.
+              <Link
+                href="/tickets?status=open&status=in_progress"
+                className="ml-2 underline font-medium hover:text-orange-900 dark:hover:text-orange-100"
+              >
+                Review now →
+              </Link>
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
 
-      {/* Quick Actions */}
-      <QuickActions user={user} />
+      {/* Main Bento Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        {/* Stats Column - Spans 12 cols on mobile, 8 on desktop */}
+        <div className="md:col-span-8 space-y-6">
+          {/* Key Metrics Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <StatsCard
+              title="Open Tickets"
+              value={formatStatValue(stats?.openTickets)}
+              icon="Ticket"
+              loading={!stats && !statsError}
+              variant="default"
+              description="Active tickets requiring attention"
+            />
+            <StatsCard
+              title="Resolved Today"
+              value={formatStatValue(stats?.resolvedTickets)}
+              icon="CheckCircle"
+              loading={!stats && !statsError}
+              variant="default"
+              description="Tickets closed in the last 24h"
+            />
+          </div>
+          
+          {/* Secondary Metrics Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <StatsCard
+              title="Avg Response Time"
+              value={stats?.avgResponseTime || '-'}
+              icon="Clock"
+              loading={!stats && !statsError}
+              variant="warning"
+              description="Average time to first response"
+            />
+            <StatsCard
+              title="Satisfaction"
+              value={formatSatisfactionValue(stats?.satisfaction)}
+              icon="Star"
+              loading={!stats && !statsError}
+              variant="default"
+              description="Average customer rating"
+            />
+          </div>
 
-      {/* Recent Activity */}
-      <RecentActivity items={activity} />
+          {/* Ticket Volume Trend Chart */}
+          <TrendChart
+            title="Ticket Volume"
+            description="Tickets created over the last 7 days"
+            data={ticketVolume}
+            dataKey="value"
+            nameKey="name"
+            variant="area"
+            color="#3b82f6"
+            height={300}
+            className="bg-card/40 backdrop-blur-xl border-white/10 shadow-lg rounded-[24px]"
+          />
+
+          {/* Quick Actions - Takes remaining height in this column */}
+          <div className="h-full">
+            <QuickActions user={user} />
+          </div>
+        </div>
+
+        {/* Sidebar Column - Spans 12 cols on mobile, 4 on desktop */}
+        <div className="md:col-span-4 space-y-6">
+          {/* Tickets by Priority Chart */}
+          <CategoryChart
+            title="Tickets by Priority"
+            description="Distribution of open tickets"
+            data={ticketsByPriority}
+            variant="donut"
+            height={250}
+            className="bg-card/40 backdrop-blur-xl border-white/10 shadow-lg rounded-[24px]"
+            showLegend={true}
+            showPercentage={false}
+          />
+
+          {/* Recent Activity */}
+          <RecentActivity items={activity} />
+          
+          {/* Future: Add more widgets here like "My Tasks" or "System Status" */}
+        </div>
+      </div>
     </div>
   )
 }
