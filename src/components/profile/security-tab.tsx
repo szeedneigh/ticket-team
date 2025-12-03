@@ -83,7 +83,7 @@ function SecurityTabComponent({ user }: SecurityTabProps) {
     const result = await getActiveSessions()
     if (result.success && result.data) {
       // Transform data to match component interface
-      const transformedSessions = result.data.map((session: any) => ({
+      const transformedSessions = result.data.map((session) => ({
         id: session.id,
         device_info: `${session.browser} on ${session.os}`,
         device_type: session.device_type,
@@ -105,7 +105,7 @@ function SecurityTabComponent({ user }: SecurityTabProps) {
     const result = await getLoginHistory(20)
     if (result.success && result.data) {
       // Transform data to match component interface
-      const transformedHistory = result.data.map((record: any) => ({
+      const transformedHistory = result.data.map((record) => ({
         id: record.id,
         timestamp: record.timestamp,
         device: record.device_type || 'Unknown',
