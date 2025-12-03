@@ -130,18 +130,34 @@ export async function getAuditLogs(
     }
 
     // Transform data
-    const auditLogs: AuditLog[] = (activities || []).map((activity: any) => ({
-      id: activity.id,
-      ticket_id: activity.ticket_id,
-      ticket_title: activity.tickets?.title || 'Unknown',
-      user_id: activity.user_id,
-      user_name: activity.users?.full_name || 'System',
-      action: activity.action,
-      old_value: activity.old_value,
-      new_value: activity.new_value,
-      metadata: activity.metadata || {},
-      created_at: activity.created_at,
-    }))
+    type TicketActivityRow = {
+      id: string
+      ticket_id: string
+      user_id: string | null
+      action: string
+      old_value: string | null
+      new_value: string | null
+      metadata: Record<string, unknown> | null
+      created_at: string
+      tickets?: { title?: string | null } | null
+      users?: { full_name?: string | null } | null
+    }
+
+    const auditLogs: AuditLog[] = (activities || []).map((activity) => {
+      const row = activity as TicketActivityRow
+      return {
+        id: row.id,
+        ticket_id: row.ticket_id,
+        ticket_title: row.tickets?.title || 'Unknown',
+        user_id: row.user_id,
+        user_name: row.users?.full_name || 'System',
+        action: row.action,
+        old_value: row.old_value,
+        new_value: row.new_value,
+        metadata: row.metadata || {},
+        created_at: row.created_at,
+      }
+    })
 
     return {
       success: true,
