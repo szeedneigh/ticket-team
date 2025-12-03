@@ -121,14 +121,28 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
         .limit(10)
 
       // Transform activities to timeline items
-      const timeline: ActivityItem[] = (activitiesData || []).map((activity: any) => ({
-        id: activity.id,
-        type: activity.action.includes('created') ? 'ticket_created' : 'ticket_updated',
-        title: activity.ticket?.title || 'Unknown',
-        description: activity.action,
-        timestamp: activity.created_at,
-        link: activity.ticket ? `/tickets/${activity.ticket.id}` : undefined,
-      }))
+      type ActivityRow = {
+        id: string
+        action: string
+        created_at: string
+        ticket?: {
+          id: string
+          ticket_number?: string
+          title?: string
+        } | null
+      }
+
+      const timeline: ActivityItem[] = (activitiesData || []).map((activity) => {
+        const row = activity as ActivityRow
+        return {
+          id: row.id,
+          type: row.action.includes('created') ? 'ticket_created' : 'ticket_updated',
+          title: row.ticket?.title || 'Unknown',
+          description: row.action,
+          timestamp: row.created_at,
+          link: row.ticket ? `/tickets/${row.ticket.id}` : undefined,
+        }
+      })
 
       setActivityTimeline(timeline)
     } catch (error) {
