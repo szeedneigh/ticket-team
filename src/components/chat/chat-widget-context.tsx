@@ -1,15 +1,3 @@
-/**
- * ChatWidgetContext
- *
- * React Context provider for managing chat widget state:
- * - Widget open/closed state
- * - Widget minimized/maximized state
- * - Active session persistence
- * - Session history
- *
- * @module components/chat/chat-widget-context
- */
-
 'use client'
 
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
