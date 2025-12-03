@@ -2,18 +2,19 @@
 
 import { useState, useRef, memo } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Loader2, Camera, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { uploadAvatar } from '@/app/actions/profile'
+import { cn } from '@/lib/utils'
 import type { User } from '@/lib/types/users'
 
 interface AvatarUploadProps {
   user: User
+  className?: string
 }
 
-function AvatarUploadComponent({ user }: AvatarUploadProps) {
+function AvatarUploadComponent({ user, className }: AvatarUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -110,74 +111,60 @@ function AvatarUploadComponent({ user }: AvatarUploadProps) {
   }
 
   return (
-    <Card className="p-4 bg-card shadow-[var(--elev-2)] rounded-[18px] border border-[var(--brand-primary)]/10">
-      <div className="flex flex-col items-center space-y-4">
-        {/* Avatar Display */}
-        <div className="relative">
-          <Avatar className="h-24 w-24 ring-4 ring-[var(--brand-tint)]/30 transition-all duration-[var(--duration-base)]">
-            <AvatarImage
-              src={previewUrl || user.avatar_url || undefined}
-              alt={user.full_name || 'User avatar'}
-            />
-            <AvatarFallback className="bg-[var(--brand-primary)] text-white text-lg font-semibold">
-              {getInitials()}
-            </AvatarFallback>
-          </Avatar>
-
-          {/* Upload overlay */}
-          {isUploading && (
-            <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <Loader2 className="h-6 w-6 text-white animate-spin" />
-            </div>
-          )}
-        </div>
-
-        {/* Upload Controls */}
-        <div className="flex flex-col items-center space-y-2 w-full">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            className="hidden"
-            disabled={isUploading}
+    <div className={cn("flex flex-col items-center space-y-4", className)}>
+      {/* Avatar Display */}
+      <div className="relative group">
+        <Avatar className="h-32 w-32 ring-4 ring-background shadow-xl transition-all duration-300 group-hover:ring-[var(--brand-primary)]/50">
+          <AvatarImage
+            src={previewUrl || user.avatar_url || undefined}
+            alt={user.full_name || 'User avatar'}
+            className="object-cover"
           />
+          <AvatarFallback className="bg-[var(--brand-primary)] text-white text-3xl font-bold">
+            {getInitials()}
+          </AvatarFallback>
+        </Avatar>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="w-full border-[var(--brand-accent)]/30 hover:border-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10 transition-all duration-[var(--duration-base)]"
-          >
-            {isUploading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Camera className="h-4 w-4 mr-2 text-[var(--brand-accent)]" />
-            )}
-            {isUploading ? 'Uploading...' : 'Change Avatar'}
-          </Button>
+        {/* Upload overlay */}
+        {isUploading && (
+          <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm z-10">
+            <Loader2 className="h-8 w-8 text-white animate-spin" />
+          </div>
+        )}
 
-          {previewUrl && !isUploading && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRemovePreview}
-              className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 w-full"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-          )}
-        </div>
-
-        {/* Upload Guidelines */}
-        <div className="text-center text-xs text-muted-foreground max-w-xs space-y-1">
-          <p className="font-medium">Upload a profile picture</p>
-          <p className="text-[10px]">Max size: 5MB • Formats: JPG, PNG, GIF</p>
-        </div>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="absolute bottom-0 right-0 p-2 bg-[var(--brand-primary)] text-white rounded-full shadow-lg hover:bg-[var(--brand-primary)]/90 transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--brand-primary)]"
+          title="Change Avatar"
+        >
+          <Camera className="h-5 w-5" />
+        </button>
       </div>
-    </Card>
+
+      {/* Hidden Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+        disabled={isUploading}
+      />
+
+      {/* Cancel Preview Button - Only show if preview exists and not uploading */}
+      {previewUrl && !isUploading && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRemovePreview}
+          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          <X className="h-4 w-4 mr-2" />
+          Cancel
+        </Button>
+      )}
+    </div>
   )
 }
 

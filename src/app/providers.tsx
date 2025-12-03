@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect } from 'react'
+import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@/components/ui/sonner'
 import { AppProgressBar as ProgressBar } from 'next-nprogress-bar'
-import { NavigationLoading } from '@/components/shared/navigation-loading'
 import { ChatWidgetInitializer } from '@/components/chat/chat-widget-initializer'
 import { PreferencesProvider } from '@/providers/preferences-provider'
 import type { UserPreferences } from '@/lib/types/users'
@@ -42,23 +42,28 @@ export function Providers({ children, initialPreferences }: ProvidersProps) {
   }, [])
 
   return (
-    <PreferencesProvider initialPreferences={initialPreferences}>
-      {/* Top Progress Bar for Navigation */}
-      <ProgressBar
-        height="3px"
-        color="#0693D2"
-        options={{ showSpinner: false }}
-        shallowRouting
-      />
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+      storageKey="ticket-team-theme"
+    >
+      <PreferencesProvider initialPreferences={initialPreferences}>
+        {/* Top Progress Bar for Navigation */}
+        <ProgressBar
+          height="3px"
+          color="#0693D2"
+          options={{ showSpinner: false }}
+          shallowRouting
+        />
 
-      {/* Loading Overlay for Slow Navigation (>300ms) */}
-      <NavigationLoading />
+        {children}
+        <Toaster richColors position="top-right" />
 
-      {children}
-      <Toaster richColors position="top-right" />
-
-      {/* Floating Chat Widget */}
-      <ChatWidgetInitializer />
-    </PreferencesProvider>
+        {/* Floating Chat Widget */}
+        <ChatWidgetInitializer />
+      </PreferencesProvider>
+    </ThemeProvider>
   )
 }

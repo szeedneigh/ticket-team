@@ -8,6 +8,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { requireAuth } from '@/lib/auth/session'
+import { logger } from '@/lib/logger'
 
 // ============================================================================
 // Types
@@ -124,7 +125,7 @@ export async function getAuditLogs(
     const { data: activities, error, count } = await query
 
     if (error) {
-      console.error('Error fetching audit logs:', error)
+      logger.error('Error fetching audit logs', { error: error.message })
       return { success: false, error: error.message }
     }
 
@@ -153,7 +154,9 @@ export async function getAuditLogs(
       },
     }
   } catch (error) {
-    console.error('Error fetching audit logs:', error)
+    logger.error('Error fetching audit logs', { 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    })
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch audit logs',
@@ -185,7 +188,7 @@ export async function getAuditActionTypes(): Promise<{
       .order('action')
 
     if (error) {
-      console.error('Error fetching action types:', error)
+      logger.error('Error fetching action types', { error: error.message })
       return { success: false, error: error.message }
     }
 
@@ -194,7 +197,9 @@ export async function getAuditActionTypes(): Promise<{
 
     return { success: true, data: uniqueActions }
   } catch (error) {
-    console.error('Error fetching action types:', error)
+    logger.error('Error fetching action types', { 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    })
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch action types',
@@ -254,7 +259,9 @@ export async function exportAuditLogs(
 
     return { success: true, data: csvContent }
   } catch (error) {
-    console.error('Error exporting audit logs:', error)
+    logger.error('Error exporting audit logs', { 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    })
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to export audit logs',

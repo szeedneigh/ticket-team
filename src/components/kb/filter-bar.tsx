@@ -84,48 +84,51 @@ export function FilterBar({ categories, tags, className }: FilterBarProps) {
   const hasActiveFilters = currentCategory || currentTags.length > 0 || currentSort !== 'recent'
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn('space-y-6', className)}>
       {/* Filter Controls */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Category Filter */}
-        <div className="flex-1">
-          <Select value={currentCategory || 'all'} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(({ category }) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/50 backdrop-blur-sm">
+        <div className="flex flex-1 gap-4 w-full sm:w-auto">
+          {/* Category Filter */}
+          <div className="flex-1 sm:max-w-[240px]">
+            <Select value={currentCategory || 'all'} onValueChange={handleCategoryChange}>
+              <SelectTrigger className="w-full bg-background/50 border-border/50 focus:ring-primary/20">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map(({ category }) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* Sort Filter */}
-        <div className="flex-1">
-          <Select value={currentSort} onValueChange={handleSortChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              {sortOptions.map(({ value, label }) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Sort Filter */}
+          <div className="flex-1 sm:max-w-[200px]">
+            <Select value={currentSort} onValueChange={handleSortChange}>
+              <SelectTrigger className="w-full bg-background/50 border-border/50 focus:ring-primary/20">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                {sortOptions.map(({ value, label }) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Clear Filters */}
         {hasActiveFilters && (
           <Button
-            variant="outline"
+            variant="ghost"
+            size="sm"
             onClick={handleClearFilters}
-            className="sm:w-auto w-full"
+            className="text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4 mr-2" />
             Clear Filters
@@ -135,10 +138,10 @@ export function FilterBar({ categories, tags, className }: FilterBarProps) {
 
       {/* Tag Filters */}
       {tags.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Filter className="h-4 w-4" />
-            <span>Filter by tags:</span>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <Filter className="h-3 w-3" />
+            <span>Filter by tags</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => {
@@ -148,13 +151,15 @@ export function FilterBar({ categories, tags, className }: FilterBarProps) {
                   key={tag}
                   variant={isActive ? 'default' : 'outline'}
                   className={cn(
-                    'cursor-pointer transition-colors',
-                    isActive ? 'hover:bg-primary/90' : 'hover:bg-muted'
+                    'cursor-pointer transition-all duration-200 px-3 py-1',
+                    isActive 
+                      ? 'bg-primary hover:bg-primary/90 shadow-md shadow-primary/20' 
+                      : 'bg-background/50 hover:bg-muted hover:border-primary/30'
                   )}
                   onClick={() => handleTagToggle(tag)}
                 >
                   {tag}
-                  {isActive && <X className="ml-1 h-3 w-3" />}
+                  {isActive && <X className="ml-1.5 h-3 w-3" />}
                 </Badge>
               )
             })}
@@ -164,12 +169,14 @@ export function FilterBar({ categories, tags, className }: FilterBarProps) {
 
       {/* Active Filters Summary */}
       {hasActiveFilters && (
-        <div className="text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-primary/5 px-3 py-2 rounded-lg border border-primary/10 w-fit">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           {currentCategory && (
-            <span>Category: <strong>{currentCategory}</strong></span>
+            <span>Category: <strong className="text-foreground">{currentCategory}</strong></span>
           )}
+          {currentCategory && currentTags.length > 0 && <span className="text-muted-foreground/50">•</span>}
           {currentTags.length > 0 && (
-            <span className="ml-4">
+            <span>
               {currentTags.length} tag{currentTags.length > 1 ? 's' : ''} selected
             </span>
           )}

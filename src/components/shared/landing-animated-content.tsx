@@ -37,7 +37,7 @@ export function LandingAnimatedContent() {
       {/* Background waves */}
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-0"
+        className="pointer-events-none absolute inset-0 z-0 hidden md:block"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
@@ -47,7 +47,7 @@ export function LandingAnimatedContent() {
 
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-0"
+        className="pointer-events-none absolute inset-0 z-0 hidden md:block"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
@@ -56,9 +56,9 @@ export function LandingAnimatedContent() {
       </motion.div>
 
       {/* Main card */}
-      <div className="relative z-10 grid place-content-center min-h-[100svh] p-6 md:ml-8">
+      <div className="relative z-10 grid place-content-center min-h-[100svh] p-4 md:p-6 md:ml-8">
         <motion.div
-          className="w-full max-w-[600px] rounded-[40px] bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] p-10 md:p-14"
+          className="w-full max-w-[600px] rounded-[40px] bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] p-8 md:p-14"
           variants={containerVariants}
           initial="hidden"
           animate="visible"

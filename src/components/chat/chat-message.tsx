@@ -89,25 +89,32 @@ export function ChatMessage({
       {!isUser && (
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.2 }}
-          className={cn(
-            'flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full',
-            isAssistant
-              ? 'bg-gradient-to-br from-[#2cafdd]/20 to-[#1f3463]/10 border-2 border-[#2cafdd]/30 shadow-[0_0_12px_rgba(44,175,221,0.15)]'
-              : 'border border-border bg-muted'
-          )}
+          animate={{ 
+            scale: 1, 
+            opacity: 1,
+            rotate: [0, -10, 10, -10, 10, 0],
+            transition: { 
+              duration: 0.5,
+              rotate: {
+                delay: 0.2,
+                duration: 0.6,
+                ease: "easeInOut"
+              }
+            }
+          }}
+          className="flex h-10 w-10 shrink-0 select-none items-center justify-center"
           aria-hidden="true"
         >
           {isAssistant ? (
-            <Image
-              src="/assets/timi-bot1.svg"
-              alt="Timi AI Assistant"
-              width={32}
-              height={32}
-              className="h-8 w-8 object-contain"
-              priority
-            />
+            <div className="relative h-10 w-10">
+                <Image
+                src="/assets/timi-bot1.svg"
+                alt="Timi AI Assistant"
+                fill
+                className="object-contain drop-shadow-[0_0_8px_rgba(44,175,221,0.4)]"
+                priority
+                />
+            </div>
           ) : (
             <User className="h-4 w-4 text-muted-foreground" />
           )}
@@ -124,11 +131,11 @@ export function ChatMessage({
         {/* Message Bubble */}
         <div
           className={cn(
-            'relative rounded-xl px-4 py-3',
+            'relative rounded-2xl px-5 py-4 shadow-sm',
             'max-w-[90%] sm:max-w-[80%] md:max-w-[75%]',
             isUser
-              ? 'bg-gradient-to-r from-[#1f3463] to-[#2cafdd] text-white'
-              : 'bg-muted text-foreground',
+              ? 'bg-gradient-to-br from-[#1f3463] to-[#2cafdd] text-white shadow-md'
+              : 'bg-background/60 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-sm text-foreground',
             isStreaming && 'animate-pulse'
           )}
         >
@@ -304,7 +311,7 @@ export function ChatMessage({
       {/* User Avatar */}
       {isUser && (
         <div
-          className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full border border-primary/20 bg-primary/10"
+          className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full border border-primary/20 bg-primary/10 shadow-sm"
           aria-hidden="true"
         >
           <User className="h-4 w-4 text-primary" />

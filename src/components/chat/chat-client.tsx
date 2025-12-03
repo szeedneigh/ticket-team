@@ -443,10 +443,10 @@ export function ChatClient({
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col relative">
       {/* Messages Area */}
       <div className="flex-1 overflow-hidden">
-        <div className="mx-auto h-full max-w-4xl">
+        <div className="mx-auto h-full w-full px-4 md:px-8">
           {messages.length === 0 && !isStreaming ? (
             <ChatWelcome
               onPromptClick={handlePromptClick}
@@ -521,8 +521,8 @@ export function ChatClient({
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-border bg-background p-4">
-        <div className="mx-auto max-w-4xl">
+      <div className="p-4 md:p-6 pb-6 md:pb-8">
+        <div className="mx-auto w-full max-w-4xl">
           <ChatInput
             onSend={handleSendMessage}
             disabled={false}

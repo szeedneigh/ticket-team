@@ -15,6 +15,8 @@
 import { useState, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
+import { History } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { ChatHistory } from '@/components/chat/chat-history'
 import { ChatClient } from '@/components/chat/chat-client'
 import {
@@ -24,6 +26,7 @@ import {
 } from '@/app/actions/chat'
 import type { SessionSummary } from '@/lib/chat/queries'
 import type { ChatMessage } from '@/lib/types/ai'
+import { cn } from '@/lib/utils'
 
 // ============================================================================
 // Types
@@ -55,6 +58,7 @@ export function ChatPageClient({
     Record<string, ChatMessage[]>
   >({})
   const [isLoadingSession, setIsLoadingSession] = useState(false)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
   // Handle session selection
   const handleSessionSelect = useCallback(
@@ -178,7 +182,35 @@ export function ChatPageClient({
 
   return (
     <>
-      {/* History Sidebar */}
+      {/* Chat Area - NOW FIRST */}
+      <div className="flex flex-1 flex-col relative h-full overflow-hidden bg-background/50 backdrop-blur-sm">
+        {/* History Toggle Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            'fixed z-50',
+            'top-4 right-4',
+            'md:top-6 md:right-6',
+            'hover:bg-muted/50'
+          )}
+          onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+          aria-label={isHistoryOpen ? 'Close chat history' : 'Open chat history'}
+        >
+          <History className="h-5 w-5 text-muted-foreground" />
+        </Button>
+
+        <div className="flex-1 w-full flex flex-col h-full">
+            <ChatClient
+            key={activeSessionId} // Re-mount on session change
+            sessionId={activeSessionId}
+            initialMessages={sessionMessages[activeSessionId] || []}
+            userName={userName}
+            />
+        </div>
+      </div>
+
+      {/* Chat History - NOW SECOND (renders on right) */}
       <ChatHistory
         sessions={sessions}
         activeSessionId={activeSessionId}
@@ -186,17 +218,9 @@ export function ChatPageClient({
         onNewChat={handleNewChat}
         onDeleteSession={handleDeleteSession}
         isLoading={isLoadingSession}
+        isOpen={isHistoryOpen}
+        onToggle={() => setIsHistoryOpen(!isHistoryOpen)}
       />
-
-      {/* Chat Area */}
-      <div className="flex flex-1 flex-col">
-        <ChatClient
-          key={activeSessionId} // Re-mount on session change
-          sessionId={activeSessionId}
-          initialMessages={sessionMessages[activeSessionId] || []}
-          userName={userName}
-        />
-      </div>
     </>
   )
 }

@@ -26,6 +26,10 @@ export const metadata = {
   description: 'Get help with Ticket Team - tutorials, guides, and FAQs',
 }
 
+// Static generation - content doesn't change frequently
+export const dynamic = 'force-static'
+export const revalidate = 3600 // Revalidate every hour
+
 export default function HelpCenterPage() {
   return (
     <div className="container max-w-6xl py-8 space-y-8">

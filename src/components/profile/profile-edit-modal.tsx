@@ -97,7 +97,7 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
     <Dialog open={open} onOpenChange={handleCancel}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-[var(--brand-primary)]">
+          <DialogTitle className="text-2xl font-bold">
             Edit Profile
           </DialogTitle>
           <DialogDescription>
@@ -108,7 +108,7 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
           {/* Read-only fields */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-[var(--brand-primary)]">Account Information</h3>
+            <h3 className="text-lg font-semibold mb-4">Account Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
@@ -129,7 +129,7 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
                   id="role"
                   value={user.role.replace('_', ' ')}
                   disabled
-                  className="bg-muted"
+                  className="bg-muted capitalize"
                 />
                 <p className="text-xs text-muted-foreground">
                   Role is managed by administrators.
@@ -142,7 +142,7 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
 
           {/* Editable fields */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-[var(--brand-primary)]">Personal Information</h3>
+            <h3 className="text-lg font-semibold mb-4">Personal Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="full_name">Full Name *</Label>
@@ -206,7 +206,6 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
             <Button
               type="submit"
               disabled={isPending || !isDirty}
-              className="bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
             >
               {isPending ? (
                 <>

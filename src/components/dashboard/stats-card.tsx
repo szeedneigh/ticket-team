@@ -167,7 +167,7 @@ export function StatsCard({
 
   if (loading) {
     return (
-      <Card className="p-6 bg-card/90 backdrop-blur-sm shadow-lg rounded-[20px]">
+      <Card className="p-6 bg-card/50 backdrop-blur-md border-white/10 shadow-lg rounded-[24px]">
         <div className="space-y-3">
           <Skeleton className="h-4 w-20" />
           <Skeleton className="h-8 w-16" />
@@ -179,18 +179,25 @@ export function StatsCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
     >
-      <Card className="p-6 bg-card/90 backdrop-blur-sm shadow-lg rounded-[20px] hover:shadow-xl transition-all duration-200">
-        <div className="flex items-center justify-between">
+      <Card className="relative overflow-hidden p-6 bg-card/40 backdrop-blur-xl border-white/10 shadow-lg hover:shadow-md rounded-[24px] transition-all duration-300 group">
+        {/* Ambient background glow - Static now */}
+        <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full blur-3xl opacity-10 ${styles.badgeBg.replace('/10', '')}`} />
+        
+        <div className="relative z-10 flex items-start justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
-            <p className={`text-2xl font-bold ${styles.valueText}`}>{displayValue}</p>
+            <p className="text-sm font-medium text-muted-foreground mb-2">{title}</p>
+            <div className="flex items-baseline gap-2">
+              <p className={`text-3xl font-bold tracking-tight ${styles.valueText}`}>{displayValue}</p>
+            </div>
+            
             {description && !trend && (
-              <p className="text-xs text-muted-foreground mt-1">{description}</p>
+              <p className="text-xs text-muted-foreground mt-2 font-medium">{description}</p>
             )}
+            
             {trend && trend !== 'neutral' && typeof trend === 'string' && !['up', 'down'].includes(trend) && (
               <div className="flex items-center gap-1 mt-2">
                 {effectiveTrendDirection === 'up' ? (
@@ -198,7 +205,7 @@ export function StatsCard({
                 ) : (
                   <TrendingDown className={`h-3 w-3 ${styles.trendDownText}`} />
                 )}
-                <span className={`text-xs font-medium ${
+                <span className={`text-xs font-bold ${
                   effectiveTrendDirection === 'up' ? styles.trendUpText : styles.trendDownText
                 }`}>
                   {trend}
@@ -206,10 +213,11 @@ export function StatsCard({
               </div>
             )}
             {trend === 'neutral' && description && (
-              <p className="text-xs text-muted-foreground mt-1">{description}</p>
+              <p className="text-xs text-muted-foreground mt-2">{description}</p>
             )}
           </div>
-          <div className={`p-3 ${styles.badgeBg} rounded-[12px]`}>
+          
+          <div className={`p-3 ${styles.badgeBg} rounded-[16px] transition-transform duration-300`}>
             <IconComponent className={`h-6 w-6 ${styles.badgeIcon}`} />
           </div>
         </div>

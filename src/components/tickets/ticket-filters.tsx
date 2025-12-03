@@ -52,17 +52,20 @@ export function TicketFilters({ className }: TicketFiltersProps) {
   }, [searchQuery, searchParams, pathname, router])
 
   return (
-    <div className={cn('relative', className)}>
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+    <div className={cn('relative group', className)}>
       <Input
         type="search"
-        placeholder="Search for ticket"
+        placeholder="Search tickets..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        className="pl-10 w-full max-w-md"
+        className="pl-10 w-full max-w-md bg-background/50 backdrop-blur-sm border-white/10 focus:bg-background transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500/20"
         disabled={isPending}
         aria-label="Search tickets by number or concern"
         aria-describedby={isPending ? "search-status" : undefined}
+      />
+      <Search 
+        className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-blue-500 pointer-events-none" 
+        aria-hidden="true" 
       />
       {isPending && (
         <span id="search-status" className="sr-only">

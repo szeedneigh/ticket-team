@@ -20,6 +20,7 @@ import { uploadTicketAttachment } from '@/lib/tickets/storage'
 import { ACTIVITY_TYPES } from '@/lib/constants/activity-types'
 import { ERROR_MESSAGES } from '@/lib/constants'
 import { notifyTicketComment } from '@/lib/email/notifications'
+import { logger } from '@/lib/logger'
 
 // ============================================================================
 // Types
@@ -226,7 +227,10 @@ export async function createComment(
       .single()
 
     if (commentError || !comment) {
-      console.error('Comment creation error:', commentError)
+      logger.error('Comment creation error', { 
+        error: commentError.message,
+        ticketId
+      })
       return {
         success: false,
         error: 'Failed to create comment',
@@ -247,7 +251,10 @@ export async function createComment(
         await notifyTicketComment(ticket_id, authorName, validation.data.content)
       } catch (emailError) {
         // Log error but don't fail the comment creation
-        console.error('Email notification error:', emailError)
+        logger.error('Email notification error', { 
+          error: emailError instanceof Error ? emailError.message : 'Unknown error',
+          ticketId: ticket_id
+        })
       }
     }
 
@@ -279,7 +286,9 @@ export async function createComment(
       data: comment as CommentWithUser,
     }
   } catch (error) {
-    console.error('Create comment error:', error)
+    logger.error('Create comment error', { 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    })
     return {
       success: false,
       error: ERROR_MESSAGES.GENERIC,
