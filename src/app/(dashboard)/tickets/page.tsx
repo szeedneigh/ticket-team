@@ -20,6 +20,7 @@ import type { TicketFilters as TTicketFilters, TimePeriod } from '@/lib/types/ti
 import type { TicketStatus } from '@/lib/types/database'
 import { isStaffOrAbove } from '@/lib/types/database'
 import { PAGINATION } from '@/lib/constants'
+import { Sparkles } from 'lucide-react'
 
 export const metadata = {
   title: 'My Tickets | Ticket Team',
@@ -103,48 +104,77 @@ export default async function TicketsPage({ searchParams }: PageProps) {
   )
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          List of My Tickets
-        </h1>
-      </div>
+    <div className="min-h-screen bg-background relative">
+      {/* Hero Section with Gradient Background */}
+      <div className="relative overflow-hidden bg-background border-b border-border/40 pb-12">
+        {/* Dot Grid Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+        
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1f3463]/10 via-background/50 to-background" />
+        
+        {/* Top Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-[#2cafdd]/20 opacity-20 blur-[100px] rounded-full pointer-events-none" />
 
-      {/* Filter Bar: Search (left) + Time Filter (right) */}
-      <div className="flex items-center justify-between gap-4">
-        <Suspense fallback={<Skeleton className="h-10 w-full max-w-md" />}>
-          <TicketFilters />
-        </Suspense>
+        <div className="container mx-auto pt-16 pb-8 px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl">
+          {/* Header Content */}
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
+            <div className="space-y-4">
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
+                My Tickets
+              </h1>
+              <p className="text-lg text-muted-foreground flex items-center gap-2 max-w-2xl">
+                Manage and track your support requests. We&apos;re here to help.
+                <Sparkles className="h-4 w-4 text-[#2cafdd]" />
+              </p>
+            </div>
+          </div>
 
-        <Suspense fallback={<Skeleton className="h-10 w-[150px]" />}>
-          <TimeFilter defaultValue="this_week" />
-        </Suspense>
-      </div>
+          {/* Controls Section - Integrated into Hero */}
+          <div className="flex flex-col gap-6 bg-background/40 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-xl shadow-[#1f3463]/5">
+            {/* Top Bar: Tabs & Actions */}
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+              <Suspense fallback={<Skeleton className="h-12 w-full md:w-auto min-w-[400px]" />}>
+                <StatusTabs />
+              </Suspense>
+              
+              <div className="flex items-center gap-3 w-full md:w-auto">
+                 <Suspense fallback={<Skeleton className="h-10 w-[150px]" />}>
+                  <TimeFilter defaultValue="this_week" />
+                </Suspense>
+              </div>
+            </div>
 
-      {/* Status Tabs */}
-      <Suspense fallback={<Skeleton className="h-12 w-full" />}>
-        <StatusTabs />
-      </Suspense>
-
-      {/* Ticket Count */}
-      {result.totalCount > 0 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {result.tickets.length} of {result.totalCount} ticket{result.totalCount !== 1 ? 's' : ''}
-          </p>
+            {/* Search Bar */}
+            <div className="w-full">
+              <Suspense fallback={<Skeleton className="h-10 w-full max-w-md" />}>
+                <TicketFilters className="max-w-md" />
+              </Suspense>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
-      {/* Ticket List (Table) */}
-      <Suspense fallback={<TicketListSkeleton />}>
-        <TicketList
-          tickets={result.tickets}
-          currentPage={result.currentPage}
-          totalPages={result.totalPages}
-          totalCount={result.totalCount}
-        />
-      </Suspense>
+      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-7xl">
+        {/* Ticket Count */}
+        {result.totalCount > 0 && (
+          <div className="flex items-center justify-between px-1 mb-4">
+            <p className="text-sm font-medium text-muted-foreground">
+              Showing <span className="text-foreground font-semibold">{result.tickets.length}</span> of <span className="text-foreground font-semibold">{result.totalCount}</span> tickets
+            </p>
+          </div>
+        )}
+
+        {/* Ticket List (Table) */}
+        <Suspense fallback={<TicketListSkeleton />}>
+          <TicketList
+            tickets={result.tickets}
+            currentPage={result.currentPage}
+            totalPages={result.totalPages}
+            totalCount={result.totalCount}
+          />
+        </Suspense>
+      </div>
     </div>
   )
 }
