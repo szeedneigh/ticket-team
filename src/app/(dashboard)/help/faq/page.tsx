@@ -20,6 +20,10 @@ export const metadata = {
   description: 'Frequently asked questions about Ticket Team',
 }
 
+// Static generation - FAQ content doesn't change frequently
+export const dynamic = 'force-static'
+export const revalidate = 3600 // Revalidate every hour
+
 export default function FAQPage() {
   return (
     <div className="container max-w-4xl py-8 space-y-8">

@@ -455,13 +455,55 @@ export async function getUserTicketSummary(userId: string): Promise<UserTicketSu
  * @returns Knowledge base statistics
  */
 export async function getKBStats(): Promise<KBStats> {
+  const supabase = await createClient()
+  
   try {
-    // Return empty stats for now - KB feature not yet implemented
+    // Get total article count
+    const { count: totalCount, error: totalError } = await supabase
+      .from('knowledge_articles')
+      .select('id', { count: 'exact', head: true })
+    
+    if (totalError) {
+      logger.error('Error fetching total KB articles', { error: totalError.message })
+    }
+
+    // Get published article count
+    const { count: publishedCount, error: publishedError } = await supabase
+      .from('knowledge_articles')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'published')
+    
+    if (publishedError) {
+      logger.error('Error fetching published KB articles', { error: publishedError.message })
+    }
+
+    // Get draft article count
+    const { count: draftCount, error: draftError } = await supabase
+      .from('knowledge_articles')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'draft')
+    
+    if (draftError) {
+      logger.error('Error fetching draft KB articles', { error: draftError.message })
+    }
+
+    // Get most viewed articles
+    const { data: topArticles, error: topError } = await supabase
+      .from('knowledge_articles')
+      .select('id, title, view_count, slug')
+      .eq('status', 'published')
+      .order('view_count', { ascending: false })
+      .limit(5)
+    
+    if (topError) {
+      logger.error('Error fetching top KB articles', { error: topError.message })
+    }
+
     return {
-      totalArticles: 0,
-      publishedArticles: 0,
-      draftArticles: 0,
-      mostViewed: [],
+      totalArticles: totalCount || 0,
+      publishedArticles: publishedCount || 0,
+      draftArticles: draftCount || 0,
+      mostViewed: topArticles || [],
     }
   } catch (error) {
     logger.error('Error fetching KB stats', { error: error instanceof Error ? error.message : 'Unknown error' })

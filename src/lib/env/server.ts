@@ -100,6 +100,10 @@ export const serverEnv = {
    */
   resend: {
     apiKey: getServerEnvVar('RESEND_API_KEY', { required: false }),
+    fromEmail: getServerEnvVar('RESEND_FROM_EMAIL', { 
+      required: false, 
+      defaultValue: 'Ticket Team <noreply@ticketteam.laverdad.edu.ph>' 
+    }),
   },
 
   /**

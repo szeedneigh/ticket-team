@@ -61,26 +61,35 @@ export function ChatWelcome({
   userName,
 }: ChatWelcomeProps) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-8 px-4 py-12">
+    <div className="h-full w-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex min-h-full flex-col items-center justify-center gap-8 px-4 py-12">
       {/* Header */}
-      <div className="flex flex-col items-center gap-4 text-center">
+      <div className="flex flex-col items-center gap-6 text-center">
         {/* Timi Avatar */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="relative"
+          animate={{ 
+            scale: 1, 
+            opacity: 1,
+            rotate: [0, -10, 10, -10, 10, 0],
+            transition: { 
+              duration: 0.5,
+              rotate: {
+                delay: 0.2,
+                duration: 0.6,
+                ease: "easeInOut"
+              }
+            }
+          }}
+          className="relative h-24 w-24"
         >
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#2cafdd]/20 to-[#1f3463]/10 border-2 border-[#2cafdd]/30 shadow-[0_0_20px_rgba(44,175,221,0.2)]">
-            <Image
-              src="/assets/timi-bot1.svg"
-              alt="Timi AI Assistant"
-              width={64}
-              height={64}
-              className="h-16 w-16 object-contain"
-              priority
-            />
-          </div>
+          <Image
+            src="/assets/timi-bot1.svg"
+            alt="Timi AI Assistant"
+            fill
+            className="object-contain drop-shadow-[0_0_15px_rgba(44,175,221,0.5)]"
+            priority
+          />
           {/* Pulse Animation */}
           <span className="absolute -right-1 -top-1 flex h-5 w-5">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2cafdd] opacity-75" />
@@ -92,7 +101,7 @@ export function ChatWelcome({
 
         {/* Welcome Text */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-[#1f3463] to-[#2cafdd] bg-clip-text text-transparent">
             Hi{userName ? ` ${userName}` : ''}! 👋
           </h1>
           <p className="text-lg text-muted-foreground">
@@ -121,11 +130,11 @@ export function ChatWelcome({
               <Button
                 key={index}
                 variant="outline"
-                className="h-auto w-full justify-start gap-3 p-4 text-left transition-colors hover:border-[#2cafdd] hover:bg-[#2cafdd]/5"
+                className="h-auto w-full justify-start gap-3 p-4 text-left transition-all hover:border-[#2cafdd]/50 hover:bg-[#2cafdd]/5 hover:shadow-md hover:-translate-y-0.5"
                 onClick={() => onPromptClick(prompt.text)}
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#2cafdd]/20 to-[#1f3463]/10">
-                  <Icon className="h-5 w-5 text-[#2cafdd]" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#2cafdd]/20 to-[#1f3463]/10 text-[#2cafdd]">
+                  <Icon className="h-5 w-5" />
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="font-medium">{prompt.text}</span>
@@ -175,6 +184,7 @@ export function ChatWelcome({
       <p className="text-xs text-muted-foreground">
         All conversations are logged for quality assurance and training purposes
       </p>
+      </div>
     </div>
   )
 }

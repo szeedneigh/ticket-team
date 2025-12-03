@@ -150,9 +150,9 @@ export function ChatInput({
       )}
 
       {/* Input Container */}
-      <div className="relative flex items-end gap-2">
+      <div className="relative flex items-end gap-3 rounded-3xl bg-background/60 p-2 shadow-lg backdrop-blur-xl ring-1 ring-white/20 dark:ring-white/10 transition-shadow hover:shadow-xl focus-within:shadow-xl focus-within:ring-[#2cafdd]/50">
         {/* Textarea */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <Textarea
             ref={textareaRef}
             value={message}
@@ -162,9 +162,8 @@ export function ChatInput({
             disabled={disabled || isStreaming}
             rows={rows}
             className={cn(
-              'min-h-[48px] resize-none pr-12',
-              'focus-visible:ring-2 focus-visible:ring-[#2cafdd]/50',
-              'focus-visible:border-[#2cafdd]',
+              'min-h-[48px] w-full resize-none bg-transparent border-0 focus-visible:ring-0 px-4 py-3',
+              'placeholder:text-muted-foreground/70',
               disabled && 'cursor-not-allowed opacity-50'
             )}
             aria-label="Chat message input"
@@ -194,17 +193,18 @@ export function ChatInput({
           disabled={isSendDisabled}
           size="icon"
           className={cn(
-            'h-12 w-12 shrink-0',
-            'bg-gradient-to-br from-[#1f3463] to-[#2cafdd]',
-            'hover:opacity-90',
-            'transition-opacity'
+            'h-10 w-10 shrink-0 rounded-full mb-1 mr-1',
+            'bg-gradient-to-br from-[#1f3463] to-[#2cafdd] shadow-md',
+            'hover:opacity-90 hover:shadow-lg hover:scale-105',
+            'transition-all duration-200',
+            isSendDisabled && 'opacity-50 shadow-none hover:scale-100'
           )}
           aria-label="Send message"
         >
           {isStreaming ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin text-white" />
           ) : (
-            <Send className="h-5 w-5" />
+            <Send className="h-5 w-5 text-white ml-0.5" />
           )}
         </Button>
       </div>

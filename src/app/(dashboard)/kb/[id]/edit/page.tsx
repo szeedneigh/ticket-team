@@ -1,23 +1,22 @@
 /**
- * Edit KB Article Page
+ * Knowledge Base Article Edit Page
  *
- * Server Component that renders the article editing form.
- * Only accessible to article author or admins.
+ * Server Component that allows authorized users to edit KB articles.
+ * Only staff (authors), admins, and super_admins can edit articles.
  */
 
+import { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { requireAuth } from '@/lib/auth/session'
-import { getArticleById, canUserEditArticle, getAllTags } from '@/lib/kb/queries'
+import { getArticleById, canUserEditArticle } from '@/lib/kb/queries'
 import { KBEditorForm } from '@/components/kb/kb-editor-form'
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator
-} from '@/components/ui/breadcrumb'
+import { PageHeader } from '@/components/shared/page-header'
 import { isValidUUID } from '@/lib/utils'
+
+export const metadata: Metadata = {
+  title: 'Edit Article',
+  description: 'Edit knowledge base article',
+}
 
 interface PageProps {
   params: Promise<{
@@ -25,31 +24,15 @@ interface PageProps {
   }>
 }
 
-export async function generateMetadata({ params }: PageProps) {
-  const { id } = await params
-
-  try {
-    const article = await getArticleById(id)
-    return {
-      title: `Edit: ${article.title} - Knowledge Base`,
-      description: `Edit knowledge base article: ${article.title}`
-    }
-  } catch {
-    return {
-      title: 'Edit Article - Knowledge Base',
-      description: 'Edit knowledge base article'
-    }
-  }
-}
-
 export default async function EditArticlePage({ params }: PageProps) {
   const { id } = await params
 
-  // Validate UUID format before attempting any operations
+  // Validate UUID format
   if (!isValidUUID(id)) {
     notFound()
   }
 
+  // Get authenticated user
   const user = await requireAuth()
 
   // Fetch article
@@ -60,46 +43,25 @@ export default async function EditArticlePage({ params }: PageProps) {
     notFound()
   }
 
-  // Check if user can edit this article
-  const canEdit = await canUserEditArticle(id, user.id, user.role)
-  if (!canEdit) {
-    redirect(`/kb/${id}`)
+  if (!article) {
+    notFound()
   }
 
-  // Fetch existing tags for autocomplete
-  const existingTags = await getAllTags()
+  // Check authorization - only author, staff, admin, or super_admin can edit
+  const canEdit = await canUserEditArticle(id, user.id, user.role)
+
+  if (!canEdit) {
+    redirect('/kb')
+  }
 
   return (
-    <div className="container mx-auto py-8 max-w-5xl">
-      {/* Breadcrumb Navigation */}
-      <Breadcrumb className="mb-6">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/dashboard">Home</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/kb">Knowledge Base</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href={`/kb/${id}`}>
-              {article.title}
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Edit</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      {/* Editor Form */}
-      <KBEditorForm
-        mode="edit"
-        article={article}
-        existingTags={existingTags}
+    <div className="container mx-auto py-6 space-y-6">
+      <PageHeader
+        title="Edit Article"
+        description={`Editing: ${article.title}`}
       />
+
+      <KBEditorForm article={article} mode="edit" />
     </div>
   )
 }

@@ -31,6 +31,9 @@ interface PageProps {
   }>
 }
 
+// ISR for KB browse - revalidate every 30 minutes
+export const revalidate = 1800 // 30 minutes
+
 export default async function KBBrowsePage({ searchParams }: PageProps) {
   const params = await searchParams
   const user = await requireAuth()

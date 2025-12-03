@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { logger } from '@/lib/logger'
 
 /**
  * Feedback Server Actions
@@ -90,7 +91,7 @@ export async function submitTicketFeedback(
       .maybeSingle()
 
     if (checkError) {
-      console.error('Error checking existing feedback:', checkError)
+      logger.error('Error checking existing feedback', { error: checkError.message, ticketId })
       return { success: false, error: 'Failed to check existing feedback' }
     }
 
@@ -109,7 +110,7 @@ export async function submitTicketFeedback(
       })
 
     if (insertError) {
-      console.error('Error inserting feedback:', insertError)
+      logger.error('Error inserting feedback', { error: insertError.message, ticketId })
       return { success: false, error: 'Failed to submit feedback' }
     }
 
@@ -126,7 +127,10 @@ export async function submitTicketFeedback(
         },
       })
     } catch (activityError) {
-      console.error('Activity logging error:', activityError)
+      logger.error('Activity logging error', { 
+        error: activityError instanceof Error ? activityError.message : 'Unknown error',
+        ticketId
+      })
       // Don't fail feedback submission if activity logging fails
     }
 
@@ -141,7 +145,9 @@ export async function submitTicketFeedback(
       return { success: false, error: error.errors[0].message }
     }
 
-    console.error('Unexpected error in submitTicketFeedback:', error)
+    logger.error('Unexpected error in submitTicketFeedback', { 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    })
     return { success: false, error: 'An unexpected error occurred' }
   }
 }
@@ -171,13 +177,16 @@ export async function hasFeedback(ticketId: string): Promise<boolean> {
       .maybeSingle()
 
     if (error) {
-      console.error('Error checking feedback:', error)
+      logger.error('Error checking feedback', { error: error.message, ticketId })
       return false
     }
 
     return !!data
   } catch (error) {
-    console.error('Error in hasFeedback:', error)
+    logger.error('Error in hasFeedback', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      ticketId
+    })
     return false
   }
 }

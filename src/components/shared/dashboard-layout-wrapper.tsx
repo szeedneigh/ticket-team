@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
+import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Navbar } from './navbar'
 import { BackToTop } from './back-to-top'
@@ -30,11 +31,14 @@ interface DashboardLayoutWrapperProps {
 
 export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrapperProps) {
   const { preferences } = usePreferences()
+  const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [scrollState, setScrollState] = useState({ atTop: true, atBottom: false })
   const [isHydrated, setIsHydrated] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
+
+  const isChatPage = pathname?.startsWith('/chat')
 
   // Load collapsed state from preferences or localStorage on mount (after hydration)
   useEffect(() => {
@@ -105,7 +109,13 @@ export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrappe
             )}
           />
 
-          <main ref={mainRef} className="flex-1 overflow-y-auto p-6 lg:p-8 h-full">
+          <main 
+            ref={mainRef} 
+            className={cn(
+              "flex-1 overflow-y-auto h-full",
+              isChatPage || pathname?.startsWith('/kb') || pathname?.startsWith('/tickets') ? "p-0" : "p-6 lg:p-8"
+            )}
+          >
             {children}
           </main>
 

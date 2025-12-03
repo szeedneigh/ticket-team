@@ -2,6 +2,11 @@ import {withSentryConfig} from '@sentry/nextjs';
 import type { NextConfig } from "next";
 import path from "node:path";
 
+// Bundle analyzer - enable with ANALYZE=true npm run build
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 const nextConfig: NextConfig = {
   // Enable React strict mode
   reactStrictMode: true,
@@ -17,11 +22,25 @@ const nextConfig: NextConfig = {
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'api.dicebear.com',
+        pathname: '/7.x/**',
+      },
+    ],
   },
   
   // Experimental features for package optimization
   experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      'recharts',
+      'framer-motion',
+      'react-hook-form',
+      'date-fns',
+    ],
     // Disable webpackBuildWorker to prevent race conditions with filesystem cache
     webpackBuildWorker: false,
   },
@@ -105,30 +124,106 @@ const nextConfig: NextConfig = {
         chunkIds: 'deterministic',
         // Ensure consistent builds
         minimize: true,
-        // Split chunks for better caching
+        // Enable tree-shaking
+        usedExports: true,
+        // Split chunks for better caching and loading performance
         splitChunks: {
           chunks: 'all',
+          maxInitialRequests: 25,
+          maxAsyncRequests: 25,
+          minSize: 20000,
           cacheGroups: {
             default: false,
             vendors: false,
-            // Vendor chunk for node_modules
+            // Framework chunk - React, React-DOM, Next.js (highest priority)
+            framework: {
+              name: 'framework',
+              test: /[\\/]node_modules[\\/](react|react-dom|next|scheduler)[\\/]/,
+              priority: 50,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            // UI libraries - Radix UI components
+            ui: {
+              name: 'ui',
+              test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
+              priority: 40,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            // Charts - Recharts is heavy, separate chunk
+            charts: {
+              name: 'charts',
+              test: /[\\/]node_modules[\\/](recharts|d3-[\w-]+)[\\/]/,
+              priority: 35,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            // Rich text editor - TipTap and dependencies
+            editor: {
+              name: 'editor',
+              test: /[\\/]node_modules[\\/](@tiptap|prosemirror-|lowlight)[\\/]/,
+              priority: 30,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            // Animation libraries
+            animations: {
+              name: 'animations',
+              test: /[\\/]node_modules[\\/](framer-motion)[\\/]/,
+              priority: 28,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            // Form libraries
+            forms: {
+              name: 'forms',
+              test: /[\\/]node_modules[\\/](react-hook-form|@hookform)[\\/]/,
+              priority: 27,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            // Utilities - date-fns, clsx, etc.
+            utils: {
+              name: 'utils',
+              test: /[\\/]node_modules[\\/](date-fns|clsx|class-variance-authority|tailwind-merge|zod)[\\/]/,
+              priority: 25,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            // Supabase and AI clients
+            services: {
+              name: 'services',
+              test: /[\\/]node_modules[\\/](@supabase|@google\/gen)[\\/]/,
+              priority: 23,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            // Other vendor libraries
             vendor: {
               name: 'vendor',
-              chunks: 'all',
-              test: /node_modules/,
+              test: /[\\/]node_modules[\\/]/,
               priority: 20,
+              minChunks: 1,
+              reuseExistingChunk: true,
             },
-            // Common chunk for shared code
+            // Common shared code across pages
             common: {
               name: 'common',
               minChunks: 2,
               chunks: 'all',
               priority: 10,
               reuseExistingChunk: true,
-              enforce: true,
             },
           },
         },
+      };
+
+      // Performance budgets
+      config.performance = {
+        maxEntrypointSize: 512000, // 512 KB
+        maxAssetSize: 512000, // 512 KB
+        hints: 'warning',
       };
     }
 
@@ -136,7 +231,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+export default withBundleAnalyzer(withSentryConfig(nextConfig, {
   org: "wise-mind-solutions",
   project: "ticket-team",
   silent: !process.env.CI,
@@ -144,11 +239,11 @@ export default withSentryConfig(nextConfig, {
   tunnelRoute: "/monitoring",
   disableLogger: true,
   automaticVercelMonitors: true,
-  
+
   // Disable source maps upload during development
   sourcemaps: {
     disable: process.env.NODE_ENV === 'development',
   },
-  
+
   telemetry: false,
-});
+}));

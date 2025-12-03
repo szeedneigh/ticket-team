@@ -7,10 +7,12 @@
 
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Eye, Edit } from 'lucide-react'
 import { parse } from 'node-html-parser'
 import { requireAuth } from '@/lib/auth/session'
 import { getArticleById, getUserVote, canUserEditArticle, getRelatedArticles } from '@/lib/kb/queries'
+import { sanitizeHTML } from '@/lib/utils/sanitize'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
@@ -26,6 +28,9 @@ interface PageProps {
     id: string
   }>
 }
+
+// ISR for KB articles - they don't change frequently once published
+export const revalidate = 3600 // Revalidate every hour
 
 export default async function ArticleDetailPage({ params }: PageProps) {
   const { id } = await params
@@ -63,8 +68,9 @@ export default async function ArticleDetailPage({ params }: PageProps) {
       })
     : 'Draft'
 
-  // Add IDs to headings for TOC navigation
+  // Add IDs to headings for TOC navigation and sanitize HTML
   const contentWithIds = addHeadingIds(article.content)
+  const sanitizedContent = sanitizeHTML(contentWithIds)
 
   return (
     <div className="container mx-auto py-8 max-w-7xl">
@@ -78,7 +84,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
       />
 
       {/* Mobile TOC */}
-      <TableOfContents content={contentWithIds} />
+      <TableOfContents content={sanitizedContent} />
 
       <div className="lg:grid lg:grid-cols-[1fr_250px] lg:gap-8">
         {/* Main Content */}
@@ -105,9 +111,12 @@ export default async function ArticleDetailPage({ params }: PageProps) {
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
               {article.author.avatar_url && (
-                <img
+                <Image
                   src={article.author.avatar_url}
                   alt={article.author.full_name}
+                  width={24}
+                  height={24}
+                  className="rounded-full"
                 />
               )}
             </Avatar>
@@ -165,7 +174,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
           {/* Article Content */}
           <article
             className="prose prose-slate dark:prose-invert max-w-none mb-12"
-            dangerouslySetInnerHTML={{ __html: contentWithIds }}
+            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
 
           <Separator className="my-8" />
@@ -187,7 +196,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
         </div>
 
         {/* Desktop TOC Sidebar */}
-        <TableOfContents content={contentWithIds} />
+        <TableOfContents content={sanitizedContent} />
       </div>
     </div>
   )

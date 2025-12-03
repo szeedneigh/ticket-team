@@ -79,7 +79,7 @@ export async function sendTicketNotification(
     }
 
     const result = await resend.emails.send({
-      from: 'Ticket Team <noreply@ticketteam.laverdad.edu.ph>',
+      from: serverEnv.resend.fromEmail,
       to: data.to,
       subject: `${actionText[data.action]}: ${data.ticketId}`,
       html: emailHtml,
@@ -136,7 +136,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<EmailRes
     )
 
     const result = await resend.emails.send({
-      from: 'Ticket Team <noreply@ticketteam.laverdad.edu.ph>',
+      from: serverEnv.resend.fromEmail,
       to: data.to,
       subject: 'Welcome to Ticket Team! 🎉',
       html: emailHtml,
@@ -204,7 +204,7 @@ export async function sendDigestEmail(
     `
 
     const result = await resend.emails.send({
-      from: 'Ticket Team <noreply@ticketteam.laverdad.edu.ph>',
+      from: serverEnv.resend.fromEmail,
       to,
       subject: `Ticket Team Daily Digest - ${notifications.length} Updates`,
       html,

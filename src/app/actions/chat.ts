@@ -33,6 +33,7 @@ import type {
   ChatMessage,
   RAGContext,
 } from '@/lib/types/ai'
+import { logger } from '@/lib/logger'
 
 // ============================================================================
 // Action Response Types
@@ -78,7 +79,9 @@ export async function createChatSession(): Promise<
       data: { sessionId },
     }
   } catch (error) {
-    console.error('Error creating chat session:', error)
+    logger.error('Error creating chat session', { 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    })
     return {
       success: false,
       error: 'Failed to create chat session. Please try again.',
@@ -119,7 +122,10 @@ export async function deleteChatSession(
       data: undefined,
     }
   } catch (error) {
-    console.error('Error deleting chat session:', error)
+    logger.error('Error deleting chat session', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      sessionId
+    })
     return {
       success: false,
       error: 'Failed to delete chat session. Please try again.',
@@ -165,7 +171,9 @@ export async function getUserChatSessions(params?: {
       data: sessions,
     }
   } catch (error) {
-    console.error('Error fetching chat sessions:', error)
+    logger.error('Error fetching chat sessions', { 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    })
     return {
       success: false,
       error: 'Failed to fetch chat sessions. Please try again.',
@@ -206,7 +214,10 @@ export async function getChatSession(
       data: session,
     }
   } catch (error) {
-    console.error('Error fetching chat session:', error)
+    logger.error('Error fetching chat session', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      sessionId
+    })
     return {
       success: false,
       error: 'Failed to fetch chat session. Please try again.',
@@ -284,7 +295,10 @@ export async function submitFeedback(
       data: undefined,
     }
   } catch (error) {
-    console.error('Error submitting feedback:', error)
+    logger.error('Error submitting feedback', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      interactionId: params.interactionId
+    })
     return {
       success: false,
       error: 'Failed to submit feedback. Please try again.',
@@ -447,7 +461,11 @@ export async function prepareTicketFromChat(params: {
       },
     }
   } catch (error) {
-    console.error('Error preparing ticket:', error)
+    logger.error('Error preparing ticket', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      sessionId: params.sessionId,
+      interactionId: params.interactionId
+    })
     return {
       success: false,
       error: 'Failed to prepare ticket data. Please try again.',
@@ -539,7 +557,11 @@ export async function createTicketFromChat(params: {
       .single()
 
     if (ticketError || !ticket) {
-      console.error('Error creating ticket:', ticketError)
+      logger.error('Error creating ticket', { 
+        error: ticketError?.message,
+        sessionId: params.sessionId,
+        interactionId: params.interactionId
+      })
       return {
         success: false,
         error: 'Failed to create ticket. Please try again.',
@@ -554,7 +576,11 @@ export async function createTicketFromChat(params: {
       data: { ticketId: ticket.id },
     }
   } catch (error) {
-    console.error('Error creating ticket from chat:', error)
+    logger.error('Error creating ticket from chat', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      sessionId: params.sessionId,
+      interactionId: params.interactionId
+    })
     return {
       success: false,
       error: 'Failed to create ticket. Please try again.',

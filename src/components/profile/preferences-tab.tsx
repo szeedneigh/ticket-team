@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useTransition } from 'react'
+import { useTheme } from 'next-themes'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -65,6 +66,7 @@ function ThemePreviewCard({
 
 export function PreferencesTab({ user }: PreferencesTabProps) {
   const { refreshPreferences } = usePreferences()
+  const { setTheme: setNextTheme } = useTheme()
   const [isPending, startTransition] = useTransition()
   const [isLoading, setIsLoading] = useState(true)
   const [preferences, setPreferences] = useState<UserPreferences | null>(null)
@@ -109,6 +111,9 @@ export function PreferencesTab({ user }: PreferencesTabProps) {
   // Save preferences
   const handleSavePreferences = () => {
     startTransition(async () => {
+      // Update next-themes immediately for instant feedback
+      setNextTheme(theme)
+      
       const result = await updateUserPreferences({
         theme,
         date_format: dateFormat,
@@ -183,21 +188,30 @@ export function PreferencesTab({ user }: PreferencesTabProps) {
                   icon={Sun}
                   label="Light"
                   selected={theme === 'light'}
-                  onClick={() => setTheme('light')}
+                  onClick={() => {
+                    setTheme('light')
+                    setNextTheme('light') // Instant preview
+                  }}
                 />
                 <ThemePreviewCard
                   theme="dark"
                   icon={Moon}
                   label="Dark"
                   selected={theme === 'dark'}
-                  onClick={() => setTheme('dark')}
+                  onClick={() => {
+                    setTheme('dark')
+                    setNextTheme('dark') // Instant preview
+                  }}
                 />
                 <ThemePreviewCard
                   theme="system"
                   icon={Monitor}
                   label="System"
                   selected={theme === 'system'}
-                  onClick={() => setTheme('system')}
+                  onClick={() => {
+                    setTheme('system')
+                    setNextTheme('system') // Instant preview
+                  }}
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-2">

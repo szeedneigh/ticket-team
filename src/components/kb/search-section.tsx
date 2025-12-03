@@ -73,6 +73,7 @@ export function SearchSection({
   const [searchTerm, setSearchTerm] = useState(defaultValue)
   const [isSemanticMode, setIsSemanticMode] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
   const debouncedSearch = useDebounce(searchTerm, 500)
 
   // Perform semantic search via API
@@ -143,72 +144,95 @@ export function SearchSection({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const handleClear = useCallback(() => {
-    setSearchTerm('')
+  const handleSearch = useCallback((value: string) => {
+    setSearchTerm(value)
   }, [])
 
-  return (
-    <div className={cn('space-y-4', className)}>
-      {/* Search Mode Toggle */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="semantic-mode"
-            checked={isSemanticMode}
-            onCheckedChange={setIsSemanticMode}
-          />
-          <Label htmlFor="semantic-mode" className="flex items-center gap-2 cursor-pointer">
-            <Sparkles className={cn(
-              'h-4 w-4 transition-colors',
-              isSemanticMode ? 'text-[#0693D2]' : 'text-muted-foreground'
-            )} />
-            <span className="text-sm font-medium">
-              {isSemanticMode ? 'AI Search' : 'Keyword Search'}
-            </span>
-          </Label>
-        </div>
-        {isSemanticMode && (
-          <p className="text-xs text-muted-foreground">
-            Search by meaning, not just keywords
-          </p>
-        )}
-      </div>
+  const handleModeChange = useCallback((isAi: boolean) => {
+    setIsSemanticMode(isAi)
+    // Clear search results when switching modes if not already empty
+    if (searchTerm) {
+      setSearchTerm('')
+      onSemanticSearch?.('', []) // Clear semantic results if switching from AI
+    }
+  }, [searchTerm, onSemanticSearch])
 
-      {/* Search Input */}
-      <div className="relative">
-        <Search className={cn(
-          'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors',
-          isSearching ? 'text-[#0693D2] animate-pulse' : 'text-muted-foreground'
+  return (
+    <div className={cn('w-full max-w-3xl mx-auto space-y-6', className)}>
+      {/* Search Input Container */}
+      <div className="relative group max-w-2xl mx-auto">
+        {/* Glow Effect */}
+        <div className={cn(
+          "absolute inset-0 rounded-3xl bg-gradient-to-r from-[#1f3463]/20 via-[#2cafdd]/20 to-[#1f3463]/20 blur-xl transition-opacity duration-500",
+          isSearching ? "opacity-100" : "opacity-0 group-hover:opacity-50"
         )} />
-        <Input
-          id="kb-search-input"
-          type="text"
-          placeholder={isSemanticMode ? 'Ask a question or describe what you need...' : placeholder}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 pr-20"
-          disabled={isSearching}
-        />
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {searchTerm && !isSearching && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClear}
-              className="h-7 w-7 p-0"
-            >
-              <X className="h-3 w-3" />
-              <span className="sr-only">Clear search</span>
-            </Button>
-          )}
-          {isSearching && (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0693D2] border-t-transparent" />
-          )}
-          {!isSemanticMode && (
-            <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-              <span className="text-xs">⌘</span>K
-            </kbd>
-          )}
+        
+        <div className="relative flex items-center gap-2 rounded-3xl bg-background/60 p-2 shadow-lg backdrop-blur-xl ring-1 ring-white/20 dark:ring-white/10 transition-all duration-300 hover:shadow-xl hover:ring-[#2cafdd]/30 focus-within:ring-[#2cafdd]/50 focus-within:shadow-[#2cafdd]/20">
+          <Search className={cn(
+            "ml-4 h-5 w-5 transition-colors duration-300",
+            isFocused ? "text-[#2cafdd]" : "text-muted-foreground"
+          )} />
+          
+          <Input
+            id="kb-search-input" // Keep ID for keyboard shortcut
+            type="text"
+            placeholder={isSemanticMode ? "Ask a question (e.g., 'How do I reset my password?')" : placeholder}
+            className="flex-1 border-0 bg-transparent px-2 py-3 text-base placeholder:text-muted-foreground/70 focus-visible:ring-0 focus-visible:ring-offset-0 h-auto"
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            disabled={isSearching} // Keep disabled state
+          />
+
+          {/* Search Mode Toggle */}
+          <div className="flex items-center gap-2 pr-2">
+            {searchTerm && !isSearching && ( // Re-add clear button logic
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleSearch('')} // Clear search term
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground rounded-full"
+                >
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Clear search</span>
+                </Button>
+              )}
+              
+              {isSearching && ( // Re-add spinner logic
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              )}
+
+            <div className="hidden sm:flex items-center gap-1 bg-muted/50 rounded-full p-1 border border-border/50">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleModeChange(false)}
+                className={cn(
+                  "h-7 rounded-full px-3 text-xs font-medium transition-all duration-300",
+                  !isSemanticMode 
+                    ? "bg-white shadow-sm text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Keyword
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleModeChange(true)}
+                className={cn(
+                  "h-7 rounded-full px-3 text-xs font-medium transition-all duration-300 gap-1.5",
+                  isSemanticMode 
+                    ? "bg-gradient-to-r from-[#1f3463] to-[#2cafdd] text-white shadow-md" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Sparkles className="w-3 h-3" />
+                AI Search
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

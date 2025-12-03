@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { TicketTable } from './ticket-table'
 import type { TicketWithUser } from '@/lib/types/tickets'
 import { cn } from '@/lib/utils'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface TicketListProps {
   tickets: TicketWithUser[]
@@ -100,64 +101,70 @@ export function TicketList({
   }, [currentPage, totalPages])
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn('space-y-6', className)}>
       {/* Ticket Table */}
       <TicketTable tickets={tickets} />
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <nav className="flex items-center justify-center gap-2 pt-4" aria-label="Pagination" role="navigation">
+        <nav className="flex items-center justify-center gap-2 pt-2" aria-label="Pagination" role="navigation">
           {/* Previous Button */}
           <Button
             variant="outline"
+            size="icon"
             onClick={() => navigateToPage(currentPage - 1)}
             disabled={currentPage === 1 || isPending}
-            className="h-9 px-4"
+            className="h-9 w-9 rounded-lg border-border/50 hover:bg-muted/50 hover:border-border transition-all"
             aria-label="Go to previous page"
           >
-            Previous
+            <ChevronLeft className="h-4 w-4" />
           </Button>
 
           {/* Page Numbers */}
-          {pageNumbers.map((page, index) => {
-            if (page === '...') {
+          <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-lg border border-border/30">
+            {pageNumbers.map((page, index) => {
+              if (page === '...') {
+                return (
+                  <span key={`ellipsis-${index}`} className="px-2 text-muted-foreground text-sm" aria-hidden="true">
+                    ...
+                  </span>
+                )
+              }
+
+              const pageNumber = page as number
+              const isActive = pageNumber === currentPage
+
               return (
-                <span key={`ellipsis-${index}`} className="px-2 text-muted-foreground" aria-hidden="true">
-                  ...
-                </span>
+                <Button
+                  key={pageNumber}
+                  variant={isActive ? 'default' : 'ghost'}
+                  onClick={() => navigateToPage(pageNumber)}
+                  disabled={isPending}
+                  className={cn(
+                    'h-8 w-8 p-0 rounded-md text-sm font-medium transition-all',
+                    isActive 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' 
+                      : 'hover:bg-background hover:text-foreground text-muted-foreground'
+                  )}
+                  aria-label={`${isActive ? 'Current page, ' : ''}Page ${pageNumber}`}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {pageNumber}
+                </Button>
               )
-            }
-
-            const pageNumber = page as number
-            const isActive = pageNumber === currentPage
-
-            return (
-              <Button
-                key={pageNumber}
-                variant={isActive ? 'default' : 'outline'}
-                onClick={() => navigateToPage(pageNumber)}
-                disabled={isPending}
-                className={cn(
-                  'h-9 w-9 p-0',
-                  isActive && 'bg-blue-600 hover:bg-blue-700 text-white'
-                )}
-                aria-label={`${isActive ? 'Current page, ' : ''}Page ${pageNumber}`}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                {pageNumber}
-              </Button>
-            )
-          })}
+            })}
+          </div>
 
           {/* Next Button */}
           <Button
             variant="outline"
+            size="icon"
             onClick={() => navigateToPage(currentPage + 1)}
             disabled={currentPage === totalPages || isPending}
-            className="h-9 px-4"
+            className="h-9 w-9 rounded-lg border-border/50 hover:bg-muted/50 hover:border-border transition-all"
             aria-label="Go to next page"
           >
-            Next
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </nav>
       )}
