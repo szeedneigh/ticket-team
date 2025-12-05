@@ -20,10 +20,11 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
-import { cn } from '@/lib/utils'
+
 
 export interface TrendChartDataPoint {
-  date: string
+  date?: string
+  name?: string
   value: number
   label?: string
   [key: string]: string | number | undefined
