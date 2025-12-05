@@ -17,7 +17,7 @@ import {
 } from '@/components/analytics'
 import { TicketIcon, TrendingUpIcon, AlertCircleIcon, ClockIcon } from 'lucide-react'
 import { exportTicketAnalytics } from '@/lib/analytics/export'
-import type { ExportFormat, TrendData } from '@/lib/types/analytics'
+import type { ExportFormat } from '@/lib/types/analytics'
 
 interface TicketAnalyticsContentProps {
   summary: {
