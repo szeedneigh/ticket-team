@@ -31,6 +31,7 @@ interface Category {
   parent_id: string | null
   type: 'ticket' | 'knowledge_base' | 'both'
   is_active: boolean
+  display_order?: number
   created_at?: string
   children?: Category[]
   ticket_count?: number
