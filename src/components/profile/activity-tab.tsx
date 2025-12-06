@@ -121,6 +121,7 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
         .limit(10)
 
       // Transform activities to timeline items
+      // Supabase nested selects return arrays, so we handle both cases
       type ActivityRow = {
         id: string
         action: string
@@ -129,18 +130,24 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
           id: string
           ticket_number?: string
           title?: string
+        }[] | {
+          id: string
+          ticket_number?: string
+          title?: string
         } | null
       }
 
       const timeline: ActivityItem[] = (activitiesData || []).map((activity) => {
-        const row = activity as ActivityRow
+        const row = activity as unknown as ActivityRow
+        // Handle both array and object ticket response from Supabase
+        const ticketData = Array.isArray(row.ticket) ? row.ticket[0] : row.ticket
         return {
           id: row.id,
           type: row.action.includes('created') ? 'ticket_created' : 'ticket_updated',
-          title: row.ticket?.title || 'Unknown',
+          title: ticketData?.title || 'Unknown',
           description: row.action,
           timestamp: row.created_at,
-          link: row.ticket ? `/tickets/${row.ticket.id}` : undefined,
+          link: ticketData ? `/tickets/${ticketData.id}` : undefined,
         }
       })
 
