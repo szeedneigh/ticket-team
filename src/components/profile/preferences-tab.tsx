@@ -90,17 +90,17 @@ export function PreferencesTab({ user }: PreferencesTabProps) {
       if (result.success && result.data) {
         setPreferences(result.data)
 
-        // Populate form with existing preferences
-        setTheme(result.data.theme as 'light' | 'dark' | 'system')
-        setDateFormat(result.data.date_format)
-        setTimeFormat(result.data.time_format as '12h' | '24h')
-        setDefaultTicketFilter(result.data.default_ticket_filter)
-        setItemsPerPage(result.data.items_per_page as 10 | 20 | 50 | 100)
-        setDefaultSortOrder(result.data.default_sort_order as 'newest' | 'oldest' | 'priority' | 'status')
-        setSidebarCollapsed(result.data.sidebar_collapsed)
-        setReducedMotion(result.data.reduced_motion)
-        setHighContrast(result.data.high_contrast)
-        setFontSize(result.data.font_size as 'small' | 'normal' | 'large' | 'extra-large')
+        // Populate form with existing preferences (with default fallbacks)
+        setTheme((result.data.theme as 'light' | 'dark' | 'system') || 'system')
+        setDateFormat(result.data.date_format || 'MM/DD/YYYY')
+        setTimeFormat((result.data.time_format as '12h' | '24h') || '12h')
+        setDefaultTicketFilter(result.data.default_ticket_filter || 'all')
+        setItemsPerPage((result.data.items_per_page as 10 | 20 | 50 | 100) || 20)
+        setDefaultSortOrder((result.data.default_sort_order as 'newest' | 'oldest' | 'priority' | 'status') || 'newest')
+        setSidebarCollapsed(result.data.sidebar_collapsed ?? false)
+        setReducedMotion(result.data.reduced_motion ?? false)
+        setHighContrast(result.data.high_contrast ?? false)
+        setFontSize((result.data.font_size as 'small' | 'normal' | 'large' | 'extra-large') || 'normal')
       }
       setIsLoading(false)
     }
