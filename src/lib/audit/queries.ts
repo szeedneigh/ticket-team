@@ -7,7 +7,6 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/lib/types/database.types'
 import type {
   AuditLogEntry,
   AuditLogFilters,
@@ -20,7 +19,8 @@ import type {
 import { getActivityTypeLabel } from '@/lib/types/audit'
 import { logger } from '@/lib/logger'
 
-type SupabaseClientType = SupabaseClient<Database>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SupabaseClientType = SupabaseClient<any>
 
 // ============================================================================
 // Query Functions
@@ -129,6 +129,7 @@ export async function getAuditLogs(
     }
 
     // Transform data - map DB columns to expected interface
+    // Supabase nested selects can return arrays or objects depending on relationship
     type TicketActivityRow = {
       id: string
       ticket_id: string
@@ -143,8 +144,17 @@ export async function getAuditLogs(
         full_name: string
         email: string
         role: string
+      }[] | {
+        id: string
+        full_name: string
+        email: string
+        role: string
       } | null
       ticket: {
+        id: string
+        title: string
+        ticket_number: string
+      }[] | {
         id: string
         title: string
         ticket_number: string
@@ -152,7 +162,10 @@ export async function getAuditLogs(
     }
 
     const logs: AuditLogEntry[] = (data || []).map((row) => {
-      const activity = row as TicketActivityRow
+      const activity = row as unknown as TicketActivityRow
+      // Handle both array and object responses from Supabase nested queries
+      const userData = Array.isArray(activity.user) ? activity.user[0] : activity.user
+      const ticketData = Array.isArray(activity.ticket) ? activity.ticket[0] : activity.ticket
       return {
         id: activity.id,
         ticket_id: activity.ticket_id,
@@ -164,20 +177,20 @@ export async function getAuditLogs(
         new_value: activity.new_value,
         comment: null, // Not in current schema
         metadata: activity.metadata,
-        user: activity.user
+        user: userData
           ? {
-              id: activity.user.id,
-              full_name: activity.user.full_name,
-              email: activity.user.email,
-              role: activity.user.role,
-            }
+            id: userData.id,
+            full_name: userData.full_name,
+            email: userData.email,
+            role: userData.role,
+          }
           : null,
-        ticket: activity.ticket
+        ticket: ticketData
           ? {
-              id: activity.ticket.id,
-              title: activity.ticket.title,
-              ticket_number: activity.ticket.ticket_number,
-            }
+            id: ticketData.id,
+            title: ticketData.title,
+            ticket_number: ticketData.ticket_number,
+          }
           : null,
       }
     })
@@ -329,6 +342,10 @@ export async function getAuditLogStats(
         id: string
         full_name: string | null
         email: string | null
+      }[] | {
+        id: string
+        full_name: string | null
+        email: string | null
       } | null
     }
 
@@ -342,13 +359,15 @@ export async function getAuditLogStats(
     const userActivityMap = (userActivityData || []).reduce<
       Record<string, UserActivitySummary>
     >((acc, rawRow) => {
-      const row = rawRow as UserActivityRow
+      const row = rawRow as unknown as UserActivityRow
       const userId = row.user_id
+      // Handle both array and object responses from Supabase nested queries
+      const userData = Array.isArray(row.user) ? row.user[0] : row.user
       if (!acc[userId]) {
         acc[userId] = {
           userId,
-          userName: row.user?.full_name || 'Unknown User',
-          userEmail: row.user?.email || '',
+          userName: userData?.full_name || 'Unknown User',
+          userEmail: userData?.email || '',
           activityCount: 0,
         }
       }
