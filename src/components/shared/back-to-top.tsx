@@ -1,32 +1,38 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, RefObject } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export function BackToTop() {
+interface BackToTopProps {
+  target?: RefObject<HTMLElement | null>
+}
+
+export function BackToTop({ target }: BackToTopProps) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
+    const getScrollElement = () => target?.current ?? document.querySelector('main')
+    
     const toggleVisibility = () => {
-      const main = document.querySelector('main')
-      if (main && main.scrollTop > 400) {
+      const scrollEl = getScrollElement()
+      if (scrollEl && scrollEl.scrollTop > 400) {
         setIsVisible(true)
       } else {
         setIsVisible(false)
       }
     }
 
-    const main = document.querySelector('main')
-    main?.addEventListener('scroll', toggleVisibility)
+    const scrollEl = getScrollElement()
+    scrollEl?.addEventListener('scroll', toggleVisibility)
 
-    return () => main?.removeEventListener('scroll', toggleVisibility)
-  }, [])
+    return () => scrollEl?.removeEventListener('scroll', toggleVisibility)
+  }, [target])
 
   const scrollToTop = () => {
-    const main = document.querySelector('main')
-    main?.scrollTo({
+    const scrollEl = target?.current ?? document.querySelector('main')
+    scrollEl?.scrollTo({
       top: 0,
       behavior: 'smooth'
     })
