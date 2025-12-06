@@ -21,11 +21,11 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code')
   const origin = requestUrl.origin
   const next = requestUrl.searchParams.get('next') ?? '/dashboard'
-  
+
   if (code) {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-    
+
     if (!error && data.user && data.session) {
       // Validate email domain
       const email = data.user.email
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
           `${origin}/auth/error?error=invalid_domain`
         )
       }
-      
+
       // Update last login
       const { error: updateError } = await supabase
         .from('users')
@@ -91,19 +91,22 @@ export async function GET(request: Request) {
     }
 
     // Auth error - log failed attempt
-    if (error && data.user?.email) {
-      await logLoginAttempt(
-        data.user.email,
-        'failed',
-        data.user.id,
-        undefined,
-        'auth_exchange_failed'
-      )
+    if (error) {
+      const authUser = (data as { user?: { email?: string; id?: string } | null })?.user
+      if (authUser?.email) {
+        await logLoginAttempt(
+          authUser.email,
+          'failed',
+          authUser.id,
+          undefined,
+          'auth_exchange_failed'
+        )
+      }
     }
 
     logger.error('Auth exchange error', { error: error?.message })
   }
-  
+
   // Return to sign-in with error
   return NextResponse.redirect(`${origin}/auth/error?error=auth_failed`)
 }
