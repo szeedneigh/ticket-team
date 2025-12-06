@@ -154,7 +154,8 @@ export async function GET(request: NextRequest) {
         const { generatePDFReport } = await import('@/lib/exports/pdf-generator')
         const pdfBuffer = generatePDFReport(report, filters)
         const filename = `analytics-report-${formatDate(new Date(), 'yyyy-MM-dd')}.pdf`
-        return new NextResponse(pdfBuffer, {
+        // Convert Buffer to Uint8Array for NextResponse compatibility
+        return new NextResponse(new Uint8Array(pdfBuffer), {
           status: 200,
           headers: {
             'Content-Type': 'application/pdf',
