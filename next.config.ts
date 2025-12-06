@@ -1,16 +1,18 @@
-import {withSentryConfig} from '@sentry/nextjs';
+import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
 import path from "node:path";
 
+import bundleAnalyzer from '@next/bundle-analyzer';
+
 // Bundle analyzer - enable with ANALYZE=true npm run build
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
+const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 
 const nextConfig: NextConfig = {
   // Enable React strict mode
   reactStrictMode: true,
-  
+
   // Suppress hydration warnings from browser extensions
   // This prevents console spam from extensions that inject attributes like fdprocessedid
   onDemandEntries: {
@@ -18,7 +20,7 @@ const nextConfig: NextConfig = {
     maxInactiveAge: 25 * 1000,
     pagesBufferLength: 2,
   },
-  
+
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -30,7 +32,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  
+
   // Experimental features for package optimization
   experimental: {
     optimizePackageImports: [
@@ -50,7 +52,7 @@ const nextConfig: NextConfig = {
     // Fix for Sentry webpack plugin issue with oneOf rules
     // Ensure all module rules with oneOf have arrays
     if (config.module?.rules) {
-      config.module.rules = config.module.rules.map((rule: any) => {
+      config.module.rules = config.module.rules.map((rule: { oneOf?: unknown[] } | null | undefined | false | '' | 0 | string) => {
         if (rule && typeof rule === 'object' && 'oneOf' in rule) {
           return {
             ...rule,
