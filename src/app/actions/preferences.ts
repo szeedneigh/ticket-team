@@ -194,7 +194,7 @@ const userPreferencesSchema = z.object({
 
   // Dashboard Defaults
   default_ticket_filter: z.string().optional(),
-  items_per_page: z.enum([10, 20, 50, 100]).optional(),
+  items_per_page: z.union([z.literal(10), z.literal(20), z.literal(50), z.literal(100)]).optional(),
   default_sort_order: z.enum(['newest', 'oldest', 'priority', 'status']).optional(),
   sidebar_collapsed: z.boolean().optional(),
 

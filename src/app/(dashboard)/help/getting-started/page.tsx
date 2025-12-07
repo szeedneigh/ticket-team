@@ -59,7 +59,7 @@ export default function GettingStartedPage() {
         <h2 className="text-2xl font-bold">What is Ticket Team?</h2>
         <div className="prose dark:prose-invert">
           <p>
-            Ticket Team is La Verdad Christian College's helpdesk platform that makes it easy to:
+            Ticket Team is La Verdad Christian College&apos;s helpdesk platform that makes it easy to:
           </p>
           <ul>
             <li>Get IT support quickly and efficiently</li>
@@ -85,7 +85,7 @@ export default function GettingStartedPage() {
           <CardContent className="space-y-4">
             <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
               <li>Go to the Ticket Team website</li>
-              <li>Click "Sign In with Google"</li>
+              <li>Click &quot;Sign In with Google&quot;</li>
               <li>Use your La Verdad email:
                 <ul className="list-disc list-inside ml-6 mt-1">
                   <li>Faculty/Staff: yourname@laverdad.edu.ph</li>
@@ -93,12 +93,12 @@ export default function GettingStartedPage() {
                 </ul>
               </li>
               <li>Authorize the application when prompted</li>
-              <li>You'll be redirected to your dashboard</li>
+              <li>You&apos;ll be redirected to your dashboard</li>
             </ol>
             <Alert>
               <AlertTitle>Note</AlertTitle>
               <AlertDescription>
-                Only La Verdad email addresses are accepted. If you're having trouble, contact IT support.
+                Only La Verdad email addresses are accepted. If you&apos;re having trouble, contact IT support.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -172,17 +172,17 @@ export default function GettingStartedPage() {
               When you need IT support, create a ticket:
             </p>
             <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
-              <li>Click "New Ticket" in the sidebar or dashboard</li>
+              <li>Click &quot;New Ticket&quot; in the sidebar or dashboard</li>
               <li>Fill in the form:
                 <ul className="list-disc list-inside ml-6 mt-2 space-y-1">
-                  <li><strong>Title:</strong> Brief summary (e.g., "Cannot access email")</li>
+                  <li><strong>Title:</strong> Brief summary (e.g., &quot;Cannot access email&quot;)</li>
                   <li><strong>Description:</strong> Detailed explanation of the issue</li>
                   <li><strong>Category:</strong> Select the most relevant category</li>
                   <li><strong>Priority:</strong> Choose based on urgency (see FAQ)</li>
                 </ul>
               </li>
               <li>Optionally attach screenshots or error logs</li>
-              <li>Click "Submit Ticket"</li>
+              <li>Click &quot;Submit Ticket&quot;</li>
             </ol>
             <Alert>
               <AlertTitle>Tip</AlertTitle>
@@ -211,18 +211,18 @@ export default function GettingStartedPage() {
               For quick questions, try our AI assistant first:
             </p>
             <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-              <li>Click "AI Chat" in the sidebar</li>
-              <li>Type your question (e.g., "How do I reset my password?")</li>
+              <li>Click &quot;AI Chat&quot; in the sidebar</li>
+              <li>Type your question (e.g., &quot;How do I reset my password?&quot;)</li>
               <li>The AI will search the knowledge base and provide an answer</li>
               <li>If needed, you can escalate to a ticket directly from the chat</li>
             </ol>
             <div className="bg-muted p-4 rounded-lg space-y-2">
               <p className="font-medium">Example Questions:</p>
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                <li>"How do I connect to campus Wi-Fi?"</li>
-                <li>"What are the VPN setup instructions?"</li>
-                <li>"How do I access my student email?"</li>
-                <li>"Where can I find Microsoft Office?"</li>
+                <li>&quot;How do I connect to campus Wi-Fi?&quot;</li>
+                <li>&quot;What are the VPN setup instructions?&quot;</li>
+                <li>&quot;How do I access my student email?&quot;</li>
+                <li>&quot;Where can I find Microsoft Office?&quot;</li>
               </ul>
             </div>
           </CardContent>
@@ -246,7 +246,7 @@ export default function GettingStartedPage() {
               Find detailed guides and documentation:
             </p>
             <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-              <li>Click "Knowledge Base" in the sidebar</li>
+              <li>Click &quot;Knowledge Base&quot; in the sidebar</li>
               <li>Use the search bar or browse by category</li>
               <li>Click on an article to read the full content</li>
               <li>Vote whether the article was helpful</li>
@@ -277,7 +277,7 @@ export default function GettingStartedPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              You'll receive notifications for:
+              You&apos;ll receive notifications for:
             </p>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
               <li>Tickets assigned to you</li>
@@ -316,7 +316,7 @@ export default function GettingStartedPage() {
             </p>
             <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
               <li>Click your avatar in the top-right corner</li>
-              <li>Select "Profile"</li>
+              <li>Select &quot;Profile&quot;</li>
               <li>Update your information:
                 <ul className="list-disc list-inside ml-6 mt-1">
                   <li>Full name</li>
@@ -326,7 +326,7 @@ export default function GettingStartedPage() {
                   <li>Profile photo (optional)</li>
                 </ul>
               </li>
-              <li>Click "Save Changes"</li>
+              <li>Click &quot;Save Changes&quot;</li>
             </ol>
           </CardContent>
         </Card>
@@ -342,7 +342,7 @@ export default function GettingStartedPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                For common questions, the AI assistant can provide instant answers 24/7. It's faster than waiting for a ticket response!
+                For common questions, the AI assistant can provide instant answers 24/7. It&apos;s faster than waiting for a ticket response!
               </p>
             </CardContent>
           </Card>
@@ -353,7 +353,7 @@ export default function GettingStartedPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                When creating tickets, include screenshots, error messages, and steps you've already tried. This speeds up resolution.
+                When creating tickets, include screenshots, error messages, and steps you&apos;ve already tried. This speeds up resolution.
               </p>
             </CardContent>
           </Card>
@@ -375,7 +375,7 @@ export default function GettingStartedPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                You can view all your tickets in "My Tickets" and add comments any time. You'll get email notifications for updates.
+                You can view all your tickets in &quot;My Tickets&quot; and add comments any time. You&apos;ll get email notifications for updates.
               </p>
             </CardContent>
           </Card>
@@ -385,9 +385,9 @@ export default function GettingStartedPage() {
       {/* Next Steps */}
       <Card className="bg-primary/5 border-primary/20">
         <CardHeader>
-          <CardTitle>You're All Set!</CardTitle>
+          <CardTitle>You&apos;re All Set!</CardTitle>
           <CardDescription>
-            Now that you know the basics, explore the platform and don't hesitate to reach out if you need help.
+            Now that you know the basics, explore the platform and don&apos;t hesitate to reach out if you need help.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-4">

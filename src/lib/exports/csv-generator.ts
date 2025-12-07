@@ -139,7 +139,21 @@ export function generateCSVReport(
  * @param tickets - Array of ticket data
  * @returns CSV string
  */
-export function generateTicketListCSV(tickets: any[]): string {
+export interface TicketExportRow {
+  id: string
+  title: string
+  status: string
+  priority: string
+  category: string
+  subcategory?: string | null
+  created_at: string
+  updated_at?: string | null
+  resolved_at?: string | null
+  assigned_user?: { full_name?: string | null } | null
+  user?: { full_name?: string | null } | null
+}
+
+export function generateTicketListCSV(tickets: TicketExportRow[]): string {
   if (!tickets || tickets.length === 0) {
     return 'No tickets to export'
   }

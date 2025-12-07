@@ -82,16 +82,16 @@ function SecurityTabComponent({ user }: SecurityTabProps) {
     setIsLoadingSessions(true)
     const result = await getActiveSessions()
     if (result.success && result.data) {
-      // Transform data to match component interface
-      const transformedSessions = result.data.map((session: any) => ({
+      // Transform data to match component interface (with fallback defaults)
+      const transformedSessions = result.data.map((session) => ({
         id: session.id,
         device_info: `${session.browser} on ${session.os}`,
-        device_type: session.device_type,
+        device_type: session.device_type || 'desktop', // Default to desktop if null
         location: session.city && session.country ? `${session.city}, ${session.country}` : session.ip_address,
         ip_address: session.ip_address,
         last_activity_at: session.last_activity_at,
-        is_current: session.is_current,
-        user_agent: session.user_agent
+        is_current: session.is_current ?? false, // Default to false if undefined
+        user_agent: session.user_agent || ''
       }))
       setActiveSessions(transformedSessions)
     } else {
@@ -105,7 +105,7 @@ function SecurityTabComponent({ user }: SecurityTabProps) {
     const result = await getLoginHistory(20)
     if (result.success && result.data) {
       // Transform data to match component interface
-      const transformedHistory = result.data.map((record: any) => ({
+      const transformedHistory = result.data.map((record) => ({
         id: record.id,
         timestamp: record.timestamp,
         device: record.device_type || 'Unknown',
@@ -114,7 +114,7 @@ function SecurityTabComponent({ user }: SecurityTabProps) {
         ip_address: record.ip_address,
         location: record.city && record.country ? `${record.city}, ${record.country}` : record.ip_address,
         status: record.status,
-        failure_reason: record.failure_reason
+        failure_reason: record.failure_reason ?? undefined
       }))
       setLoginHistory(transformedHistory)
     } else {

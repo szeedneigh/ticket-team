@@ -25,7 +25,6 @@ import {
   Trash2,
   Search,
   Loader2,
-  Menu,
   X,
   AlertTriangle,
 } from 'lucide-react'

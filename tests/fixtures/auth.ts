@@ -50,6 +50,7 @@ export const test = base.extend<AuthFixtures>({
         storageState: STORAGE_STATE
       })
       const page = await context.newPage()
+      // eslint-disable-next-line react-hooks/rules-of-hooks
       await use(page)
       await context.close()
     } else {
@@ -58,6 +59,7 @@ export const test = base.extend<AuthFixtures>({
       // Fall back to unauthenticated page
       const context = await browser.newContext()
       const page = await context.newPage()
+      // eslint-disable-next-line react-hooks/rules-of-hooks
       await use(page)
       await context.close()
     }
@@ -90,6 +92,7 @@ export const authenticatedTest = base.extend({
     await page.setExtraHTTPHeaders({
       'X-E2E-Test-Auth': 'bypass'
     })
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page)
   }
 })

@@ -223,7 +223,7 @@ async function calculateOverdueTickets(userId: string, isStaff: boolean): Promis
  */
 export async function getDashboardStats(userId: string): Promise<DashboardStats> {
   const supabase = await createClient()
-  
+
   try {
     // Get user info to determine their role
     const { data: userData, error: userError } = await supabase
@@ -231,69 +231,69 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
       .select('role')
       .eq('id', userId)
       .single()
-    
+
     if (userError) {
       logger.error('Error fetching user role', { error: userError.message, userId })
       throw new Error(`Failed to fetch user role: ${userError.message}`)
     }
-    
+
     const isStaff = ['staff', 'admin', 'super_admin'].includes(userData?.role ?? '')
-    
+
     // Get ticket counts based on user role
     let openTicketsQuery = supabase
       .from('tickets')
       .select('id', { count: 'exact', head: true })
       .in('status', ['open', 'in_progress'])
-    
+
     // Employees only see their own tickets, staff see all
     if (!isStaff) {
       openTicketsQuery = openTicketsQuery.eq('user_id', userId)
     }
-    
+
     const { count: openCount, error: openError } = await openTicketsQuery
-    
+
     if (openError) {
       logger.error('Error fetching open tickets', { error: openError.message, userId })
       throw new Error(`Failed to fetch open tickets: ${openError.message}`)
     }
-    
+
     // Get tickets resolved today
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
+
     let resolvedTodayQuery = supabase
       .from('tickets')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'resolved')
       .gte('resolved_at', today.toISOString())
-    
+
     if (!isStaff) {
       resolvedTodayQuery = resolvedTodayQuery.eq('user_id', userId)
     }
-    
+
     const { count: resolvedToday, error: resolvedError } = await resolvedTodayQuery
-    
+
     if (resolvedError) {
       logger.error('Error fetching resolved tickets', { error: resolvedError.message, userId })
       // Don't throw, just log and continue with 0
     }
-    
+
     // Get total tickets
     let totalTicketsQuery = supabase
       .from('tickets')
       .select('id', { count: 'exact', head: true })
-    
+
     if (!isStaff) {
       totalTicketsQuery = totalTicketsQuery.eq('user_id', userId)
     }
-    
+
     const { count: totalCount, error: totalError } = await totalTicketsQuery
-    
+
     if (totalError) {
       logger.error('Error fetching total tickets', { error: totalError.message, userId })
       // Don't throw, just log and continue
     }
-    
+
     // Get tickets assigned to user (staff only)
     let assignedCount = 0
     if (isStaff) {
@@ -302,14 +302,14 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
         .select('id', { count: 'exact', head: true })
         .eq('assigned_to', userId)
         .in('status', ['open', 'in_progress'])
-      
+
       if (assignedError) {
         logger.error('Error fetching assigned tickets', { error: assignedError.message, userId })
       } else {
         assignedCount = count || 0
       }
     }
-    
+
     // Calculate real metrics
     const [avgResponseTime, satisfaction, overdueCount] = await Promise.all([
       calculateAvgResponseTime(userId, isStaff),
@@ -328,10 +328,10 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
       overdueTickets: overdueCount,
     }
   } catch (error) {
-    logger.error('Error fetching dashboard stats', { 
+    logger.error('Error fetching dashboard stats', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
-      userId 
+      userId
     })
     throw error instanceof Error ? error : new Error('Failed to fetch dashboard statistics')
   }
@@ -402,19 +402,19 @@ export async function getRecentActivity(userId: string, limit: number = 10): Pro
  */
 export async function getUserTicketSummary(userId: string): Promise<UserTicketSummary> {
   const supabase = await createClient()
-  
+
   try {
     // Get ticket counts by status
     const { data: tickets, error } = await supabase
       .from('tickets')
       .select('id, status, user_id, assigned_to')
       .eq('user_id', userId)
-    
+
     if (error) {
       logger.error('Error fetching ticket summary', { error: error.message })
       throw error
     }
-    
+
     // Calculate overdue tickets
     const overdueCount = await calculateOverdueTickets(userId, false)
 
@@ -426,18 +426,18 @@ export async function getUserTicketSummary(userId: string): Promise<UserTicketSu
       closed: tickets?.filter(t => t.status === 'closed').length || 0,
       overdue: overdueCount,
     }
-    
+
     // Get tickets assigned to user
     const { count: assignedCount, error: assignedError } = await supabase
       .from('tickets')
       .select('id', { count: 'exact', head: true })
       .eq('assigned_to', userId)
       .in('status', ['open', 'in_progress'])
-    
+
     if (assignedError) {
       logger.error('Error fetching assigned tickets', { error: assignedError.message })
     }
-    
+
     return {
       ...counts,
       myTickets: counts.total,
@@ -456,13 +456,13 @@ export async function getUserTicketSummary(userId: string): Promise<UserTicketSu
  */
 export async function getKBStats(): Promise<KBStats> {
   const supabase = await createClient()
-  
+
   try {
     // Get total article count
     const { count: totalCount, error: totalError } = await supabase
       .from('knowledge_articles')
       .select('id', { count: 'exact', head: true })
-    
+
     if (totalError) {
       logger.error('Error fetching total KB articles', { error: totalError.message })
     }
@@ -472,7 +472,7 @@ export async function getKBStats(): Promise<KBStats> {
       .from('knowledge_articles')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'published')
-    
+
     if (publishedError) {
       logger.error('Error fetching published KB articles', { error: publishedError.message })
     }
@@ -482,7 +482,7 @@ export async function getKBStats(): Promise<KBStats> {
       .from('knowledge_articles')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'draft')
-    
+
     if (draftError) {
       logger.error('Error fetching draft KB articles', { error: draftError.message })
     }
@@ -494,7 +494,7 @@ export async function getKBStats(): Promise<KBStats> {
       .eq('status', 'published')
       .order('view_count', { ascending: false })
       .limit(5)
-    
+
     if (topError) {
       logger.error('Error fetching top KB articles', { error: topError.message })
     }
@@ -503,7 +503,11 @@ export async function getKBStats(): Promise<KBStats> {
       totalArticles: totalCount || 0,
       publishedArticles: publishedCount || 0,
       draftArticles: draftCount || 0,
-      mostViewed: topArticles || [],
+      mostViewed: (topArticles || []).map(article => ({
+        id: article.id,
+        title: article.title,
+        views: article.view_count || 0
+      })),
     }
   } catch (error) {
     logger.error('Error fetching KB stats', { error: error instanceof Error ? error.message : 'Unknown error' })
@@ -531,7 +535,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
       getUserTicketSummary(userId),
       getKBStats(),
     ])
-    
+
     return {
       stats,
       recentActivity,
@@ -551,10 +555,10 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
  */
 export async function getCurrentUserDashboardData(): Promise<DashboardData> {
   const user = await getUser()
-  
+
   if (!user) {
     throw new Error('User not authenticated')
   }
-  
+
   return getDashboardData(user.id)
 }

@@ -227,9 +227,9 @@ export async function createComment(
       .single()
 
     if (commentError || !comment) {
-      logger.error('Comment creation error', { 
-        error: commentError.message,
-        ticketId
+      logger.error('Comment creation error', {
+        error: commentError?.message || 'Unknown error',
+        ticketId: ticket_id
       })
       return {
         success: false,
@@ -251,7 +251,7 @@ export async function createComment(
         await notifyTicketComment(ticket_id, authorName, validation.data.content)
       } catch (emailError) {
         // Log error but don't fail the comment creation
-        logger.error('Email notification error', { 
+        logger.error('Email notification error', {
           error: emailError instanceof Error ? emailError.message : 'Unknown error',
           ticketId: ticket_id
         })
@@ -286,8 +286,8 @@ export async function createComment(
       data: comment as CommentWithUser,
     }
   } catch (error) {
-    logger.error('Create comment error', { 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    logger.error('Create comment error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
     })
     return {
       success: false,

@@ -7,6 +7,11 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "sonner"
 import { createClient } from "@/lib/supabase/server"
 
+// Force dynamic rendering because we read auth cookies for user preferences
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+export const fetchCache = "force-no-store"
+
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],

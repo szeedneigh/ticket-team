@@ -1,0 +1,22 @@
+/**
+ * Vitest Setup File
+ *
+ * Global test configuration and setup
+ */
+
+import { expect, afterEach } from 'vitest'
+import { cleanup } from '@testing-library/react'
+import '@testing-library/jest-dom/vitest'
+
+// Cleanup after each test
+afterEach(() => {
+  cleanup()
+})
+
+// Mock environment variables for tests
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key'
+process.env.GEMINI_API_KEY = 'test-gemini-api-key'
+process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000'
+// NODE_ENV is automatically set to 'test' by Vitest

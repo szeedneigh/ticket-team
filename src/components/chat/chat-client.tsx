@@ -23,7 +23,7 @@ import { ChatWelcome } from './chat-welcome'
 import { ChatSources } from './chat-sources'
 import { EscalateButton } from './escalate-button'
 import { TicketReviewModal } from './ticket-review-modal'
-import { AlertCircle, Headset } from 'lucide-react'
+import { Headset } from 'lucide-react'
 import {
   prepareTicketFromChat,
   createTicketFromChat,
@@ -76,7 +76,7 @@ export function ChatClient({
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [currentSources, setCurrentSources] = useState<RAGContext[]>([])
-  const [currentInteractionId, setCurrentInteractionId] = useState<string | null>(null)
+  const [_currentInteractionId, setCurrentInteractionId] = useState<string | null>(null)
   const [shouldShowEscalate, setShouldShowEscalate] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
