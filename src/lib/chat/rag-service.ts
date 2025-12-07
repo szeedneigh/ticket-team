@@ -472,13 +472,21 @@ export async function* streamRAGResponse(
     
     // Provide more specific error messages when possible
     if (error instanceof Error) {
-      if (error.message.includes('quota') || error.message.includes('429')) {
+      const message = error.message.toLowerCase()
+
+      // Quota / rate limit
+      if (
+        message.includes('quota') ||
+        message.includes('429') ||
+        message.includes('high demand') ||
+        message.includes('resource_exhausted')
+      ) {
         errorMessage = 'Our AI assistant is experiencing high demand. Please try again in a moment.'
-      } else if (error.message.includes('network') || error.message.includes('ENOTFOUND')) {
+      } else if (message.includes('network') || message.includes('enotfound')) {
         errorMessage = 'Connection issue detected. Please check your internet and try again.'
-      } else if (error.message.includes('Failed to retrieve context')) {
+      } else if (message.includes('failed to retrieve context')) {
         errorMessage = 'Having trouble accessing the knowledge base. Please try again or create a support ticket.'
-      } else if (error.message.includes('GEMINI_API_KEY')) {
+      } else if (message.includes('gemini_api_key')) {
         errorMessage = 'AI service configuration error. Please contact support.'
       }
     }
