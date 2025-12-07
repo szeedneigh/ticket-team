@@ -12,10 +12,17 @@ import TicketNotificationEmail from '@/emails/ticket-notification'
 import WelcomeEmail from '@/emails/welcome'
 
 // ============================================================================
-// Initialize Resend
+// Lazy Initialize Resend (prevents build-time errors when API key is not available)
 // ============================================================================
 
-const resend = new Resend(serverEnv.resend.apiKey)
+let resendInstance: Resend | null = null
+
+function getResend(): Resend {
+  if (!resendInstance) {
+    resendInstance = new Resend(serverEnv.resend.apiKey)
+  }
+  return resendInstance
+}
 
 // ============================================================================
 // Types
@@ -78,7 +85,7 @@ export async function sendTicketNotification(
       closed: 'Ticket Closed',
     }
 
-    const result = await resend.emails.send({
+    const result = await getResend().emails.send({
       from: serverEnv.resend.fromEmail,
       to: data.to,
       subject: `${actionText[data.action]}: ${data.ticketId}`,
@@ -135,7 +142,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<EmailRes
       })
     )
 
-    const result = await resend.emails.send({
+    const result = await getResend().emails.send({
       from: serverEnv.resend.fromEmail,
       to: data.to,
       subject: 'Welcome to Ticket Team! 🎉',
@@ -203,7 +210,7 @@ export async function sendDigestEmail(
       <p>Visit your dashboard to see more details.</p>
     `
 
-    const result = await resend.emails.send({
+    const result = await getResend().emails.send({
       from: serverEnv.resend.fromEmail,
       to,
       subject: `Ticket Team Daily Digest - ${notifications.length} Updates`,

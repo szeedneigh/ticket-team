@@ -18,6 +18,7 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "scripts/**",
     ],
   },
   {
@@ -36,6 +37,13 @@ const eslintConfig = [
           ],
         },
       ],
+    },
+  },
+  // Test files may use 'any' for mocking patterns
+  {
+    files: ["tests/**/*.ts", "tests/**/*.tsx"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 ];

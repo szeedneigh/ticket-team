@@ -99,7 +99,27 @@ export async function changePassword(formData: FormData): Promise<ActionResult> 
 /**
  * Get user's active sessions
  */
-export async function getActiveSessions(): Promise<ActionResult<any[]>> {
+interface ActiveSession {
+  id: string
+  session_id: string
+  user_id: string
+  browser: string | null
+  os: string | null
+  device_type: 'desktop' | 'mobile' | 'tablet' | null
+  city: string | null
+  country: string | null
+  ip_address: string
+  last_activity_at: string
+  is_active: boolean
+  logout_at: string | null
+  user_agent: string | null
+  is_current?: boolean
+}
+
+/**
+ * Get user's active sessions
+ */
+export async function getActiveSessions(): Promise<ActionResult<ActiveSession[]>> {
   try {
     const user = await getUser()
     if (!user) {
@@ -127,7 +147,7 @@ export async function getActiveSessions(): Promise<ActionResult<any[]>> {
     }
 
     // Mark current session
-    const sessionsWithCurrent = sessions?.map(session => ({
+    const sessionsWithCurrent: ActiveSession[] = (sessions || []).map((session) => ({
       ...session,
       is_current: session.session_id === currentSession?.access_token
     })) || []
@@ -216,7 +236,21 @@ export async function revokeAllSessions(): Promise<ActionResult> {
 /**
  * Get user's login history
  */
-export async function getLoginHistory(limit: number = 20): Promise<ActionResult<any[]>> {
+interface LoginHistoryRecord {
+  id: string
+  user_id: string
+  timestamp: string
+  device_type: string | null
+  browser: string | null
+  os: string | null
+  ip_address: string
+  city: string | null
+  country: string | null
+  status: 'success' | 'failed' | 'blocked'
+  failure_reason?: string | null
+}
+
+export async function getLoginHistory(limit: number = 20): Promise<ActionResult<LoginHistoryRecord[]>> {
   try {
     const user = await getUser()
     if (!user) {
@@ -236,7 +270,7 @@ export async function getLoginHistory(limit: number = 20): Promise<ActionResult<
       return { success: false, error: 'Failed to fetch login history' }
     }
 
-    return { success: true, data: history || [] }
+    return { success: true, data: (history || []) as LoginHistoryRecord[] }
   } catch (error) {
     logger.error('Get login history error', { error })
     return { success: false, error: 'Failed to fetch login history' }

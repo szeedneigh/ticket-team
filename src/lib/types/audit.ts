@@ -6,14 +6,31 @@
  * @module lib/types/audit
  */
 
-import type { Database } from './database.types'
-
 // ============================================================================
 // Database Types
 // ============================================================================
 
-export type TicketActivity = Database['public']['Tables']['ticket_activities']['Row']
-export type ActivityType = Database['public']['Enums']['activity_type']
+// Activity types from database enum
+export type ActivityType =
+  | 'created'
+  | 'status_changed'
+  | 'priority_changed'
+  | 'assigned'
+  | 'reassigned'
+  | 'unassigned'
+  | 'commented'
+  | 'comment_edited'
+  | 'comment_deleted'
+  | 'attachment_added'
+  | 'attachment_removed'
+  | 'category_changed'
+  | 'tags_changed'
+  | 'title_changed'
+  | 'description_changed'
+  | 'resolved'
+  | 'closed'
+  | 'reopened'
+  | 'archived'
 
 // ============================================================================
 // Query Types
@@ -26,7 +43,7 @@ export interface AuditLogEntry {
   id: string
   ticket_id: string
   activity_type: ActivityType
-  performed_by: string
+  performed_by: string | null
   performed_at: string
   field_name: string | null
   old_value: string | null

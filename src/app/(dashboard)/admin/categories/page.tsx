@@ -17,7 +17,6 @@ import { useToast } from '@/hooks/use-toast'
 import { CategoryTree } from '@/components/categories/category-tree'
 import { CategoryForm } from '@/components/categories/category-form'
 import { CategoryList } from '@/components/categories/category-list'
-import { createClient } from '@/lib/supabase/client'
 import {
   getCategories,
   reorderCategories,
@@ -32,6 +31,7 @@ interface Category {
   parent_id: string | null
   type: 'ticket' | 'knowledge_base' | 'both'
   is_active: boolean
+  display_order?: number
   created_at?: string
   children?: Category[]
   ticket_count?: number
@@ -54,13 +54,13 @@ export default function CategoriesPage() {
   const fetchCategories = async () => {
     setIsLoading(true)
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name')
+      const result = await getCategories()
+      
+      if (result.error) {
+        throw new Error(result.error)
+      }
 
-      if (error) throw error
+      const data = result.data || []
 
       // Build hierarchy
       const categoryMap = new Map<string, Category>(data.map((cat: Category) => [cat.id, { ...cat, children: [] as Category[] }]))
@@ -92,10 +92,17 @@ export default function CategoriesPage() {
 
   const handleAddCategory = async (categoryData: Partial<Category>) => {
     try {
-      const supabase = createClient()
-      const { error } = await supabase.from('categories').insert(categoryData)
+      const result = await createCategoryAction({
+        name: categoryData.name || '',
+        parent_id: categoryData.parent_id || null,
+        type: (categoryData.type as 'ticket' | 'knowledge_base' | 'both') || 'both',
+        is_active: categoryData.is_active ?? true,
+        display_order: categoryData.display_order || 0,
+      })
 
-      if (error) throw error
+      if (result.error) {
+        throw new Error(result.error)
+      }
 
       toast({
         title: 'Success',
@@ -116,13 +123,18 @@ export default function CategoriesPage() {
 
   const handleUpdateCategory = async (id: string, updates: Partial<Category>) => {
     try {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from('categories')
-        .update(updates)
-        .eq('id', id)
+      const result = await updateCategoryAction({
+        id,
+        ...(updates.name && { name: updates.name }),
+        ...(updates.parent_id !== undefined && { parent_id: updates.parent_id }),
+        ...(updates.type && { type: updates.type as 'ticket' | 'knowledge_base' | 'both' }),
+        ...(updates.is_active !== undefined && { is_active: updates.is_active }),
+        ...(updates.display_order !== undefined && { display_order: updates.display_order }),
+      })
 
-      if (error) throw error
+      if (result.error) {
+        throw new Error(result.error)
+      }
 
       toast({
         title: 'Success',
@@ -143,8 +155,6 @@ export default function CategoriesPage() {
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      const supabase = createClient()
-
       // Check if category has children
       const hasChildren = categories.some(cat =>
         cat.parent_id === id || cat.children?.some(child => child.id === id)
@@ -159,12 +169,11 @@ export default function CategoriesPage() {
         return
       }
 
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id)
+      const result = await deleteCategoryAction(id)
 
-      if (error) throw error
+      if (result.error) {
+        throw new Error(result.error)
+      }
 
       toast({
         title: 'Success',

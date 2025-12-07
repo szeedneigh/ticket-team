@@ -111,7 +111,9 @@ export function generatePDFReport(
     },
   })
 
-  yPos = (doc as any).lastAutoTable.finalY + 10
+  type AutoTableDoc = jsPDF & { lastAutoTable?: { finalY: number } }
+  const docWithTable = doc as AutoTableDoc
+  yPos = (docWithTable.lastAutoTable?.finalY ?? yPos) + 10
 
   // Check if we need a new page
   if (yPos > pageHeight - 60) {
@@ -143,7 +145,8 @@ export function generatePDFReport(
       styles: { fontSize: 10 },
     })
 
-    yPos = (doc as any).lastAutoTable.finalY + 10
+    const docWithTableCategory = doc as AutoTableDoc
+    yPos = (docWithTableCategory.lastAutoTable?.finalY ?? yPos) + 10
   } else {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'italic')
@@ -181,7 +184,8 @@ export function generatePDFReport(
       styles: { fontSize: 10 },
     })
 
-    yPos = (doc as any).lastAutoTable.finalY + 10
+    const docWithTablePriority = doc as AutoTableDoc
+    yPos = (docWithTablePriority.lastAutoTable?.finalY ?? yPos) + 10
   } else {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'italic')

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
@@ -14,9 +15,7 @@ import {
   TrendingUp,
   Settings2,
   X,
-  LogOut,
-  ChevronRight,
-  MoreVertical
+  LogOut
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { User } from '@/lib/types/users'
@@ -39,7 +38,6 @@ interface NavItem {
   href: string
   icon: React.ComponentType<{ className?: string }>
   roles: string[]
-  badge?: string
 }
 
 const navItems: NavItem[] = [
@@ -71,29 +69,25 @@ const navItems: NavItem[] = [
     title: 'Ticket Queue',
     href: '/tickets/queue',
     icon: Inbox,
-    roles: ['staff', 'admin', 'super_admin'],
-    badge: 'Staff+'
+    roles: ['staff', 'admin', 'super_admin']
   },
   {
     title: 'User Management',
     href: '/admin/users',
     icon: Users,
-    roles: ['admin', 'super_admin'],
-    badge: 'Admin+'
+    roles: ['admin', 'super_admin']
   },
   {
     title: 'Analytics',
     href: '/analytics',
     icon: TrendingUp,
-    roles: ['admin', 'super_admin'],
-    badge: 'Admin+'
+    roles: ['admin', 'super_admin']
   },
   {
     title: 'Settings',
     href: '/admin/settings',
     icon: Settings2,
-    roles: ['super_admin'],
-    badge: 'Super Admin'
+    roles: ['super_admin']
   }
 ]
 
@@ -198,9 +192,9 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
               isCollapsed && !isMobile ? "justify-center" : "gap-3"
             )}
           >
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 border border-white/20 shadow-inner overflow-hidden group-hover:bg-white/20 transition-all duration-300">
+            <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-white/10 border border-white/20 shadow-inner overflow-hidden group-hover:bg-white/20 transition-all duration-300">
               <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="text-white font-bold text-lg relative z-10">TT</span>
+              <Image src="/logo.svg" alt="TicketTeam" width={22} height={22} className="object-contain" />
             </div>
             
             <AnimatePresence mode="wait">
@@ -212,8 +206,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                   transition={{ duration: 0.2 }}
                   className="flex flex-col whitespace-nowrap overflow-hidden"
                 >
-                  <span className="text-lg font-bold text-white tracking-tight">TicketTeam</span>
-                  <span className="text-[10px] text-white/60 uppercase tracking-wider font-medium">Enterprise</span>
+                  <span className="text-xl font-bold text-white tracking-tight">TicketTeam</span>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -221,7 +214,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto min-h-0 scrollbar-none">
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto min-h-0 scrollbar-none">
           {filteredNavItems.map((item, index) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
             
@@ -230,8 +223,8 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                 href={item.href}
                 onClick={() => isMobileOpen && setIsMobileOpen(false)}
                 className={cn(
-                  "relative flex items-center w-full h-11 px-3 rounded-xl transition-all duration-300 group",
-                  isCollapsed && !isMobile ? "justify-center" : "",
+                  "relative flex items-center w-full h-12 px-3.5 rounded-xl transition-all duration-300 group",
+                  isCollapsed && !isMobile ? "justify-center px-0" : "",
                   isActive 
                     ? "bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.05)] border border-white/10" 
                     : "text-white/70 hover:text-white hover:bg-white/5"
@@ -254,7 +247,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                   isActive ? "scale-110 text-cyan-300" : "group-hover:scale-110",
                   (!isCollapsed || isMobile) && "mr-3"
                 )}>
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className="h-[22px] w-[22px]" />
                 </div>
 
                 {/* Label */}
@@ -268,18 +261,11 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                       className="flex-1 flex items-center justify-between overflow-hidden whitespace-nowrap"
                     >
                       <span className={cn(
-                        "text-sm font-medium transition-colors",
+                        "text-[15px] font-medium transition-colors",
                         isActive ? "text-white" : "text-white/80 group-hover:text-white"
                       )}>
                         {item.title}
                       </span>
-                      
-                      {/* Badge */}
-                      {item.badge && (
-                        <span className="ml-2 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-white/20 text-white/90 border border-white/10">
-                          {item.badge}
-                        </span>
-                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -330,7 +316,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
         <div className="p-4 mt-auto">
           <div className={cn(
             "relative rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md overflow-hidden transition-all duration-300 group",
-            isCollapsed && !isMobile ? "p-2" : "p-3",
+            isCollapsed && !isMobile ? "p-2" : "p-3.5",
             "hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-black/10"
           )}>
             <div className={cn(
@@ -339,7 +325,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
             )}>
               {/* Avatar */}
               <div className="relative flex-shrink-0">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white/10">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white/10">
                   {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
                 </div>
                 <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#002C64] rounded-full" />
@@ -348,7 +334,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
               {/* User Info */}
               {(!isCollapsed || isMobile) && (
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">
+                  <p className="text-[15px] font-semibold text-white truncate">
                     {user.full_name || 'User'}
                   </p>
                   <p className="text-xs text-white/60 truncate capitalize">

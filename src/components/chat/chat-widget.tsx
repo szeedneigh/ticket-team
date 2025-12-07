@@ -1,17 +1,3 @@
-/**
- * ChatWidget Component
- *
- * Floating chat widget that provides quick access to Timi AI assistant.
- * Features:
- * - Non-modal desktop interface (allows page interaction)
- * - Brand-aligned gradients and imagery
- * - Smooth Framer Motion animations
- * - Responsive mobile drawer
- * - Persistence across navigation
- *
- * @module components/chat/chat-widget
- */
-
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'

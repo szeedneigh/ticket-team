@@ -59,7 +59,7 @@ export default function FAQPage() {
             <AccordionContent>
               <div className="space-y-2 text-muted-foreground">
                 <p>
-                  Ticket Team is La Verdad Christian College's official helpdesk platform designed to streamline IT support and service requests. It provides:
+                  Ticket Team is La Verdad Christian College&apos;s official helpdesk platform designed to streamline IT support and service requests. It provides:
                 </p>
                 <ul className="list-disc list-inside space-y-1 ml-4">
                   <li>Easy ticket submission and tracking</li>
@@ -96,12 +96,12 @@ export default function FAQPage() {
                 <p>Access Ticket Team by:</p>
                 <ol className="list-decimal list-inside space-y-1 ml-4">
                   <li>Visit the Ticket Team website</li>
-                  <li>Click "Sign In with Google"</li>
+                  <li>Click &quot;Sign In with Google&quot;</li>
                   <li>Use your La Verdad (@laverdad.edu.ph or @student.laverdad.edu.ph) email</li>
                   <li>Authorize the application</li>
                 </ol>
                 <p className="mt-2">
-                  You'll be automatically redirected to the dashboard once signed in.
+                  You&apos;ll be automatically redirected to the dashboard once signed in.
                 </p>
               </div>
             </AccordionContent>
@@ -118,7 +118,7 @@ export default function FAQPage() {
             <AccordionContent>
               <div className="space-y-2 text-muted-foreground">
                 <ol className="list-decimal list-inside space-y-1 ml-4">
-                  <li>Click the "New Ticket" button in the dashboard or sidebar</li>
+                  <li>Click the &quot;New Ticket&quot; button in the dashboard or sidebar</li>
                   <li>Fill in the required fields:
                     <ul className="list-disc list-inside ml-4 mt-1">
                       <li>Title (brief description of your issue)</li>
@@ -128,10 +128,10 @@ export default function FAQPage() {
                     </ul>
                   </li>
                   <li>Optionally attach files (screenshots, error logs)</li>
-                  <li>Click "Submit Ticket"</li>
+                  <li>Click &quot;Submit Ticket&quot;</li>
                 </ol>
                 <p className="mt-2">
-                  You'll receive a confirmation and can track your ticket in the "My Tickets" section.
+                  You&apos;ll receive a confirmation and can track your ticket in the &quot;My Tickets&quot; section.
                 </p>
               </div>
             </AccordionContent>
@@ -181,10 +181,10 @@ export default function FAQPage() {
                   Yes! You can add comments to your ticket at any time. To add information:
                 </p>
                 <ol className="list-decimal list-inside space-y-1 ml-4">
-                  <li>Go to "My Tickets" and click on your ticket</li>
-                  <li>Scroll to the "Comments" section</li>
+                  <li>Go to &quot;My Tickets&quot; and click on your ticket</li>
+                  <li>Scroll to the &quot;Comments&quot; section</li>
                   <li>Type your message and attach files if needed</li>
-                  <li>Click "Add Comment"</li>
+                  <li>Click &quot;Add Comment&quot;</li>
                 </ol>
                 <p className="mt-2">
                   Staff will be notified of your comment and will respond accordingly.
@@ -268,7 +268,7 @@ export default function FAQPage() {
                   <li>Issue requires staff intervention</li>
                   <li>Need to track resolution progress</li>
                   <li>Problem affects multiple users</li>
-                  <li>AI couldn't resolve your issue</li>
+                  <li>AI couldn&apos;t resolve your issue</li>
                 </ul>
                 <p className="mt-2">
                   <strong>Tip:</strong> Start with AI Chat - you can always escalate to a ticket if needed!
@@ -347,11 +347,11 @@ export default function FAQPage() {
             <AccordionContent>
               <div className="space-y-2 text-muted-foreground">
                 <p>
-                  Staff members can create and edit knowledge base articles. If you're an employee and would like to contribute:
+                  Staff members can create and edit knowledge base articles. If you&apos;re an employee and would like to contribute:
                 </p>
                 <ol className="list-decimal list-inside space-y-1 ml-4">
                   <li>Go to the Knowledge Base</li>
-                  <li>Click "Create Article" (if you have permissions)</li>
+                  <li>Click &quot;Create Article&quot; (if you have permissions)</li>
                   <li>Write your article using the rich text editor</li>
                   <li>Submit for review</li>
                 </ol>
@@ -369,12 +369,12 @@ export default function FAQPage() {
         <h2 className="text-2xl font-bold">Account & Access</h2>
         <Accordion type="single" collapsible className="w-full">
           <AccordionItem value="cant-login">
-            <AccordionTrigger>I can't log in. What should I do?</AccordionTrigger>
+            <AccordionTrigger>I can&apos;t log in. What should I do?</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-2 text-muted-foreground">
-                <p>If you're having trouble logging in:</p>
+                <p>If you&apos;re having trouble logging in:</p>
                 <ol className="list-decimal list-inside space-y-1 ml-4">
-                  <li>Verify you're using your La Verdad email (@laverdad.edu.ph or @student.laverdad.edu.ph)</li>
+                  <li>Verify you&apos;re using your La Verdad email (@laverdad.edu.ph or @student.laverdad.edu.ph)</li>
                   <li>Try clearing your browser cache and cookies</li>
                   <li>Try a different browser or incognito mode</li>
                   <li>Check if your Google account is working (try logging into Gmail)</li>
@@ -392,12 +392,12 @@ export default function FAQPage() {
               <div className="space-y-2 text-muted-foreground">
                 <ol className="list-decimal list-inside space-y-1 ml-4">
                   <li>Click on your avatar in the top-right corner</li>
-                  <li>Select "Profile"</li>
+                  <li>Select &quot;Profile&quot;</li>
                   <li>Update your information (name, department, phone, etc.)</li>
-                  <li>Click "Save Changes"</li>
+                  <li>Click &quot;Save Changes&quot;</li>
                 </ol>
                 <p className="mt-2">
-                  Note: Your email address cannot be changed as it's linked to your Google account.
+                  Note: Your email address cannot be changed as it&apos;s linked to your Google account.
                 </p>
               </div>
             </AccordionContent>
@@ -436,7 +436,7 @@ export default function FAQPage() {
         <CardHeader>
           <CardTitle>Still Have Questions?</CardTitle>
           <CardDescription>
-            Can't find what you're looking for? Get in touch with us!
+            Can&apos;t find what you&apos;re looking for? Get in touch with us!
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-4">

@@ -7,7 +7,6 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/lib/types/database.types'
 import type {
   AuditLogEntry,
   AuditLogFilters,
@@ -20,7 +19,8 @@ import type {
 import { getActivityTypeLabel } from '@/lib/types/audit'
 import { logger } from '@/lib/logger'
 
-type SupabaseClientType = SupabaseClient<Database>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SupabaseClientType = SupabaseClient<any>
 
 // ============================================================================
 // Query Functions
@@ -129,33 +129,71 @@ export async function getAuditLogs(
     }
 
     // Transform data - map DB columns to expected interface
-    const logs: AuditLogEntry[] = (data || []).map((row: any) => ({
-      id: row.id,
-      ticket_id: row.ticket_id,
-      activity_type: row.action as ActivityType,
-      performed_by: row.user_id,
-      performed_at: row.created_at,
-      field_name: null, // Not in current schema
-      old_value: row.old_value,
-      new_value: row.new_value,
-      comment: null, // Not in current schema
-      metadata: row.metadata as Record<string, unknown> | null,
-      user: row.user
-        ? {
-            id: row.user.id,
-            full_name: row.user.full_name,
-            email: row.user.email,
-            role: row.user.role,
+    // Supabase nested selects can return arrays or objects depending on relationship
+    type TicketActivityRow = {
+      id: string
+      ticket_id: string
+      action: string
+      user_id: string | null
+      created_at: string
+      old_value: string | null
+      new_value: string | null
+      metadata: Record<string, unknown> | null
+      user: {
+        id: string
+        full_name: string
+        email: string
+        role: string
+      }[] | {
+        id: string
+        full_name: string
+        email: string
+        role: string
+      } | null
+      ticket: {
+        id: string
+        title: string
+        ticket_number: string
+      }[] | {
+        id: string
+        title: string
+        ticket_number: string
+      } | null
+    }
+
+    const logs: AuditLogEntry[] = (data || []).map((row) => {
+      const activity = row as unknown as TicketActivityRow
+      // Handle both array and object responses from Supabase nested queries
+      const userData = Array.isArray(activity.user) ? activity.user[0] : activity.user
+      const ticketData = Array.isArray(activity.ticket) ? activity.ticket[0] : activity.ticket
+      return {
+        id: activity.id,
+        ticket_id: activity.ticket_id,
+        activity_type: activity.action as ActivityType,
+        performed_by: activity.user_id,
+        performed_at: activity.created_at,
+        field_name: null, // Not in current schema
+        old_value: activity.old_value,
+        new_value: activity.new_value,
+        comment: null, // Not in current schema
+        metadata: activity.metadata,
+        user: userData
+          ? {
+            id: userData.id,
+            full_name: userData.full_name,
+            email: userData.email,
+            role: userData.role,
           }
-        : null,
-      ticket: row.ticket
-        ? {
-            id: row.ticket.id,
-            title: row.ticket.title,
-            ticket_number: row.ticket.ticket_number,
+          : null,
+        ticket: ticketData
+          ? {
+            id: ticketData.id,
+            title: ticketData.title,
+            ticket_number: ticketData.ticket_number,
           }
-        : null,
-    }))
+          : null,
+      }
+    })
 
     const total = count || 0
     const totalPages = Math.ceil(total / perPage)
@@ -210,7 +248,7 @@ export async function getAuditLogStats(
       .from('ticket_activities')
       .select('user_id')
 
-    const uniqueUsers = new Set(uniqueUsersData?.map((row: any) => row.user_id) || []).size
+    const uniqueUsers = new Set((uniqueUsersData || []).map((row) => row.user_id) || []).size
 
     // Get earliest and latest activity dates
     let dateQuery = supabase
@@ -227,7 +265,9 @@ export async function getAuditLogStats(
     }
 
     const { data: earliestData } = await dateQuery
-    const earliestActivity = (earliestData as any)?.[0]?.created_at || null
+    type CreatedAtRow = { created_at: string }
+    const earliestRow = (earliestData as CreatedAtRow[] | null)?.[0]
+    const earliestActivity = earliestRow?.created_at || null
 
     dateQuery = supabase
       .from('ticket_activities')
@@ -243,7 +283,8 @@ export async function getAuditLogStats(
     }
 
     const { data: latestData } = await dateQuery
-    const latestActivity = (latestData as any)?.[0]?.created_at || null
+    const latestRow = (latestData as CreatedAtRow[] | null)?.[0]
+    const latestActivity = latestRow?.created_at || null
 
     // Get activity type breakdown
     let activityQuery = supabase
@@ -259,16 +300,13 @@ export async function getAuditLogStats(
 
     const { data: activityData } = await activityQuery
 
-    const activityBreakdown = Object.entries(
-      (activityData || []).reduce(
-        (acc: any, row: any) => {
-          const type = row.action as ActivityType
-          acc[type] = (acc[type] || 0) + 1
-          return acc
-        },
-        {} as Record<ActivityType, number>
-      )
-    )
+    const activityCounts = (activityData || []).reduce<Record<ActivityType, number>>((acc, row) => {
+      const type = row.action as ActivityType
+      acc[type] = (acc[type] || 0) + 1
+      return acc
+    }, {} as Record<ActivityType, number>)
+
+    const activityBreakdown = Object.entries(activityCounts)
       .map(([type, count]) => ({
         type: type as ActivityType,
         count: count as number,
@@ -298,30 +336,44 @@ export async function getAuditLogStats(
 
     const { data: userActivityData } = await userActivityQuery
 
-    const userActivityMap = (userActivityData || []).reduce(
-      (acc: any, row: any) => {
-        const userId = row.user_id
-        if (!acc[userId]) {
-          acc[userId] = {
-            userId,
-            userName: row.user?.full_name || 'Unknown User',
-            userEmail: row.user?.email || '',
-            activityCount: 0,
-          }
+    type UserActivityRow = {
+      user_id: string
+      user: {
+        id: string
+        full_name: string | null
+        email: string | null
+      }[] | {
+        id: string
+        full_name: string | null
+        email: string | null
+      } | null
+    }
+
+    type UserActivitySummary = {
+      userId: string
+      userName: string
+      userEmail: string
+      activityCount: number
+    }
+
+    const userActivityMap = (userActivityData || []).reduce<
+      Record<string, UserActivitySummary>
+    >((acc, rawRow) => {
+      const row = rawRow as unknown as UserActivityRow
+      const userId = row.user_id
+      // Handle both array and object responses from Supabase nested queries
+      const userData = Array.isArray(row.user) ? row.user[0] : row.user
+      if (!acc[userId]) {
+        acc[userId] = {
+          userId,
+          userName: userData?.full_name || 'Unknown User',
+          userEmail: userData?.email || '',
+          activityCount: 0,
         }
-        acc[userId].activityCount += 1
-        return acc
-      },
-      {} as Record<
-        string,
-        {
-          userId: string
-          userName: string
-          userEmail: string
-          activityCount: number
-        }
-      >
-    )
+      }
+      acc[userId].activityCount += 1
+      return acc
+    }, {})
 
     const topUsers = Object.values(userActivityMap)
       .sort((a, b) => b.activityCount - a.activityCount)

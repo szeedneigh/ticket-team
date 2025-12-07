@@ -58,7 +58,7 @@ export default function HelpCenterPage() {
           />
         </div>
         <p className="text-sm text-muted-foreground mt-2 text-center">
-          Try searching for "create ticket", "knowledge base", or "notifications"
+          Try searching for &quot;create ticket&quot;, &quot;knowledge base&quot;, or &quot;notifications&quot;
         </p>
       </div>
 
@@ -250,7 +250,7 @@ export default function HelpCenterPage() {
         <CardHeader>
           <CardTitle>Still Need Help?</CardTitle>
           <CardDescription>
-            Can't find what you're looking for? We're here to help!
+            Can&apos;t find what you&apos;re looking for? We&apos;re here to help!
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-4">

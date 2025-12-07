@@ -32,8 +32,14 @@ interface AuditFiltersProps {
 export function AuditFilters({ filters, users, onFilterChange, onClearFilters }: AuditFiltersProps) {
   const [localFilters, setLocalFilters] = useState<AuditLogFilters>(filters)
 
-  const handleFilterChange = (key: keyof AuditLogFilters, value: any) => {
-    const newFilters = { ...localFilters, [key]: value }
+  const handleFilterChange = <K extends keyof AuditLogFilters>(
+    key: K,
+    value: AuditLogFilters[K] | undefined
+  ) => {
+    const newFilters: AuditLogFilters = {
+      ...localFilters,
+      [key]: value,
+    }
     setLocalFilters(newFilters)
     onFilterChange(newFilters)
   }
