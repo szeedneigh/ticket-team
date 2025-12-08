@@ -10,7 +10,6 @@
 import { useState, useTransition } from 'react'
 import { ThumbsUp, ThumbsDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { voteArticle } from '@/lib/kb/actions'
 import { toast } from 'sonner'
@@ -88,81 +87,82 @@ export function FeedbackSection({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Was this article helpful?</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Vote Buttons */}
-        {!localVote && (
-          <div className="flex items-center gap-4">
+    <div className="space-y-5">
+      {/* Vote Buttons */}
+      {!localVote && (
+        <div className="flex items-center justify-center gap-4">
+          <Button
+            onClick={() => handleVote(true)}
+            disabled={isPending}
+            variant="outline"
+            className="flex-1 max-w-[200px] h-12 gap-2.5 bg-background/50 hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all duration-200 group"
+          >
+            <ThumbsUp className="h-5 w-5 group-hover:scale-110 transition-transform" />
+            <span className="font-medium">Helpful</span>
+          </Button>
+          <Button
+            onClick={() => handleVote(false)}
+            disabled={isPending}
+            variant="outline"
+            className="flex-1 max-w-[200px] h-12 gap-2.5 bg-background/50 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-600 dark:hover:text-rose-400 transition-all duration-200 group"
+          >
+            <ThumbsDown className="h-5 w-5 group-hover:scale-110 transition-transform" />
+            <span className="font-medium">Not Helpful</span>
+          </Button>
+        </div>
+      )}
+
+      {/* Feedback Textarea (shown when user clicks "Not Helpful") */}
+      {showFeedback && !localVote && (
+        <div className="space-y-3 mt-4 max-w-lg mx-auto">
+          <Textarea
+            placeholder="How can we improve this article?"
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            className="min-h-[100px] bg-background/50 border-border/50 focus:border-primary/50 resize-none"
+          />
+          <div className="flex gap-2 justify-end">
             <Button
-              onClick={() => handleVote(true)}
+              onClick={() => {
+                setShowFeedback(false)
+                setFeedbackText('')
+              }}
+              variant="ghost"
               disabled={isPending}
-              variant="outline"
-              className="flex-1"
+              size="sm"
             >
-              <ThumbsUp className="h-4 w-4 mr-2" />
-              Helpful
+              Cancel
             </Button>
             <Button
-              onClick={() => handleVote(false)}
+              onClick={handleSubmitFeedback}
               disabled={isPending}
-              variant="outline"
-              className="flex-1"
+              size="sm"
+              className="bg-primary hover:bg-primary/90"
             >
-              <ThumbsDown className="h-4 w-4 mr-2" />
-              Not Helpful
+              Submit Feedback
             </Button>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Feedback Textarea (shown when user clicks "Not Helpful") */}
-        {showFeedback && !localVote && (
-          <div className="space-y-2">
-            <Textarea
-              placeholder="How can we improve this article? (optional)"
-              value={feedbackText}
-              onChange={(e) => setFeedbackText(e.target.value)}
-              className="min-h-[100px]"
-            />
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSubmitFeedback}
-                disabled={isPending}
-                className="flex-1"
-              >
-                Submit Feedback
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowFeedback(false)
-                  setFeedbackText('')
-                }}
-                variant="ghost"
-                disabled={isPending}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
+      {/* Vote Statistics */}
+      {totalVotes > 0 && !localVote && (
+        <p className="text-sm text-muted-foreground text-center">
+          <span className="font-medium text-foreground">{helpfulVotes}</span> out of{' '}
+          <span className="font-medium text-foreground">{totalVotes}</span> people found this helpful
+          <span className="text-primary ml-1">({helpfulnessPercent}%)</span>
+        </p>
+      )}
 
-        {/* Vote Statistics */}
-        {totalVotes > 0 && (
-          <p className="text-sm text-muted-foreground">
-            {helpfulVotes} out of {totalVotes} people found this helpful ({helpfulnessPercent}%)
-          </p>
-        )}
-
-        {/* Thank You Message */}
-        {localVote && (
-          <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
-            <span>✓</span>
-            <span>Thank you for your feedback!</span>
-          </p>
-        )}
-      </CardContent>
-    </Card>
+      {/* Thank You Message */}
+      {localVote && (
+        <div className="flex items-center justify-center gap-2.5 py-3 px-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-600 dark:text-emerald-400">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span className="font-medium">Thank you for your feedback!</span>
+        </div>
+      )}
+    </div>
   )
 }
