@@ -429,8 +429,8 @@ export async function prepareTicketFromChat(params: {
       conversation: conversationContext,
     })
 
-    // Format description
-    const suggestedDescription = formatTicketDescription({
+    // Format description (concise summary instead of full chat dump)
+    const suggestedDescription = await formatTicketDescription({
       conversation: conversationContext,
       contextArticles,
     })
