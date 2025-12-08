@@ -101,7 +101,7 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
           <CollapsibleTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between"
+              className="w-full justify-between bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
               aria-label="Toggle table of contents"
             >
               <span className="flex items-center gap-2">
@@ -110,15 +110,15 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
               </span>
               <ChevronDown
                 className={cn(
-                  'h-4 w-4 transition-transform',
+                  'h-4 w-4 transition-transform duration-200',
                   isOpen && 'rotate-180'
                 )}
               />
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-2">
+          <CollapsibleContent className="mt-3">
             <nav
-              className="border rounded-lg p-4 bg-card"
+              className="border border-border/40 rounded-xl p-4 bg-card/50 backdrop-blur-sm"
               aria-label="Table of contents"
             >
               <TocList
@@ -131,28 +131,20 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
         </Collapsible>
       </div>
 
-      {/* Desktop: Sticky Sidebar */}
-      <aside
+      {/* Desktop: Inline List (parent handles card wrapper) */}
+      <nav
         className={cn(
           'hidden lg:block',
-          'sticky top-24 self-start',
-          'max-h-[calc(100vh-7rem)] overflow-auto',
           className
         )}
         aria-label="Table of contents"
       >
-        <div className="border rounded-lg p-4 bg-card">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <List className="h-4 w-4" />
-            On this page
-          </h3>
-          <TocList
-            headings={headings}
-            activeId={activeId}
-            onHeadingClick={scrollToHeading}
-          />
-        </div>
-      </aside>
+        <TocList
+          headings={headings}
+          activeId={activeId}
+          onHeadingClick={scrollToHeading}
+        />
+      </nav>
     </>
   )
 }
@@ -165,22 +157,22 @@ interface TocListProps {
 
 function TocList({ headings, activeId, onHeadingClick }: TocListProps) {
   return (
-    <ul className="space-y-2 text-sm">
+    <ul className="space-y-1 text-sm">
       {headings.map((heading) => (
         <li
           key={heading.id}
           className={cn(
-            heading.level === 3 && 'pl-4'
+            heading.level === 3 && 'pl-3'
           )}
         >
           <button
             onClick={() => onHeadingClick(heading.id)}
             className={cn(
-              'text-left w-full transition-colors hover:text-foreground',
-              'py-1 px-2 rounded-sm text-sm',
+              'text-left w-full transition-all duration-200',
+              'py-1.5 px-3 rounded-md text-sm leading-snug',
               activeId === heading.id
-                ? 'text-foreground font-medium bg-muted'
-                : 'text-muted-foreground hover:bg-muted/50'
+                ? 'text-primary font-medium bg-primary/10 border-l-2 border-primary'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
             )}
             aria-current={activeId === heading.id ? 'location' : undefined}
           >
