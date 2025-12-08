@@ -395,22 +395,21 @@ Respond with ONLY the title, nothing else. Do not use quotes.`
 // ============================================================================
 
 /**
- * Format comprehensive ticket description from chat context
+ * Create a concise, staff-friendly ticket description from chat context.
  *
- * Includes:
- * - User's additional context (if provided)
- * - Issue summary
- * - Full conversation history
+ * It focuses on the signal that a technician needs:
+ * - Brief summary of the issue, impact, and environment
+ * - Steps already attempted or suggested by AI
+ * - Open questions/blockers for resolution
  * - Referenced KB articles
  *
- * @param params - Formatting parameters
- * @returns Formatted markdown description
+ * Full chat transcripts are intentionally excluded to keep tickets readable.
  */
-export function formatTicketDescription(params: {
+export async function formatTicketDescription(params: {
   conversation: ChatMessage[]
   contextArticles: RAGContext[]
   userAdditions?: string
-}): string {
+}): Promise<string> {
   const { conversation, contextArticles, userAdditions } = params
 
   let description = '**🤖 This ticket was created from an AI chat conversation**\n\n'
@@ -422,29 +421,18 @@ export function formatTicketDescription(params: {
     description += '---\n\n'
   }
 
-  // Issue summary (first user message)
-  if (conversation.length > 0) {
-    description += `**❓ Original Issue:**\n\n`
-    description += `${conversation[0].content}\n\n`
-    description += '---\n\n'
-  }
+  // Concise summary for staff
+  const summary = await summarizeConversationForTicket(conversation)
+  description += `**🔎 Summary for Staff (concise):**\n\n${summary}\n\n---\n\n`
 
-  // Full conversation history
-  if (conversation.length > 0) {
-    description += `**💬 Chat Conversation History:**\n\n`
-
-    conversation.forEach((msg, index) => {
-      const icon = msg.role === 'user' ? '👤' : '🤖'
-      const label = msg.role === 'user' ? 'User' : 'AI Assistant'
-      const timestamp = msg.timestamp
-        ? new Date(msg.timestamp).toLocaleString()
-        : ''
-
-      description += `**${icon} ${label}**${timestamp ? ` (${timestamp})` : ''}:\n`
-      description += `${msg.content}\n\n`
+  // Trimmed highlights (latest relevant turns) without full transcript
+  const keyExcerpts = buildKeyExcerpts(conversation, 4, 220)
+  if (keyExcerpts.length > 0) {
+    description += '**📌 Key Chat Highlights (truncated):**\n\n'
+    keyExcerpts.forEach(item => {
+      description += `- ${item}\n`
     })
-
-    description += '---\n\n'
+    description += '\n---\n\n'
   }
 
   // Referenced KB articles
@@ -464,6 +452,70 @@ export function formatTicketDescription(params: {
   }
 
   return description
+}
+
+/**
+ * Summarize the chat into the smallest set of details a technician needs.
+ */
+async function summarizeConversationForTicket(
+  conversation: ChatMessage[]
+): Promise<string> {
+  if (!conversation.length) {
+    return 'No chat messages were captured for this session.'
+  }
+
+  const serialized = conversation
+    .map(msg => `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`)
+    .join('\n')
+
+  try {
+    const response = await generateChatResponse({
+      prompt: `You are an IT helpdesk triage assistant. Summarize this chat for the technician in <= 6 bullet points, max 1200 characters.
+- Capture: issue, impact, device/app/context, steps already tried (by user or AI), KB suggestions already given, and open questions/blockers.
+- Remove greetings/chit-chat. Prefer action verbs. Be specific.
+- If the AI could not solve it, highlight what is still needed from staff.
+
+Conversation:
+${serialized}`,
+      temperature: 0.2,
+      maxOutputTokens: 320,
+    })
+
+    const text = response.text.trim()
+    if (text) return text
+  } catch (error) {
+    console.error('Conversation summary error:', error)
+  }
+
+  // Fallback: compact recent turns
+  const fallback = buildKeyExcerpts(conversation, 6, 180)
+  if (fallback.length === 0) {
+    return 'Summary unavailable (chat data was empty).'
+  }
+  return fallback.map(item => `- ${item}`).join('\n')
+}
+
+/**
+ * Build short, recent excerpts without dumping the full transcript.
+ */
+function buildKeyExcerpts(
+  conversation: ChatMessage[],
+  maxItems: number,
+  maxLength: number
+): string[] {
+  const trimmed = conversation
+    .filter(msg => msg.content && msg.content.trim())
+    .slice(-maxItems)
+
+  return trimmed.map(msg => {
+    const label = msg.role === 'user' ? 'User' : 'AI'
+    return `${label}: ${truncate(msg.content, maxLength)}`
+  })
+}
+
+function truncate(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, maxLength - 3)}...`
 }
 
 // ============================================================================
