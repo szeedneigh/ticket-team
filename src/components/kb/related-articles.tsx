@@ -10,8 +10,6 @@ import { memo } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Eye, ThumbsUp } from 'lucide-react'
 import { CategoryBadge } from './category-badge'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import type { KnowledgeArticle } from '@/lib/types/knowledge-base'
 
 interface RelatedArticlesProps {
@@ -24,18 +22,11 @@ export const RelatedArticles = memo(function RelatedArticles({ articles }: Relat
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl font-semibold">Related Articles</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {articles.map((article) => (
-            <RelatedArticleItem key={article.id} article={article} />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {articles.map((article) => (
+        <RelatedArticleItem key={article.id} article={article} />
+      ))}
+    </div>
   )
 })
 
@@ -51,9 +42,12 @@ const RelatedArticleItem = memo(function RelatedArticleItem({ article }: Related
   return (
     <Link
       href={`/kb/${article.id}`}
-      className="group block p-4 rounded-lg border border-border bg-card hover:shadow-md transition-all"
+      className="group relative block p-5 rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/80 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
     >
-      <div className="space-y-2">
+      {/* Hover Accent */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300" />
+      
+      <div className="relative space-y-3">
         {/* Category */}
         {article.category && (
           <CategoryBadge
@@ -63,43 +57,40 @@ const RelatedArticleItem = memo(function RelatedArticleItem({ article }: Related
         )}
 
         {/* Title */}
-        <h4 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors">
+        <h4 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors duration-200">
           {article.title}
         </h4>
 
         {/* Summary */}
         {article.summary && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
             {article.summary}
           </p>
         )}
 
         {/* Metadata */}
         <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {article.view_count !== undefined && (
-              <div className="flex items-center gap-1">
-                <Eye className="h-3 w-3" />
-                <span>{article.view_count}</span>
+              <div className="flex items-center gap-1.5">
+                <Eye className="h-3.5 w-3.5" />
+                <span>{article.view_count.toLocaleString()}</span>
               </div>
             )}
             {helpfulnessPercent > 0 && (
-              <div className="flex items-center gap-1">
-                <ThumbsUp className="h-3 w-3" />
+              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                <ThumbsUp className="h-3.5 w-3.5" />
                 <span>{helpfulnessPercent}%</span>
               </div>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 text-xs group-hover:translate-x-1 transition-transform"
-          >
+          <span className="flex items-center gap-1 text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             Read more
-            <ArrowRight className="h-3 w-3 ml-1" />
-          </Button>
+            <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </span>
         </div>
       </div>
     </Link>
   )
 })
+
