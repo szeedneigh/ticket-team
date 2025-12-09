@@ -225,8 +225,28 @@ export function ChatClient({
                 streamingContentRef.current = ''
                 setCurrentSources([])
               } else if (chunk.type === 'error') {
-                // Error occurred - throw to be caught by outer catch block
-                throw new Error(chunk.error || 'An error occurred while processing your request')
+                // Server signaled an error; surface to the user and stop streaming gracefully
+                const serverMessage = chunk.error || 'An error occurred while processing your request'
+                
+                // Update UI state without throwing (avoids noisy console errors)
+                setError(serverMessage)
+                toast.error('Chat Error', {
+                  description: serverMessage,
+                  duration: 5000,
+                })
+                
+                // Cancel further streaming and clear transient state
+                await reader.cancel().catch(() => null)
+                setIsStreaming(false)
+                setStreamingContent('')
+                streamingContentRef.current = ''
+                currentInteractionIdRef.current = null
+                setCurrentSources([])
+
+                // Remove the optimistic user message since the request failed
+                setMessages(prev => prev.slice(0, -1))
+
+                return
               }
             } catch (parseError) {
               // Log parsing errors for debugging
