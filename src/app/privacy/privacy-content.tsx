@@ -145,7 +145,7 @@ export function PrivacyContent() {
                     Privacy Policy
                   </h1>
                   <p className="text-lg text-muted-foreground relative z-10 max-w-2xl">
-                    Transparency is our core value. Here's how Ticket Team protects and manages your data.
+                    Transparency is our core value. Here&apos;s how Ticket Team protects and manages your data.
                   </p>
                   <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground font-medium relative z-10">
                     <div className="bg-primary/10 p-1.5 rounded-full">
@@ -168,7 +168,7 @@ export function PrivacyContent() {
                 </h2>
                 <p className="text-muted-foreground leading-relaxed">
                   Welcome to Ticket Team, the intelligent helpdesk platform for La Verdad Christian College. 
-                  Your privacy is important to us. It is Ticket Team's policy to respect your privacy regarding any information we may collect from you across our website and other sites we own and operate.
+                  Your privacy is important to us. It is Ticket Team&apos;s policy to respect your privacy regarding any information we may collect from you across our website and other sites we own and operate.
                 </p>
              </section>
 
