@@ -44,7 +44,7 @@ export async function getAuditLogs(
   sort: AuditLogSort = { field: 'performed_at', order: 'desc' }
 ): Promise<AuditLogResult> {
   try {
-    // Build query
+    // Build query - using simple join syntax for foreign keys
     let query = supabase
       .from('ticket_activities')
       .select(
@@ -57,7 +57,7 @@ export async function getAuditLogs(
         old_value,
         new_value,
         metadata,
-        user:users!ticket_activities_user_id_fkey(
+        user:users(
           id,
           full_name,
           email,
@@ -65,8 +65,7 @@ export async function getAuditLogs(
         ),
         ticket:tickets(
           id,
-          title,
-          ticket_number
+          title
         )
       `,
         { count: 'exact' }
@@ -153,11 +152,9 @@ export async function getAuditLogs(
       ticket: {
         id: string
         title: string
-        ticket_number: string
       }[] | {
         id: string
         title: string
-        ticket_number: string
       } | null
     }
 
@@ -189,7 +186,6 @@ export async function getAuditLogs(
           ? {
             id: ticketData.id,
             title: ticketData.title,
-            ticket_number: ticketData.ticket_number,
           }
           : null,
       }
@@ -319,7 +315,7 @@ export async function getAuditLogStats(
       .select(
         `
         user_id,
-        user:users!ticket_activities_user_id_fkey(
+        user:users(
           id,
           full_name,
           email
@@ -421,7 +417,7 @@ export async function exportAuditLogsCSV(
         Time: date.toLocaleTimeString(),
         User: log.user?.full_name || 'Unknown User',
         Email: log.user?.email || '',
-        'Ticket Number': log.ticket?.ticket_number || '',
+        'Ticket Number': log.ticket?.ticket_number || log.ticket?.id || '',
         'Ticket Title': log.ticket?.title || '',
         Action: getActivityTypeLabel(log.activity_type),
         Field: log.field_name || '',
