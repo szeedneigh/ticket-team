@@ -24,6 +24,7 @@ interface NavbarProps {
   setIsCollapsed?: (collapsed: boolean) => void
   isMobileOpen?: boolean
   setIsMobileOpen?: (open: boolean) => void
+  transparent?: boolean
 }
 
 export function Navbar({
@@ -31,19 +32,26 @@ export function Navbar({
   isCollapsed,
   setIsCollapsed,
   isMobileOpen,
-  setIsMobileOpen
+  setIsMobileOpen,
+  transparent = false
 }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
-      const main = document.querySelector('main')
-      setScrolled((main?.scrollTop ?? 0) > 20)
+      // Check both window and main element for flexibility
+      const scrollY = window.scrollY || document.querySelector('main')?.scrollTop || 0
+      setScrolled(scrollY > 20)
     }
 
+    window.addEventListener('scroll', handleScroll)
     const main = document.querySelector('main')
     main?.addEventListener('scroll', handleScroll)
-    return () => main?.removeEventListener('scroll', handleScroll)
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      main?.removeEventListener('scroll', handleScroll)
+    }
   }, [])
 
   const handleToggle = () => {
@@ -58,10 +66,13 @@ export function Navbar({
 
   return (
     <header className={cn(
-      "z-50 w-full border-b flex-shrink-0 transition-all duration-300",
+      "z-50 w-full flex-shrink-0 transition-all duration-300",
+      transparent ? "fixed top-0 left-0 right-0 border-transparent" : "sticky top-0 border-b",
       scrolled
-        ? "bg-background/80 backdrop-blur-xl shadow-md"
-        : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        ? "bg-background/80 backdrop-blur-xl shadow-md border-border/40"
+        : transparent 
+          ? "bg-background/20 backdrop-blur-md border-white/10 dark:border-white/5 shadow-sm" 
+          : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     )} suppressHydrationWarning>
       <div className="flex h-16 items-center justify-between px-4 lg:px-6" suppressHydrationWarning>
         <div className="flex items-center gap-6" suppressHydrationWarning>

@@ -11,13 +11,35 @@ import type { User } from '@/lib/types/users'
 import { usePreferences } from '@/providers/preferences-provider'
 
 // Dynamically import Sidebar with framer-motion to reduce initial bundle size
+// Dynamically import Sidebar with framer-motion to reduce initial bundle size
 const Sidebar = dynamic(() => import('./sidebar').then(mod => ({ default: mod.Sidebar })), {
   loading: () => (
-    <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card/50 backdrop-blur-sm">
-      <div className="p-4 space-y-2">
+    <aside className="hidden lg:flex flex-col flex-shrink-0 w-[280px] h-screen bg-[linear-gradient(180deg,#002C64_48.56%,#0693D2_100%)] border-r border-white/10">
+      {/* Logo Skeleton */}
+      <div className="p-6 pb-2 mb-2 flex items-center gap-3">
+        <Skeleton className="w-11 h-11 rounded-xl bg-white/20" />
+        <Skeleton className="h-6 w-32 bg-white/20" />
+      </div>
+
+      {/* Nav Skeleton */}
+      <div className="flex-1 px-4 py-6 space-y-2 overflow-hidden">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <Skeleton key={i} className="h-10 w-full" />
+          <div key={i} className="flex items-center w-full h-12 px-3.5 gap-3">
+             <Skeleton className="w-[22px] h-[22px] rounded bg-white/20" />
+             <Skeleton className="h-4 w-32 bg-white/10" />
+          </div>
         ))}
+      </div>
+
+      {/* Profile Skeleton */}
+      <div className="p-4 mt-auto">
+        <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 flex items-center gap-3">
+          <Skeleton className="w-10 h-10 rounded-full bg-white/20" />
+          <div className="space-y-1.5 flex-1">
+             <Skeleton className="h-3.5 w-24 bg-white/20" />
+             <Skeleton className="h-3 w-16 bg-white/10" />
+          </div>
+        </div>
       </div>
     </aside>
   ),

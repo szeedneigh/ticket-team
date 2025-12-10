@@ -137,196 +137,212 @@ export function UserForm({
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-6"
       >
-        {/* Full Name */}
-        <FormField
-          control={form.control}
-          name="full_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Name *</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Juan Dela Cruz"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Email (Create mode only) */}
-        {mode === 'create' && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            Personal Information
+          </h3>
           <FormField
             control={form.control}
-            name="email"
+            name="full_name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email *</FormLabel>
+                <FormLabel>Full Name *</FormLabel>
                 <FormControl>
                   <Input
-                    type="email"
-                    placeholder="juan.delacruz@laverdad.edu.ph"
+                    placeholder="Juan Dela Cruz"
                     {...field}
+                    className="bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20"
                   />
                 </FormControl>
-                <FormDescription>
-                  Must be a @laverdad.edu.ph or @student.laverdad.edu.ph email
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-        )}
 
-        {/* Password (Create mode only) */}
-        {mode === 'create' && (
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password *</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder="••••••••"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Minimum 8 characters with uppercase, lowercase, and number
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        {/* Role (Create mode only, or super_admin editing) */}
-        {mode === 'create' && (
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Role *</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+          {/* Email (Create mode only) */}
+          {mode === 'create' && (
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email *</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
+                    <Input
+                      type="email"
+                      placeholder="juan.delacruz@laverdad.edu.ph"
+                      {...field}
+                      className="bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20"
+                    />
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="employee">
-                      <div className="flex flex-col items-start">
-                        <span>Employee</span>
-                        <span className="text-xs text-muted-foreground">
-                          {getRoleDescription('employee')}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="staff">
-                      <div className="flex flex-col items-start">
-                        <span>Staff</span>
-                        <span className="text-xs text-muted-foreground">
-                          {getRoleDescription('staff')}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="admin">
-                      <div className="flex flex-col items-start">
-                        <span>Admin</span>
-                        <span className="text-xs text-muted-foreground">
-                          {getRoleDescription('admin')}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    {currentUserRole === 'super_admin' && (
-                      <SelectItem value="super_admin">
-                        <div className="flex flex-col items-start">
-                          <span>Super Admin</span>
-                          <span className="text-xs text-muted-foreground">
-                            {getRoleDescription('super_admin')}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                {currentUserRole === 'admin' && (
                   <FormDescription>
-                    Admins cannot create super_admin users
+                    Must be a @laverdad.edu.ph or @student.laverdad.edu.ph email
                   </FormDescription>
-                )}
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          {/* Department */}
+          {/* Password (Create mode only) */}
+          {mode === 'create' && (
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      {...field}
+                      className="bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Minimum 8 characters with uppercase, lowercase, and number
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* Phone */}
           <FormField
             control={form.control}
-            name="department"
+            name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Department</FormLabel>
+                <FormLabel>Phone</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="IT Department"
+                    type="tel"
+                    placeholder="+639123456789"
                     {...field}
+                    className="bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20"
                   />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Position */}
-          <FormField
-            control={form.control}
-            name="position"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Position</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="System Administrator"
-                    {...field}
-                  />
-                </FormControl>
+                <FormDescription>
+                  Philippine phone number format: +639XXXXXXXXX or 09XXXXXXXXX
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
 
-        {/* Phone */}
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone</FormLabel>
-              <FormControl>
-                <Input
-                  type="tel"
-                  placeholder="+639123456789"
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Philippine phone number format: +639XXXXXXXXX or 09XXXXXXXXX
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            Role & Department
+          </h3>
+          
+          {/* Role (Create mode only, or super_admin editing) */}
+          {mode === 'create' && (
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role *</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20">
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="employee">
+                        <div className="flex flex-col items-start">
+                          <span>Employee</span>
+                          <span className="text-xs text-muted-foreground">
+                            {getRoleDescription('employee')}
+                          </span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="staff">
+                        <div className="flex flex-col items-start">
+                          <span>Staff</span>
+                          <span className="text-xs text-muted-foreground">
+                            {getRoleDescription('staff')}
+                          </span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="admin">
+                        <div className="flex flex-col items-start">
+                          <span>Admin</span>
+                          <span className="text-xs text-muted-foreground">
+                            {getRoleDescription('admin')}
+                          </span>
+                        </div>
+                      </SelectItem>
+                      {currentUserRole === 'super_admin' && (
+                        <SelectItem value="super_admin">
+                          <div className="flex flex-col items-start">
+                            <span>Super Admin</span>
+                            <span className="text-xs text-muted-foreground">
+                              {getRoleDescription('super_admin')}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {currentUserRole === 'admin' && (
+                    <FormDescription>
+                      Admins cannot create super_admin users
+                    </FormDescription>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
-        />
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            {/* Department */}
+            <FormField
+              control={form.control}
+              name="department"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Department</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="IT Department"
+                      {...field}
+                      className="bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Position */}
+            <FormField
+              control={form.control}
+              name="position"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Position</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="System Administrator"
+                      {...field}
+                      className="bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
         {/* Form Actions */}
         <div className="flex justify-end gap-4">

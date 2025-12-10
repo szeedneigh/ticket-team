@@ -136,11 +136,11 @@ export const AuditLogTable = memo(function AuditLogTable({
   return (
     <div className="space-y-4">
       {/* Table */}
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border overflow-hidden">
+        <Table className="table-fixed w-full">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[180px]">
+              <TableHead className="w-[120px]">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -151,7 +151,7 @@ export const AuditLogTable = memo(function AuditLogTable({
                   {renderSortIcon('performed_at')}
                 </Button>
               </TableHead>
-              <TableHead>
+              <TableHead className="w-[160px]">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -162,7 +162,7 @@ export const AuditLogTable = memo(function AuditLogTable({
                   {renderSortIcon('performed_by')}
                 </Button>
               </TableHead>
-              <TableHead>
+              <TableHead className="w-[120px]">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -173,7 +173,7 @@ export const AuditLogTable = memo(function AuditLogTable({
                   {renderSortIcon('ticket_id')}
                 </Button>
               </TableHead>
-              <TableHead>
+              <TableHead className="w-[110px]">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -184,10 +184,9 @@ export const AuditLogTable = memo(function AuditLogTable({
                   {renderSortIcon('activity_type')}
                 </Button>
               </TableHead>
-              <TableHead>Field</TableHead>
-              <TableHead>Old Value</TableHead>
-              <TableHead>New Value</TableHead>
-              <TableHead>Comment</TableHead>
+              <TableHead className="w-[90px]">Field</TableHead>
+              <TableHead className="w-[100px]">Old Value</TableHead>
+              <TableHead className="w-[100px]">New Value</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -197,48 +196,62 @@ export const AuditLogTable = memo(function AuditLogTable({
 
               return (
                 <TableRow key={log.id} className={isMajor ? 'bg-muted/30' : ''}>
-                  <TableCell>
+                  <TableCell className="p-2">
                     <div className="flex flex-col">
                       <span className="text-xs font-medium">{dateInfo.date}</span>
                       <span className="text-xs text-muted-foreground">{dateInfo.time}</span>
                       <span className="text-xs text-muted-foreground">{dateInfo.relative}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <User className="h-3 w-3 text-muted-foreground" />
-                      <div className="flex flex-col">
-                        <span className="text-xs font-medium">
+                  <TableCell className="p-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <User className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-medium truncate" title={log.user?.full_name || 'Unknown User'}>
                           {log.user?.full_name || 'Unknown User'}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground truncate" title={log.user?.email || ''}>
                           {log.user?.email || ''}
                         </span>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="p-2">
                     {log.ticket ? (
                       <Link
                         href={`/tickets/${log.ticket_id}`}
-                        className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                        className="flex items-center gap-1 text-xs font-medium text-primary hover:underline truncate"
+                        title={log.ticket.title}
                       >
-                        {log.ticket.ticket_number}
-                        <ExternalLink className="h-3 w-3" />
+                        <span className="truncate">
+                          {log.ticket.ticket_number || log.ticket.title.substring(0, 15) + '...'}
+                        </span>
+                        <ExternalLink className="h-3 w-3 shrink-0" />
                       </Link>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    <Badge variant={isMajor ? 'default' : 'secondary'} className="text-xs">
+                  <TableCell className="p-2">
+                    <Badge variant={isMajor ? 'default' : 'secondary'} className="text-xs whitespace-nowrap">
                       {getActivityTypeLabel(log.activity_type)}
                     </Badge>
                   </TableCell>
-                  <TableCell>{renderValue(log.field_name)}</TableCell>
-                  <TableCell>{renderValue(log.old_value)}</TableCell>
-                  <TableCell>{renderValue(log.new_value)}</TableCell>
-                  <TableCell>{renderValue(log.comment)}</TableCell>
+                  <TableCell className="p-2">
+                    <span className="text-xs truncate block" title={log.field_name || ''}>
+                      {log.field_name || <span className="text-muted-foreground">—</span>}
+                    </span>
+                  </TableCell>
+                  <TableCell className="p-2">
+                    <span className="text-xs truncate block" title={log.old_value || ''}>
+                      {log.old_value || <span className="text-muted-foreground">—</span>}
+                    </span>
+                  </TableCell>
+                  <TableCell className="p-2">
+                    <span className="text-xs truncate block" title={log.new_value || ''}>
+                      {log.new_value || <span className="text-muted-foreground">—</span>}
+                    </span>
+                  </TableCell>
                 </TableRow>
               )
             })}

@@ -14,6 +14,7 @@ import {
   AlertCircle,
   LucideIcon
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface StatsCardProps {
   title: string
@@ -24,6 +25,7 @@ interface StatsCardProps {
   loading?: boolean
   description?: string
   variant?: 'default' | 'destructive' | 'warning'
+  className?: string
 }
 
 interface MetricStyles {
@@ -150,7 +152,8 @@ export function StatsCard({
   trendDirection = 'up',
   loading = false,
   description,
-  variant = 'default'
+  variant = 'default',
+  className
 }: StatsCardProps) {
   // Support both string icon names and LucideIcon components
   const IconComponent = typeof icon === 'string' ? (iconMap[icon] || Ticket) : icon
@@ -167,7 +170,7 @@ export function StatsCard({
 
   if (loading) {
     return (
-      <Card className="p-6 bg-card/50 backdrop-blur-md border-white/10 shadow-lg rounded-[24px]">
+      <Card className={cn("p-6 bg-card/50 backdrop-blur-md border-white/10 shadow-lg rounded-[24px]", className)}>
         <div className="space-y-3">
           <Skeleton className="h-4 w-20" />
           <Skeleton className="h-8 w-16" />
@@ -182,12 +185,13 @@ export function StatsCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
+      className={cn("h-full", className)}
     >
-      <Card className="relative overflow-hidden p-6 bg-card/40 backdrop-blur-xl border-white/10 shadow-lg hover:shadow-md rounded-[24px] transition-all duration-300 group">
+      <Card className="relative overflow-hidden p-6 bg-card/40 backdrop-blur-xl border-white/10 shadow-lg hover:shadow-md rounded-[24px] transition-all duration-300 group h-full flex flex-col justify-between">
         {/* Ambient background glow - Static now */}
         <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full blur-3xl opacity-10 ${styles.badgeBg.replace('/10', '')}`} />
         
-        <div className="relative z-10 flex items-start justify-between">
+        <div className="relative z-10 flex items-start justify-between mb-4">
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-2">{title}</p>
             <div className="flex items-baseline gap-2">

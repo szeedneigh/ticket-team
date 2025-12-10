@@ -1,7 +1,9 @@
 /**
  * Chat Page Loading State
  *
- * Displays loading skeleton while chat page is loading
+ * Displays loading skeleton mirroring the ChatPageClient layout:
+ * - Left: Main Chat Area (Messages + Input)
+ * - Right: History Sidebar
  *
  * @module app/(dashboard)/chat/loading
  */
@@ -10,53 +12,69 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function ChatLoading() {
   return (
-    <div className="flex h-full">
-      {/* Sidebar Skeleton */}
-      <div className="hidden w-80 flex-col border-r border-border md:flex">
-        {/* Header */}
-        <div className="flex flex-col gap-3 border-b border-border p-4">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
+    <div className="flex h-full bg-background overflow-hidden relative">
+      {/* Main Chat Area (Left) */}
+      <div className="flex flex-1 flex-col relative h-full">
+        {/* Messages Skeleton */}
+        <div className="flex-1 overflow-y-auto p-4 md:px-8 space-y-8">
+           {/* Welcome / Empty State Placeholder */}
+           <div className="flex flex-col items-center justify-center h-[40%] space-y-4 opacity-50">
+              <Skeleton className="h-16 w-16 rounded-full" />
+              <Skeleton className="h-6 w-48" />
+           </div>
+
+           {/* User Message (Right) */}
+           <div className="flex justify-end">
+              <div className="max-w-[80%]">
+                 <Skeleton className="h-12 w-64 rounded-2xl rounded-tr-sm bg-muted/40" />
+              </div>
+           </div>
+
+           {/* AI Message (Left) */}
+           <div className="flex gap-4 max-w-[80%]">
+              <Skeleton className="h-8 w-8 rounded-full shrink-0 mt-1" />
+              <div className="space-y-2 w-full">
+                 <Skeleton className="h-4 w-full" />
+                 <Skeleton className="h-4 w-[90%]" />
+                 <Skeleton className="h-4 w-[80%]" />
+              </div>
+           </div>
         </div>
 
-        {/* Sessions */}
-        <div className="space-y-2 p-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="space-y-2 rounded-lg border border-border p-3"
-            >
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-1/2" />
-            </div>
-          ))}
+        {/* Input Area (Bottom) */}
+        <div className="p-4 md:p-6 pb-6 md:pb-8">
+          <div className="mx-auto w-full max-w-4xl">
+            <Skeleton className="h-[60px] w-full rounded-xl bg-muted/30" />
+          </div>
         </div>
       </div>
 
-      {/* Main Area Skeleton */}
-      <div className="flex flex-1 flex-col">
-        {/* Messages */}
-        <div className="flex-1 space-y-6 p-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex gap-3">
-              <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-2/3" />
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* History Sidebar (Right) */}
+      <div className="hidden md:flex w-80 flex-col h-full border-l border-border/50 bg-background/80 backdrop-blur-md">
+         {/* Header */}
+         <div className="flex flex-col gap-4 p-5 border-b border-border/50">
+            <Skeleton className="h-7 w-24 bg-muted/40" /> {/* Title */}
+            <Skeleton className="h-10 w-full rounded-md bg-muted/40" /> {/* New Chat Button */}
+            <Skeleton className="h-10 w-full rounded-md bg-muted/20" /> {/* Search */}
+         </div>
 
-        {/* Input */}
-        <div className="border-t border-border p-4">
-          <div className="mx-auto max-w-4xl">
-            <Skeleton className="h-12 w-full" />
-          </div>
-        </div>
+         {/* Sessions List */}
+         <div className="flex-1 p-3 space-y-2">
+            {[1, 2, 3, 4].map((i) => (
+               <div key={i} className="p-3 rounded-xl border border-transparent space-y-2">
+                  <div className="flex justify-between">
+                     <Skeleton className="h-4 w-32 bg-muted/40" />
+                     <Skeleton className="h-3 w-12 bg-muted/20" />
+                  </div>
+                  <Skeleton className="h-3 w-full bg-muted/20" />
+               </div>
+            ))}
+         </div>
+
+         {/* Footer */}
+         <div className="p-4 border-t border-border/50">
+            <Skeleton className="h-3 w-32 mx-auto bg-muted/30" />
+         </div>
       </div>
     </div>
   )

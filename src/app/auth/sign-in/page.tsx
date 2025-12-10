@@ -188,13 +188,15 @@ export default function SignInPage() {
             </p>
           </div>
           
-          {/* Footer Links */}
-          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2">
-            <Link href="/terms" className="hover:text-primary transition-colors">Terms</Link>
-            <span>•</span>
-            <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
-            <span>•</span>
-            <Link href="/help" className="hover:text-primary transition-colors">Help</Link>
+          {/* Footer Links with improved UI */}
+          <div className="flex items-center justify-center pt-2">
+            <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground bg-white/50 backdrop-blur-sm px-6 py-2 rounded-full border border-white/20 shadow-sm">
+              <Link href="/terms" className="hover:text-primary transition-colors hover:underline">Terms</Link>
+              <span className="text-muted-foreground/40">•</span>
+              <Link href="/privacy" className="hover:text-primary transition-colors hover:underline">Privacy</Link>
+              <span className="text-muted-foreground/40">•</span>
+              <Link href="/help" className="hover:text-primary transition-colors hover:underline">Help</Link>
+            </div>
           </div>
         </motion.div>
       </div>

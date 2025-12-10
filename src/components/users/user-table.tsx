@@ -107,8 +107,8 @@ export const UserTable = memo(function UserTable({
     <div className="space-y-4">
       {/* Bulk Actions Bar */}
       {selectedUsers.size > 0 && (
-        <div className="flex items-center justify-between rounded-lg border bg-muted p-4">
-          <span className="text-sm font-medium">
+        <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-sm transition-all duration-300 animate-in fade-in slide-in-from-top-2">
+          <span className="text-sm font-medium text-primary">
             {selectedUsers.size} user{selectedUsers.size !== 1 ? 's' : ''} selected
           </span>
           <div className="flex gap-2">
@@ -116,6 +116,7 @@ export const UserTable = memo(function UserTable({
               <Button
                 size="sm"
                 variant="outline"
+                className="bg-background/50 hover:bg-background/80"
                 onClick={() => onBulkAction?.(Array.from(selectedUsers), 'change_role')}
               >
                 Change Role
@@ -124,6 +125,7 @@ export const UserTable = memo(function UserTable({
             <Button
               size="sm"
               variant="outline"
+              className="bg-background/50 hover:bg-background/80 text-emerald-600 hover:text-emerald-700 hover:border-emerald-200"
               onClick={() => onBulkAction?.(Array.from(selectedUsers), 'activate')}
             >
               Activate
@@ -131,6 +133,7 @@ export const UserTable = memo(function UserTable({
             <Button
               size="sm"
               variant="outline"
+              className="bg-background/50 hover:bg-background/80 text-red-600 hover:text-red-700 hover:border-red-200"
               onClick={() => onBulkAction?.(Array.from(selectedUsers), 'deactivate')}
             >
               Deactivate
@@ -138,6 +141,7 @@ export const UserTable = memo(function UserTable({
             <Button
               size="sm"
               variant="ghost"
+              className="text-muted-foreground hover:text-foreground"
               onClick={() => setSelectedUsers(new Set())}
             >
               Clear Selection
@@ -272,17 +276,11 @@ export const UserTable = memo(function UserTable({
                   </TableCell>
                   <TableCell>
                     {user.deactivated_at ? (
-                      <Badge
-                        variant="destructive"
-                        className="bg-red-50 text-red-700"
-                      >
+                      <Badge variant="destructive">
                         Deactivated
                       </Badge>
                     ) : (
-                      <Badge
-                        variant="outline"
-                        className="bg-green-50 text-green-700"
-                      >
+                      <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 border-emerald-200">
                         Active
                       </Badge>
                     )}
