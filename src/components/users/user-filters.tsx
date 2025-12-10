@@ -8,7 +8,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, X } from 'lucide-react'
+import { Search, X, Filter } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
 import type { UserRole } from '@/lib/types/database'
 
 interface UserFiltersProps {
@@ -65,30 +64,29 @@ export function UserFilters({
 
   return (
     <div className={`space-y-4 ${className || ''}`}>
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, email, department..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            // Debounced search will be handled by parent
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleFilterChange()
-            }
-          }}
-          className="pl-10"
-        />
-      </div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search users..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              // Debounced search will be handled by parent
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleFilterChange()
+              }
+            }}
+            className="pl-10 h-10 bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20 w-full"
+          />
+        </div>
 
-      {/* Filters Row */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Role Filter */}
-        <div className="space-y-2">
-          <Label htmlFor="role-filter">Role</Label>
+        {/* Filters Row */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Role Filter */}
           <Select
             value={role}
             onValueChange={(value) => {
@@ -96,22 +94,19 @@ export function UserFilters({
               handleFilterChange()
             }}
           >
-            <SelectTrigger id="role-filter">
-              <SelectValue placeholder="All roles" />
+            <SelectTrigger id="role-filter" className="w-[140px] h-10 bg-background/50 backdrop-blur-sm border-primary/10">
+              <SelectValue placeholder="Role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All roles</SelectItem>
+              <SelectItem value="all">All Roles</SelectItem>
               <SelectItem value="employee">Employee</SelectItem>
               <SelectItem value="staff">Staff</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="super_admin">Super Admin</SelectItem>
             </SelectContent>
           </Select>
-        </div>
 
-        {/* Department Filter */}
-        <div className="space-y-2">
-          <Label htmlFor="department-filter">Department</Label>
+          {/* Department Filter */}
           <Select
             value={department}
             onValueChange={(value) => {
@@ -119,11 +114,11 @@ export function UserFilters({
               handleFilterChange()
             }}
           >
-            <SelectTrigger id="department-filter">
-              <SelectValue placeholder="All departments" />
+            <SelectTrigger id="department-filter" className="w-[160px] h-10 bg-background/50 backdrop-blur-sm border-primary/10">
+              <SelectValue placeholder="Department" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All departments</SelectItem>
+              <SelectItem value="all">All Departments</SelectItem>
               {departments.map((dept) => (
                 <SelectItem
                   key={dept}
@@ -134,11 +129,8 @@ export function UserFilters({
               ))}
             </SelectContent>
           </Select>
-        </div>
 
-        {/* Active Status Filter */}
-        <div className="space-y-2">
-          <Label htmlFor="status-filter">Status</Label>
+          {/* Active Status Filter */}
           <Select
             value={activeStatus}
             onValueChange={(value) => {
@@ -146,28 +138,28 @@ export function UserFilters({
               handleFilterChange()
             }}
           >
-            <SelectTrigger id="status-filter">
-              <SelectValue placeholder="All users" />
+            <SelectTrigger id="status-filter" className="w-[140px] h-10 bg-background/50 backdrop-blur-sm border-primary/10">
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All users</SelectItem>
-              <SelectItem value="active">Active only</SelectItem>
-              <SelectItem value="inactive">Deactivated only</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Deactivated</SelectItem>
             </SelectContent>
           </Select>
-        </div>
 
-        {/* Reset Button */}
-        <div className="flex items-end">
-          <Button
-            variant="outline"
-            onClick={handleReset}
-            disabled={!hasActiveFilters}
-            className="w-full"
-          >
-            <X className="mr-2 h-4 w-4" />
-            Reset Filters
-          </Button>
+          {/* Reset Button */}
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleReset}
+              className="h-10 w-10 text-muted-foreground hover:text-foreground"
+              title="Reset Filters"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
