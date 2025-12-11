@@ -1,12 +1,13 @@
 /**
  * Ticket Analytics Content Component (Client)
  *
- * Contains all the interactive chart components with custom formatters.
- * Extracted as a client component to avoid passing functions from server to client.
+ * Premium ticket analytics with glassmorphism styling,
+ * semantic colors, and modern chart presentations.
  */
 
 'use client'
 
+import { motion } from 'framer-motion'
 import {
   KPICard,
   KPICardGrid,
@@ -15,7 +16,7 @@ import {
   BarChart,
   ExportButton,
 } from '@/components/analytics'
-import { TicketIcon, TrendingUpIcon, AlertCircleIcon, ClockIcon } from 'lucide-react'
+import { TicketIcon, TrendingUpIcon, AlertCircleIcon, ClockIcon, BarChart3Icon } from 'lucide-react'
 import { exportTicketAnalytics } from '@/lib/analytics/export'
 import type { ExportFormat } from '@/lib/types/analytics'
 
@@ -44,6 +45,29 @@ interface TicketAnalyticsContentProps {
     hourly: Array<{ label: string; count: number }>
     daily: Array<{ label: string; count: number }>
   }
+}
+
+// Semantic colors for priorities
+const PRIORITY_COLORS = {
+  high: '#ef4444',
+  medium: '#f59e0b', 
+  low: '#10b981',
+}
+
+// Semantic colors for statuses
+const STATUS_COLORS = ['#0693D2', '#8b5cf6', '#10b981', '#6b7280']
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
 }
 
 export function TicketAnalyticsContent({
@@ -104,71 +128,86 @@ export function TicketAnalyticsContent({
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-8"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Ticket Analytics</h1>
-          <p className="text-muted-foreground">
-            Detailed insights into ticket patterns and trends
-          </p>
+      <motion.div 
+        className="flex items-center justify-between"
+        variants={itemVariants}
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0693D2] to-[#0570A6] shadow-lg">
+            <TicketIcon className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Ticket Analytics</h1>
+            <p className="text-muted-foreground">
+              Detailed insights into ticket patterns and trends
+            </p>
+          </div>
         </div>
         <ExportButton onExport={handleExport} />
-      </div>
+      </motion.div>
 
       {/* KPI Cards */}
-      <KPICardGrid>
-        <KPICard
-          title="Total Tickets"
-          value={summary.totalTickets.toLocaleString()}
-          description="Last 30 days"
-          icon={<TicketIcon className="h-4 w-4" />}
-        />
-        <KPICard
-          title="Open Tickets"
-          value={summary.openTickets.toLocaleString()}
-          description="Currently active"
-          icon={<AlertCircleIcon className="h-4 w-4" />}
-          variant="info"
-        />
-        <KPICard
-          title="Resolution Rate"
-          value={`${summary.resolutionRate}%`}
-          description="Successfully resolved"
-          icon={<TrendingUpIcon className="h-4 w-4" />}
-          variant={summary.resolutionRate >= 80 ? 'success' : 'warning'}
-        />
-        <KPICard
-          title="Avg Resolution Time"
-          value={summary.avgResolutionTime}
-          description="Time to resolve"
-          icon={<ClockIcon className="h-4 w-4" />}
-        />
-      </KPICardGrid>
+      <motion.div variants={itemVariants}>
+        <KPICardGrid>
+          <KPICard
+            title="Total Tickets"
+            value={summary.totalTickets.toLocaleString()}
+            description="Last 30 days"
+            icon={<TicketIcon className="h-4 w-4" />}
+          />
+          <KPICard
+            title="Open Tickets"
+            value={summary.openTickets.toLocaleString()}
+            description="Currently active"
+            icon={<AlertCircleIcon className="h-4 w-4" />}
+            variant="info"
+          />
+          <KPICard
+            title="Resolution Rate"
+            value={`${summary.resolutionRate}%`}
+            description="Successfully resolved"
+            icon={<TrendingUpIcon className="h-4 w-4" />}
+            variant={summary.resolutionRate >= 80 ? 'success' : 'warning'}
+          />
+          <KPICard
+            title="Avg Resolution Time"
+            value={summary.avgResolutionTime}
+            description="Time to resolve"
+            icon={<ClockIcon className="h-4 w-4" />}
+          />
+        </KPICardGrid>
+      </motion.div>
 
       {/* Trends */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <motion.div className="grid gap-6 lg:grid-cols-2" variants={itemVariants}>
         <TrendChart
           title="Ticket Volume Trend"
           description="Daily ticket creation"
           data={trends.ticketVolume}
           variant="area"
-          color="hsl(var(--primary))"
-          height={300}
+          color="#0693D2"
+          height={320}
         />
         <TrendChart
           title="Resolution Rate Trend"
           description="Daily resolution rate percentage"
           data={trends.resolutionRate}
           variant="line"
-          color="hsl(var(--chart-2))"
-          height={300}
+          color="#10b981"
+          height={320}
           formatTooltip={(value) => `${value}%`}
         />
-      </div>
+      </motion.div>
 
       {/* Distribution Charts */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <motion.div className="grid gap-6 lg:grid-cols-2" variants={itemVariants}>
         {/* Priority Distribution */}
         <CategoryChart
           title="Priority Distribution"
@@ -176,41 +215,40 @@ export function TicketAnalyticsContent({
           data={priorityDist.map((p) => ({
             name: p.priority.charAt(0).toUpperCase() + p.priority.slice(1),
             value: p.count,
-            color:
-              p.priority === 'high'
-                ? '#ef4444'
-                : p.priority === 'medium'
-                  ? '#f59e0b'
-                  : '#10b981',
+            color: PRIORITY_COLORS[p.priority as keyof typeof PRIORITY_COLORS] || '#6b7280',
           }))}
           variant="pie"
           showLegend={true}
-          height={300}
+          height={320}
         />
 
         {/* Status Distribution */}
         <CategoryChart
           title="Status Distribution"
           description="Tickets by current status"
-          data={statusDist.map((s) => ({
-            name: s.status.replace('_', ' ').charAt(0).toUpperCase() + s.status.slice(1),
+          data={statusDist.map((s, index) => ({
+            name: s.status.replace('_', ' ').charAt(0).toUpperCase() + s.status.replace('_', ' ').slice(1),
             value: s.count,
+            color: STATUS_COLORS[index % STATUS_COLORS.length],
           }))}
           variant="donut"
           showLegend={true}
-          height={300}
+          height={320}
+          centerLabel="Total"
+          centerValue={statusDist.reduce((sum, s) => sum + s.count, 0)}
         />
-      </div>
+      </motion.div>
 
       {/* Peak Hours Analysis */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <motion.div className="grid gap-6 lg:grid-cols-2" variants={itemVariants}>
         <BarChart
           title="Peak Hours"
           description="Tickets created by hour of day"
           data={peakHours.hourly}
           dataKey="count"
           nameKey="label"
-          height={300}
+          height={320}
+          color="#0693D2"
         />
         <BarChart
           title="Peak Days"
@@ -218,60 +256,69 @@ export function TicketAnalyticsContent({
           data={peakHours.daily}
           dataKey="count"
           nameKey="label"
-          height={300}
-          color="hsl(var(--chart-3))"
+          height={320}
+          color="#8b5cf6"
         />
-      </div>
+      </motion.div>
 
-      {/* Priority Performance Table */}
-      <div className="rounded-lg border">
-        <div className="border-b p-4">
-          <h3 className="font-semibold">Priority Performance</h3>
-          <p className="text-sm text-muted-foreground">
-            Resolution metrics by priority level
-          </p>
+      {/* Priority Performance Cards */}
+      <motion.div className="space-y-4" variants={itemVariants}>
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-semibold">Priority Performance</h2>
+          <span className="text-sm text-muted-foreground">Resolution metrics by priority level</span>
         </div>
-        <div className="p-4">
-          <div className="space-y-2">
-            {priorityDist.map((priority) => (
+        <div className="grid gap-4 md:grid-cols-3">
+          {priorityDist.map((priority) => {
+            const color = PRIORITY_COLORS[priority.priority as keyof typeof PRIORITY_COLORS] || '#6b7280'
+            return (
               <div
                 key={priority.priority}
-                className="flex items-center justify-between rounded-lg border p-3"
+                className="group relative overflow-hidden rounded-2xl border border-white/30 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="h-3 w-3 rounded-full"
-                    style={{
-                      backgroundColor:
-                        priority.priority === 'high'
-                          ? '#ef4444'
-                          : priority.priority === 'medium'
-                            ? '#f59e0b'
-                            : '#10b981',
-                    }}
-                  />
-                  <span className="font-medium capitalize">{priority.priority}</span>
+                {/* Accent bar */}
+                <div 
+                  className="absolute top-0 left-0 right-0 h-1"
+                  style={{ backgroundColor: color }}
+                />
+                
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="flex items-center justify-center w-10 h-10 rounded-xl"
+                      style={{ backgroundColor: `${color}15` }}
+                    >
+                      <BarChart3Icon className="h-5 w-5" style={{ color }} />
+                    </div>
+                    <span className="font-semibold capitalize">{priority.priority} Priority</span>
+                  </div>
+                  <span className="text-2xl font-bold" style={{ color }}>
+                    {priority.percentage}%
+                  </span>
                 </div>
-                <div className="flex items-center gap-6 text-sm">
-                  <div className="text-right">
-                    <p className="font-medium">{priority.count}</p>
-                    <p className="text-muted-foreground">tickets</p>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Tickets</p>
+                    <p className="text-lg font-semibold">{priority.count.toLocaleString()}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">{priority.percentage}%</p>
-                    <p className="text-muted-foreground">of total</p>
+                  <div>
+                    <p className="text-muted-foreground">Avg Resolution</p>
+                    <p className="text-lg font-semibold">{priority.avgResolutionTime}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">{priority.avgResolutionTime}</p>
-                    <p className="text-muted-foreground">avg resolution</p>
-                  </div>
+                </div>
+                
+                {/* Progress bar */}
+                <div className="mt-4 h-1.5 rounded-full bg-muted/50 overflow-hidden">
+                  <div 
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${priority.percentage}%`, backgroundColor: color }}
+                  />
                 </div>
               </div>
-            ))}
-          </div>
+            )
+          })}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
-
