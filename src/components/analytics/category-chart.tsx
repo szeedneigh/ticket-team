@@ -1,8 +1,8 @@
 /**
  * Category Chart Component
  *
- * Pie and donut charts for visualizing category distributions.
- * Uses Recharts for rendering.
+ * Modern pie and donut charts with glassmorphism containers,
+ * enhanced color palette, and premium styling.
  */
 
 'use client'
@@ -29,20 +29,22 @@ export interface CategoryChartProps {
   className?: string
   loading?: boolean
   colors?: string[]
+  centerLabel?: string
+  centerValue?: string | number
 }
 
-// Default color palette
+// Premium color palette with semantic meaning
 const DEFAULT_COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  '#8b5cf6',
-  '#ec4899',
-  '#f59e0b',
-  '#10b981',
-  '#3b82f6',
+  '#0693D2', // Primary blue
+  '#10b981', // Emerald (success)
+  '#8b5cf6', // Violet
+  '#f59e0b', // Amber (warning)
+  '#ef4444', // Red (danger)
+  '#06b6d4', // Cyan
+  '#ec4899', // Pink
+  '#84cc16', // Lime
+  '#14b8a6', // Teal
+  '#6366f1', // Indigo
 ]
 
 export const CategoryChart = memo(function CategoryChart({
@@ -56,6 +58,8 @@ export const CategoryChart = memo(function CategoryChart({
   className,
   loading = false,
   colors = DEFAULT_COLORS,
+  centerLabel,
+  centerValue,
 }: CategoryChartProps) {
   // Memoize chart data calculation
   const chartData = useMemo(() => {
@@ -68,6 +72,8 @@ export const CategoryChart = memo(function CategoryChart({
     }))
   }, [data, colors])
 
+  const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data])
+
   // Custom label for pie chart
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderLabel = (entry: any) => {
@@ -75,27 +81,65 @@ export const CategoryChart = memo(function CategoryChart({
     return `${entry.name} (${entry.percentage}%)`
   }
 
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: { name: string; value: number; percentage: string | number } }> }) => {
+  // Custom tooltip with glassmorphism
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: { name: string; value: number; percentage: string | number; fill: string } }> }) => {
     if (!active || !payload || !payload[0]) return null
 
-    const data = payload[0].payload
+    const chartData = payload[0].payload
 
     return (
-      <div className="rounded-lg border bg-background p-2 shadow-md">
-        <p className="text-sm font-medium">{data.name}</p>
-        <p className="text-sm text-muted-foreground">
-          {data.value} ({data.percentage}%)
+      <div className="rounded-xl border border-white/30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-3 shadow-xl">
+        <div className="flex items-center gap-2">
+          <div 
+            className="w-3 h-3 rounded-full" 
+            style={{ backgroundColor: chartData.fill }}
+          />
+          <p className="text-sm font-semibold text-foreground">{chartData.name}</p>
+        </div>
+        <p className="text-lg font-bold mt-1" style={{ color: chartData.fill }}>
+          {chartData.value.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">({chartData.percentage}%)</span>
         </p>
       </div>
     )
   }
 
+  // Custom legend - using any type due to complex Recharts Legend payload types
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderLegend = (props: any) => {
+    const { payload } = props
+    if (!payload) return null
+
+    return (
+      <div className="flex flex-wrap justify-center gap-4 mt-4">
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {payload.map((entry: any, index: number) => (
+          <div key={`legend-${index}`} className="flex items-center gap-2">
+            <div 
+              className="w-3 h-3 rounded-full shadow-sm" 
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-sm text-muted-foreground">
+              {entry.value} 
+              <span className="font-medium text-foreground ml-1">
+                {entry.payload?.value}
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+    <Card className={cn(
+      'overflow-hidden border-white/30 dark:border-white/10',
+      'bg-white/70 dark:bg-white/5 backdrop-blur-xl',
+      'shadow-lg hover:shadow-xl transition-shadow duration-300',
+      className
+    )}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        {description && <CardDescription className="text-muted-foreground">{description}</CardDescription>}
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -103,7 +147,7 @@ export const CategoryChart = memo(function CategoryChart({
             className="flex items-center justify-center"
             style={{ height: `${height}px` }}
           >
-            <div className="h-32 w-32 animate-pulse rounded-full bg-muted" />
+            <div className="h-32 w-32 animate-pulse rounded-full bg-muted/50" />
           </div>
         ) : data.length === 0 ? (
           <div
@@ -113,27 +157,55 @@ export const CategoryChart = memo(function CategoryChart({
             No data available
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={height}>
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={renderLabel}
-                outerRadius={variant === 'donut' ? 80 : 100}
-                innerRadius={variant === 'donut' ? 50 : 0}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              {showLegend && <Legend />}
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="relative">
+            <ResponsiveContainer width="100%" height={height}>
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={!showLegend ? renderLabel : undefined}
+                  outerRadius={variant === 'donut' ? 90 : 100}
+                  innerRadius={variant === 'donut' ? 60 : 0}
+                  fill="#8884d8"
+                  dataKey="value"
+                  stroke="white"
+                  strokeWidth={2}
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.fill}
+                      className="transition-opacity duration-200 hover:opacity-80"
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                {showLegend && <Legend content={renderLegend} />}
+              </PieChart>
+            </ResponsiveContainer>
+            
+            {/* Center label for donut charts */}
+            {variant === 'donut' && (centerLabel || centerValue !== undefined) && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ top: showLegend ? -20 : 0 }}>
+                <div className="text-center">
+                  {centerValue !== undefined && (
+                    <p className="text-2xl font-bold text-foreground">{centerValue}</p>
+                  )}
+                  {centerLabel && (
+                    <p className="text-xs text-muted-foreground">{centerLabel}</p>
+                  )}
+                  {!centerLabel && !centerValue && (
+                    <>
+                      <p className="text-2xl font-bold text-foreground">{total.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">Total</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
@@ -160,13 +232,13 @@ export const CategoryLegend = memo(function CategoryLegend({ data, className }: 
           <div key={index} className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <div
-                className="h-3 w-3 rounded-sm"
+                className="h-3 w-3 rounded-full shadow-sm"
                 style={{ backgroundColor: item.color || DEFAULT_COLORS[index % DEFAULT_COLORS.length] }}
               />
               <span className="text-muted-foreground">{item.name}</span>
             </div>
             <div className="flex items-center gap-2 font-medium">
-              <span>{item.value}</span>
+              <span>{item.value.toLocaleString()}</span>
               <span className="text-muted-foreground">({percentage}%)</span>
             </div>
           </div>
