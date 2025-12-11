@@ -1,8 +1,8 @@
 /**
  * Trend Chart Component
  *
- * Line and area charts for visualizing trends over time.
- * Uses Recharts for rendering.
+ * Modern line and area charts with glassmorphism containers,
+ * gradient fills, and premium tooltips.
  */
 
 'use client'
@@ -20,6 +20,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
+import { cn } from '@/lib/utils'
 
 
 export interface TrendChartDataPoint {
@@ -38,6 +39,8 @@ export interface TrendChartProps {
   nameKey?: string
   variant?: 'line' | 'area'
   color?: string
+  gradientFrom?: string
+  gradientTo?: string
   showGrid?: boolean
   showLegend?: boolean
   height?: number
@@ -54,7 +57,9 @@ export function TrendChart({
   dataKey = 'value',
   nameKey = 'date',
   variant = 'line',
-  color = 'hsl(var(--primary))',
+  color = '#0693D2',
+  gradientFrom,
+  gradientTo,
   showGrid = true,
   showLegend = false,
   height = 300,
@@ -63,28 +68,37 @@ export function TrendChart({
   formatYAxis,
   formatTooltip,
 }: TrendChartProps) {
-  // Custom tooltip
+  const chartId = `gradient-${title.replace(/\s+/g, '-').toLowerCase()}`
+  const fromColor = gradientFrom || color
+  const toColor = gradientTo || `${color}10`
+
+  // Custom tooltip with glassmorphism
   const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: TrendChartDataPoint; value: number }> }) => {
     if (!active || !payload || !payload[0]) return null
 
-    const data = payload[0].payload
+    const chartData = payload[0].payload
     const value = payload[0].value
 
     return (
-      <div className="rounded-lg border bg-background p-2 shadow-md">
-        <p className="text-sm font-medium">{data.label || data[nameKey]}</p>
-        <p className="text-sm text-muted-foreground">
-          {formatTooltip ? formatTooltip(value) : value}
+      <div className="rounded-xl border border-white/30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-3 shadow-xl">
+        <p className="text-sm font-semibold text-foreground">{chartData.label || chartData[nameKey]}</p>
+        <p className="text-lg font-bold" style={{ color }}>
+          {formatTooltip ? formatTooltip(value) : value.toLocaleString()}
         </p>
       </div>
     )
   }
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+    <Card className={cn(
+      'overflow-hidden border-white/30 dark:border-white/10',
+      'bg-white/70 dark:bg-white/5 backdrop-blur-xl',
+      'shadow-lg hover:shadow-xl transition-shadow duration-300',
+      className
+    )}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        {description && <CardDescription className="text-muted-foreground">{description}</CardDescription>}
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -92,7 +106,7 @@ export function TrendChart({
             className="flex items-center justify-center"
             style={{ height: `${height}px` }}
           >
-            <div className="h-32 w-32 animate-pulse rounded bg-muted" />
+            <div className="h-32 w-32 animate-pulse rounded-xl bg-muted/50" />
           </div>
         ) : data.length === 0 ? (
           <div
@@ -105,18 +119,33 @@ export function TrendChart({
           <ResponsiveContainer width="100%" height={height}>
             {variant === 'area' ? (
               <AreaChart data={data}>
+                <defs>
+                  <linearGradient id={chartId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={fromColor} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={toColor} stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
                 {showGrid && (
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <CartesianGrid 
+                    strokeDasharray="3 3" 
+                    stroke="currentColor" 
+                    strokeOpacity={0.1}
+                    vertical={false}
+                  />
                 )}
                 <XAxis
                   dataKey={nameKey}
-                  tick={{ fontSize: 12 }}
-                  className="text-muted-foreground"
+                  tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+                  axisLine={false}
+                  tickLine={false}
+                  dy={10}
                 />
                 <YAxis
-                  tick={{ fontSize: 12 }}
-                  className="text-muted-foreground"
+                  tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+                  axisLine={false}
+                  tickLine={false}
                   tickFormatter={formatYAxis}
+                  dx={-10}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 {showLegend && <Legend />}
@@ -124,25 +153,35 @@ export function TrendChart({
                   type="monotone"
                   dataKey={dataKey}
                   stroke={color}
-                  fill={color}
-                  fillOpacity={0.2}
-                  strokeWidth={2}
+                  fill={`url(#${chartId})`}
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{ r: 6, fill: color, stroke: 'white', strokeWidth: 2 }}
                 />
               </AreaChart>
             ) : (
               <LineChart data={data}>
                 {showGrid && (
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <CartesianGrid 
+                    strokeDasharray="3 3" 
+                    stroke="currentColor" 
+                    strokeOpacity={0.1}
+                    vertical={false}
+                  />
                 )}
                 <XAxis
                   dataKey={nameKey}
-                  tick={{ fontSize: 12 }}
-                  className="text-muted-foreground"
+                  tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+                  axisLine={false}
+                  tickLine={false}
+                  dy={10}
                 />
                 <YAxis
-                  tick={{ fontSize: 12 }}
-                  className="text-muted-foreground"
+                  tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+                  axisLine={false}
+                  tickLine={false}
                   tickFormatter={formatYAxis}
+                  dx={-10}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 {showLegend && <Legend />}
@@ -150,9 +189,9 @@ export function TrendChart({
                   type="monotone"
                   dataKey={dataKey}
                   stroke={color}
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: color, stroke: 'white', strokeWidth: 2 }}
+                  activeDot={{ r: 6, fill: color, stroke: 'white', strokeWidth: 2 }}
                 />
               </LineChart>
             )}
@@ -197,10 +236,15 @@ export function MultiLineTrendChart({
   formatYAxis,
 }: MultiLineTrendChartProps) {
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+    <Card className={cn(
+      'overflow-hidden border-white/30 dark:border-white/10',
+      'bg-white/70 dark:bg-white/5 backdrop-blur-xl',
+      'shadow-lg hover:shadow-xl transition-shadow duration-300',
+      className
+    )}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        {description && <CardDescription className="text-muted-foreground">{description}</CardDescription>}
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -208,25 +252,40 @@ export function MultiLineTrendChart({
             className="flex items-center justify-center"
             style={{ height: `${height}px` }}
           >
-            <div className="h-32 w-32 animate-pulse rounded bg-muted" />
+            <div className="h-32 w-32 animate-pulse rounded-xl bg-muted/50" />
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={height}>
             <LineChart data={data}>
               {showGrid && (
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="currentColor" 
+                  strokeOpacity={0.1}
+                  vertical={false}
+                />
               )}
               <XAxis
                 dataKey={nameKey}
-                tick={{ fontSize: 12 }}
-                className="text-muted-foreground"
+                tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+                axisLine={false}
+                tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 12 }}
-                className="text-muted-foreground"
+                tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+                axisLine={false}
+                tickLine={false}
                 tickFormatter={formatYAxis}
               />
-              <Tooltip />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+                  backdropFilter: 'blur(12px)',
+                }}
+              />
               <Legend />
               {lines.map((line) => (
                 <Line
@@ -235,8 +294,9 @@ export function MultiLineTrendChart({
                   dataKey={line.dataKey}
                   name={line.name}
                   stroke={line.color}
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: line.color, stroke: 'white', strokeWidth: 2 }}
+                  activeDot={{ r: 6, fill: line.color, stroke: 'white', strokeWidth: 2 }}
                 />
               ))}
             </LineChart>
