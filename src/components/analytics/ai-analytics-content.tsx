@@ -1,12 +1,13 @@
 /**
  * AI Analytics Content Component (Client)
  *
- * Contains interactive charts and data tables with custom formatters.
- * Extracted as a client component to avoid passing functions from server to client.
+ * Premium AI chat analytics with glassmorphism styling,
+ * semantic colors, and modern visual design.
  */
 
 'use client'
 
+import { motion } from 'framer-motion'
 import {
   KPICard,
   KPICardGrid,
@@ -23,6 +24,8 @@ import {
   AlertTriangleIcon,
   ClockIcon,
   UsersIcon,
+  SparklesIcon,
+  ZapIcon,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { exportAIAnalytics } from '@/lib/analytics/export'
@@ -30,6 +33,19 @@ import type { ExportFormat, AIAnalyticsData } from '@/lib/types/analytics'
 
 interface AIAnalyticsContentProps {
   aiData: AIAnalyticsData
+}
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
 }
 
 export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
@@ -45,7 +61,7 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
       sortable: false,
       render: (value) => (
         <div className="max-w-md">
-          <p className="text-sm">{value as string}</p>
+          <p className="text-sm truncate">{value as string}</p>
         </div>
       ),
     },
@@ -54,7 +70,11 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
       label: 'Count',
       sortable: true,
       align: 'center',
-      render: (value) => <Badge variant="secondary">{value as number}</Badge>,
+      render: (value) => (
+        <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+          {value as number}
+        </Badge>
+      ),
     },
     {
       key: 'avgResponseTime',
@@ -63,7 +83,7 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
       align: 'right',
       render: (value) => {
         const ms = value as number
-        return <span className="text-sm">{ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`}</span>
+        return <span className="text-sm font-medium">{ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`}</span>
       },
     },
     {
@@ -74,7 +94,10 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
       render: (value) => {
         const rate = value as number
         return (
-          <Badge variant={rate >= 70 ? 'default' : rate >= 50 ? 'secondary' : 'outline'}>
+          <Badge 
+            variant={rate >= 70 ? 'default' : rate >= 50 ? 'secondary' : 'outline'}
+            className={rate >= 70 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : ''}
+          >
             {rate}%
           </Badge>
         )
@@ -83,62 +106,77 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
   ]
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-8"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">AI Chat Analytics</h1>
-          <p className="text-muted-foreground">
-            Performance metrics for AI-powered support conversations
-          </p>
+      <motion.div 
+        className="flex items-center justify-between"
+        variants={itemVariants}
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg">
+            <BotIcon className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">AI Chat Analytics</h1>
+            <p className="text-muted-foreground">
+              Performance metrics for AI-powered support conversations
+            </p>
+          </div>
         </div>
         <ExportButton onExport={handleExport} />
-      </div>
+      </motion.div>
 
       {/* KPI Cards */}
-      <KPICardGrid>
-        <KPICard
-          title="Total Conversations"
-          value={aiData.summary.totalConversations.toLocaleString()}
-          description="Unique chat sessions"
-          icon={<BotIcon className="h-4 w-4" />}
-        />
-        <KPICard
-          title="Total Queries"
-          value={aiData.summary.totalQueries.toLocaleString()}
-          description="Questions asked"
-          icon={<MessageSquareIcon className="h-4 w-4" />}
-        />
-        <KPICard
-          title="Helpfulness Rate"
-          value={`${aiData.summary.helpfulnessRate}%`}
-          description={`${aiData.summary.helpfulCount} helpful / ${aiData.summary.helpfulCount + aiData.summary.notHelpfulCount} rated`}
-          icon={<ThumbsUpIcon className="h-4 w-4" />}
-          variant={
-            aiData.summary.helpfulnessRate >= 70
-              ? 'success'
-              : aiData.summary.helpfulnessRate >= 50
-                ? 'warning'
-                : 'danger'
-          }
-        />
-        <KPICard
-          title="Escalation Rate"
-          value={`${aiData.summary.escalationRate}%`}
-          description="Escalated to tickets"
-          icon={<AlertTriangleIcon className="h-4 w-4" />}
-          variant={
-            aiData.summary.escalationRate <= 10
-              ? 'success'
-              : aiData.summary.escalationRate <= 30
-                ? 'warning'
-                : 'danger'
-          }
-        />
-      </KPICardGrid>
+      <motion.div variants={itemVariants}>
+        <KPICardGrid>
+          <KPICard
+            title="Total Conversations"
+            value={aiData.summary.totalConversations.toLocaleString()}
+            description="Unique chat sessions"
+            icon={<BotIcon className="h-4 w-4" />}
+          />
+          <KPICard
+            title="Total Queries"
+            value={aiData.summary.totalQueries.toLocaleString()}
+            description="Questions asked"
+            icon={<MessageSquareIcon className="h-4 w-4" />}
+          />
+          <KPICard
+            title="Helpfulness Rate"
+            value={`${aiData.summary.helpfulnessRate}%`}
+            description={`${aiData.summary.helpfulCount} helpful / ${aiData.summary.helpfulCount + aiData.summary.notHelpfulCount} rated`}
+            icon={<ThumbsUpIcon className="h-4 w-4" />}
+            variant={
+              aiData.summary.helpfulnessRate >= 70
+                ? 'success'
+                : aiData.summary.helpfulnessRate >= 50
+                  ? 'warning'
+                  : 'danger'
+            }
+          />
+          <KPICard
+            title="Escalation Rate"
+            value={`${aiData.summary.escalationRate}%`}
+            description="Escalated to tickets"
+            icon={<AlertTriangleIcon className="h-4 w-4" />}
+            variant={
+              aiData.summary.escalationRate <= 10
+                ? 'success'
+                : aiData.summary.escalationRate <= 30
+                  ? 'warning'
+                  : 'danger'
+            }
+          />
+        </KPICardGrid>
+      </motion.div>
 
       {/* Secondary Metrics */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <motion.div className="grid gap-4 md:grid-cols-2" variants={itemVariants}>
         <KPICard
           title="Avg Response Time"
           value={aiData.summary.avgResponseTime}
@@ -158,25 +196,27 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
           description="Users who used AI chat"
           icon={<UsersIcon className="h-4 w-4" />}
         />
-      </div>
+      </motion.div>
 
       {/* Volume Trend */}
       {aiData.volumeTrend.length > 0 && (
-        <TrendChart
-          title="Conversation Volume Trend"
-          description="Daily AI chat usage"
-          data={aiData.volumeTrend.map((d) => ({
-            date: d.date,
-            value: d.queries,
-          }))}
-          variant="area"
-          color="hsl(var(--primary))"
-          height={300}
-        />
+        <motion.div variants={itemVariants}>
+          <TrendChart
+            title="Conversation Volume Trend"
+            description="Daily AI chat usage"
+            data={aiData.volumeTrend.map((d) => ({
+              date: d.date,
+              value: d.queries,
+            }))}
+            variant="area"
+            color="#0693D2"
+            height={320}
+          />
+        </motion.div>
       )}
 
       {/* Charts Row */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <motion.div className="grid gap-6 lg:grid-cols-2" variants={itemVariants}>
         {/* Helpfulness Distribution */}
         <CategoryChart
           title="Feedback Distribution"
@@ -195,12 +235,14 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
             {
               name: 'No Feedback',
               value: aiData.helpfulnessDistribution.noFeedback,
-              color: '#6b7280',
+              color: '#94a3b8',
             },
           ]}
           variant="donut"
           showLegend={true}
-          height={300}
+          height={320}
+          centerLabel="Total Rated"
+          centerValue={aiData.helpfulnessDistribution.helpful + aiData.helpfulnessDistribution.notHelpful}
         />
 
         {/* Escalation Trend if we have volume data */}
@@ -213,96 +255,117 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
               value: d.escalations,
             }))}
             variant="line"
-            color="hsl(var(--chart-3))"
-            height={300}
+            color="#f59e0b"
+            height={320}
           />
         )}
-      </div>
+      </motion.div>
 
       {/* Common Queries Table */}
-      {aiData.commonQueries.length > 0 ? (
-        <DataTable
-          title="Most Common Queries"
-          description="Frequently asked questions and their performance"
-          columns={queryColumns}
-          data={aiData.commonQueries as unknown as Array<Record<string, unknown>>}
-          showPagination={false}
-        />
-      ) : (
-        <div className="rounded-lg border p-8 text-center">
-          <BotIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
-          <h3 className="mt-4 text-lg font-medium">No Common Queries Yet</h3>
-          <p className="text-sm text-muted-foreground">
-            Common queries will appear here once users start having repeated questions
-          </p>
-        </div>
-      )}
+      <motion.div variants={itemVariants}>
+        {aiData.commonQueries.length > 0 ? (
+          <DataTable
+            title="Most Common Queries"
+            description="Frequently asked questions and their performance"
+            columns={queryColumns}
+            data={aiData.commonQueries as unknown as Array<Record<string, unknown>>}
+            showPagination={false}
+          />
+        ) : (
+          <div className="rounded-2xl border border-white/30 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-xl p-12 text-center shadow-lg">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 mb-4">
+              <BotIcon className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold">No Common Queries Yet</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Common queries will appear here once users start having repeated questions
+            </p>
+          </div>
+        )}
+      </motion.div>
 
       {/* Performance Summary */}
-      <div className="rounded-lg border">
-        <div className="border-b p-4">
-          <h3 className="font-semibold">Performance Summary</h3>
-          <p className="text-sm text-muted-foreground">
-            Key metrics for AI chat effectiveness
-          </p>
-        </div>
-        <div className="p-4">
-          <div className="space-y-4">
-            {/* Helpfulness Bar */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Helpfulness Rate</span>
-                <span>{aiData.summary.helpfulnessRate}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full bg-green-500 transition-all"
-                  style={{ width: `${aiData.summary.helpfulnessRate}%` }}
-                />
+      <motion.div variants={itemVariants}>
+        <div className="rounded-2xl border border-white/30 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-xl overflow-hidden shadow-lg">
+          <div className="border-b border-white/20 p-6">
+            <div className="flex items-center gap-3">
+              <SparklesIcon className="h-5 w-5 text-[#0693D2]" />
+              <div>
+                <h3 className="text-lg font-semibold">Performance Summary</h3>
+                <p className="text-sm text-muted-foreground">
+                  Key metrics for AI chat effectiveness
+                </p>
               </div>
             </div>
+          </div>
+          <div className="p-6">
+            <div className="space-y-6">
+              {/* Helpfulness Bar */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <ThumbsUpIcon className="h-4 w-4 text-emerald-500" />
+                    <span className="font-medium">Helpfulness Rate</span>
+                  </div>
+                  <span className="font-semibold">{aiData.summary.helpfulnessRate}%</span>
+                </div>
+                <div className="h-2.5 overflow-hidden rounded-full bg-muted/30">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${aiData.summary.helpfulnessRate}%` }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
 
-            {/* Escalation Bar */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Self-Service Rate</span>
-                <span>{100 - aiData.summary.escalationRate}%</span>
+              {/* Self-Service Bar */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <ZapIcon className="h-4 w-4 text-blue-500" />
+                    <span className="font-medium">Self-Service Rate</span>
+                  </div>
+                  <span className="font-semibold">{100 - aiData.summary.escalationRate}%</span>
+                </div>
+                <div className="h-2.5 overflow-hidden rounded-full bg-muted/30">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${100 - aiData.summary.escalationRate}%` }}
+                    transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Percentage of queries resolved without creating a ticket
+                </p>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full bg-blue-500 transition-all"
-                  style={{ width: `${100 - aiData.summary.escalationRate}%` }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Percentage of queries resolved without creating a ticket
-              </p>
-            </div>
 
-            {/* Stats Grid */}
-            <div className="mt-4 grid gap-4 pt-4 border-t md:grid-cols-3">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">
-                  {aiData.summary.helpfulCount}
-                </p>
-                <p className="text-sm text-muted-foreground">Helpful Responses</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-red-600">
-                  {aiData.summary.notHelpfulCount}
-                </p>
-                <p className="text-sm text-muted-foreground">Not Helpful</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-muted-foreground">
-                  {aiData.helpfulnessDistribution.noFeedback}
-                </p>
-                <p className="text-sm text-muted-foreground">No Feedback</p>
+              {/* Stats Grid */}
+              <div className="grid gap-4 pt-4 border-t border-white/20 md:grid-cols-3">
+                <div className="text-center p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30">
+                  <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {aiData.summary.helpfulCount}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">Helpful Responses</p>
+                </div>
+                <div className="text-center p-4 rounded-xl bg-red-50 dark:bg-red-950/30">
+                  <p className="text-3xl font-bold text-red-600 dark:text-red-400">
+                    {aiData.summary.notHelpfulCount}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">Not Helpful</p>
+                </div>
+                <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/30">
+                  <p className="text-3xl font-bold text-slate-600 dark:text-slate-400">
+                    {aiData.helpfulnessDistribution.noFeedback}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">No Feedback</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

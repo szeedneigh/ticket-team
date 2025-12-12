@@ -1,12 +1,13 @@
 /**
  * Satisfaction Content Component (Client)
  *
- * Contains interactive charts and data tables with custom formatters.
- * Extracted as a client component to avoid passing functions from server to client.
+ * Premium satisfaction analytics with glassmorphism styling,
+ * semantic star ratings, and modern visual design.
  */
 
 'use client'
 
+import { motion } from 'framer-motion'
 import {
   KPICard,
   KPICardGrid,
@@ -16,7 +17,7 @@ import {
   ExportButton,
 } from '@/components/analytics'
 import type { DataTableColumn } from '@/components/analytics'
-import { StarIcon, MessageSquareIcon, TrendingUpIcon, HeartIcon } from 'lucide-react'
+import { StarIcon, MessageSquareIcon, TrendingUpIcon, HeartIcon, SmileIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
 import { exportSatisfactionAnalytics } from '@/lib/analytics/export'
@@ -42,6 +43,26 @@ interface SatisfactionContentProps {
       createdAt: string
     }>
   }
+}
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+}
+
+// Semantic colors for ratings
+const getRatingColor = (rating: number) => {
+  if (rating >= 4) return '#10b981' // Emerald for positive
+  if (rating === 3) return '#f59e0b' // Amber for neutral
+  return '#ef4444' // Red for negative
 }
 
 export function SatisfactionContent({ satisfactionData }: SatisfactionContentProps) {
@@ -79,7 +100,7 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
     })
   }
 
-  // Define table columns for recent feedback (must be in client component)
+  // Define table columns for recent feedback
   const feedbackColumns: DataTableColumn[] = [
     {
       key: 'rating',
@@ -87,14 +108,14 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
       sortable: true,
       align: 'center',
       render: (value) => (
-        <div className="flex items-center justify-center gap-1">
+        <div className="flex items-center justify-center gap-0.5">
           {Array.from({ length: 5 }).map((_, i) => (
             <StarIcon
               key={i}
               className={`h-4 w-4 ${
                 i < (value as number)
                   ? 'fill-yellow-400 text-yellow-400'
-                  : 'text-muted-foreground/30'
+                  : 'text-muted-foreground/20'
               }`}
             />
           ))}
@@ -141,11 +162,15 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
       render: (value) => {
         const score = value as number
         return (
-          <Badge
-            variant={score >= 4 ? 'default' : score >= 3 ? 'secondary' : 'destructive'}
-          >
-            {score.toFixed(1)}/5.0
-          </Badge>
+          <div className="flex items-center justify-center gap-1">
+            <StarIcon className={`h-4 w-4 ${score >= 4 ? 'fill-yellow-400 text-yellow-400' : score >= 3 ? 'fill-yellow-400/50 text-yellow-400' : 'text-muted-foreground'}`} />
+            <Badge
+              variant={score >= 4 ? 'default' : score >= 3 ? 'secondary' : 'destructive'}
+              className={score >= 4 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : ''}
+            >
+              {score.toFixed(1)}/5.0
+            </Badge>
+          </div>
         )
       },
     },
@@ -158,59 +183,72 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
   ]
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-8"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Satisfaction Analytics
-          </h1>
-          <p className="text-muted-foreground">
-            Customer feedback and satisfaction metrics
-          </p>
+      <motion.div 
+        className="flex items-center justify-between"
+        variants={itemVariants}
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-lg">
+            <HeartIcon className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Satisfaction Analytics</h1>
+            <p className="text-muted-foreground">
+              Customer feedback and satisfaction metrics
+            </p>
+          </div>
         </div>
         <ExportButton onExport={handleExport} />
-      </div>
+      </motion.div>
 
       {/* KPI Cards */}
-      <KPICardGrid>
-        <KPICard
-          title="Overall Score"
-          value={`${satisfactionData.overallScore.toFixed(1)}/5.0`}
-          description="Average satisfaction rating"
-          icon={<StarIcon className="h-4 w-4" />}
-          variant={
-            satisfactionData.overallScore >= 4
-              ? 'success'
-              : satisfactionData.overallScore >= 3
-                ? 'warning'
-                : 'danger'
-          }
-        />
-        <KPICard
-          title="Total Responses"
-          value={satisfactionData.totalResponses.toLocaleString()}
-          description="Feedback submissions"
-          icon={<MessageSquareIcon className="h-4 w-4" />}
-        />
-        <KPICard
-          title="Promoters"
-          value={`${promotersScore}%`}
-          description="Rated 4-5 stars"
-          icon={<TrendingUpIcon className="h-4 w-4" />}
-          variant={promotersScore >= 75 ? 'success' : promotersScore >= 50 ? 'warning' : 'danger'}
-        />
-        <KPICard
-          title="Negative Feedback"
-          value={negativeResponses.toLocaleString()}
-          description="Rated 1-2 stars"
-          icon={<HeartIcon className="h-4 w-4" />}
-          variant={negativeResponses === 0 ? 'success' : negativeResponses < 5 ? 'warning' : 'danger'}
-        />
-      </KPICardGrid>
+      <motion.div variants={itemVariants}>
+        <KPICardGrid>
+          <KPICard
+            title="Overall Score"
+            value={`${satisfactionData.overallScore.toFixed(1)}/5.0`}
+            description="Average satisfaction rating"
+            icon={<StarIcon className="h-4 w-4" />}
+            variant={
+              satisfactionData.overallScore >= 4
+                ? 'success'
+                : satisfactionData.overallScore >= 3
+                  ? 'warning'
+                  : 'danger'
+            }
+          />
+          <KPICard
+            title="Total Responses"
+            value={satisfactionData.totalResponses.toLocaleString()}
+            description="Feedback submissions"
+            icon={<MessageSquareIcon className="h-4 w-4" />}
+          />
+          <KPICard
+            title="Promoters"
+            value={`${promotersScore}%`}
+            description="Rated 4-5 stars"
+            icon={<TrendingUpIcon className="h-4 w-4" />}
+            variant={promotersScore >= 75 ? 'success' : promotersScore >= 50 ? 'warning' : 'danger'}
+          />
+          <KPICard
+            title="Negative Feedback"
+            value={negativeResponses.toLocaleString()}
+            description="Rated 1-2 stars"
+            icon={<SmileIcon className="h-4 w-4" />}
+            variant={negativeResponses === 0 ? 'success' : negativeResponses < 5 ? 'warning' : 'danger'}
+          />
+        </KPICardGrid>
+      </motion.div>
 
       {/* Charts Row */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <motion.div className="grid gap-6 lg:grid-cols-2" variants={itemVariants}>
         {/* Rating Distribution */}
         <CategoryChart
           title="Rating Distribution"
@@ -218,16 +256,13 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
           data={satisfactionData.distribution.map((d) => ({
             name: `${d.rating} Star${d.rating !== 1 ? 's' : ''}`,
             value: d.count,
-            color:
-              d.rating >= 4
-                ? '#10b981'
-                : d.rating === 3
-                  ? '#f59e0b'
-                  : '#ef4444',
+            color: getRatingColor(d.rating),
           }))}
           variant="donut"
           showLegend={true}
-          height={300}
+          height={320}
+          centerLabel="Responses"
+          centerValue={satisfactionData.totalResponses}
         />
 
         {/* Category Satisfaction */}
@@ -237,84 +272,93 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
           data={satisfactionData.byCategory.map((c) => ({
             name: c.category,
             value: c.score,
+            color: getRatingColor(Math.round(c.score)),
           }))}
           dataKey="value"
           nameKey="name"
           orientation="horizontal"
-          height={300}
-          color="hsl(var(--chart-2))"
+          height={320}
+          color="#8b5cf6"
           formatTooltip={(value) => `${value.toFixed(1)}/5.0`}
         />
-      </div>
+      </motion.div>
 
-      {/* Category Satisfaction Table */}
-      <DataTable
-        title="Category Performance"
-        description="Satisfaction scores by ticket category"
-        columns={categoryColumns}
-        data={satisfactionData.byCategory}
-        showPagination={false}
-      />
-
-      {/* Recent Feedback */}
-      <DataTable
-        title="Recent Feedback"
-        description="Latest customer feedback submissions"
-        columns={feedbackColumns}
-        data={satisfactionData.recentFeedback}
-        showPagination={true}
-        pageSize={5}
-      />
-
-      {/* Rating Distribution Details */}
-      <div className="rounded-lg border">
-        <div className="border-b p-4">
-          <h3 className="font-semibold">Rating Breakdown</h3>
-          <p className="text-sm text-muted-foreground">
-            Detailed distribution of satisfaction ratings
-          </p>
-        </div>
-        <div className="p-4">
-          <div className="space-y-3">
-            {satisfactionData.distribution
-              .sort((a, b) => b.rating - a.rating)
-              .map((dist) => (
-                <div key={dist.rating} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="flex">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <StarIcon
-                            key={i}
-                            className={`h-4 w-4 ${
-                              i < dist.rating
-                                ? 'fill-yellow-400 text-yellow-400'
-                                : 'text-muted-foreground/30'
-                            }`}
-                          />
-                        ))}
+      {/* Rating Breakdown Visual */}
+      <motion.div variants={itemVariants}>
+        <div className="rounded-2xl border border-white/30 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-xl overflow-hidden shadow-lg">
+          <div className="border-b border-white/20 p-6">
+            <h3 className="text-lg font-semibold">Rating Breakdown</h3>
+            <p className="text-sm text-muted-foreground">
+              Detailed distribution of satisfaction ratings
+            </p>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {satisfactionData.distribution
+                .sort((a, b) => b.rating - a.rating)
+                .map((dist) => (
+                  <div key={dist.rating} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="flex gap-0.5">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <StarIcon
+                              key={i}
+                              className={`h-4 w-4 ${
+                                i < dist.rating
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-muted-foreground/20'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="font-medium">{dist.rating} Star{dist.rating !== 1 ? 's' : ''}</span>
                       </div>
-                      <span className="font-medium">{dist.rating} Star{dist.rating !== 1 ? 's' : ''}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold">{dist.count}</span>
+                        <span className="text-muted-foreground w-12 text-right">
+                          ({dist.percentage}%)
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{dist.count}</span>
-                      <span className="text-muted-foreground">
-                        ({dist.percentage}%)
-                      </span>
+                    <div className="h-2.5 overflow-hidden rounded-full bg-muted/30">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: getRatingColor(dist.rating) }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${dist.percentage}%` }}
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                      />
                     </div>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full bg-primary transition-all"
-                      style={{ width: `${dist.percentage}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                ))}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+
+      {/* Category Satisfaction Table */}
+      <motion.div variants={itemVariants}>
+        <DataTable
+          title="Category Performance"
+          description="Satisfaction scores by ticket category"
+          columns={categoryColumns}
+          data={satisfactionData.byCategory}
+          showPagination={false}
+        />
+      </motion.div>
+
+      {/* Recent Feedback */}
+      <motion.div variants={itemVariants}>
+        <DataTable
+          title="Recent Feedback"
+          description="Latest customer feedback submissions"
+          columns={feedbackColumns}
+          data={satisfactionData.recentFeedback}
+          showPagination={true}
+          pageSize={5}
+        />
+      </motion.div>
+    </motion.div>
   )
 }
-
