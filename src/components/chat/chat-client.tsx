@@ -525,7 +525,7 @@ export function ChatClient({
                               onClick={handleEscalateClick}
                               variant="default"
                               size="sm"
-                              className="w-full shrink-0 bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 sm:w-auto"
+                              className="w-full shrink-0 bg-gradient-to-r from-[#1f3463] to-[#2cafdd] text-white shadow-md hover:shadow-lg hover:opacity-90 transition-all duration-200 sm:w-auto"
                             >
                               Create Ticket
                             </EscalateButton>
