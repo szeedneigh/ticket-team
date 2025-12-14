@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Download, RefreshCw, Users, UserCheck, Briefcase, Building2 } from 'lucide-react'
+import { Plus, Download, RefreshCw, Users, UserCheck, Briefcase, Building2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -263,107 +263,135 @@ export function UsersView() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">User Management</h2>
-          <p className="text-muted-foreground">Manage user accounts, roles, and permissions</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportCSV}
-            disabled={users.length === 0 || isLoading}
-            className="h-9"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="h-9"
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => {
-              setSelectedUser(undefined)
-              setIsFormOpen(true)
-            }}
-            className="h-9 shadow-md hover:shadow-lg transition-all"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add User
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background relative animate-in fade-in zoom-in-95 duration-500">
+      {/* Hero Section with Gradient Background */}
+      <div className="relative overflow-hidden bg-background border-b border-border/40 pb-12">
+        {/* Dot Grid Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+        
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1f3463]/10 via-background/50 to-background" />
+        
+        {/* Top Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-[#2cafdd]/20 opacity-20 blur-[100px] rounded-full pointer-events-none" />
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers}</div>
-            <p className="text-xs text-muted-foreground">All user accounts</p>
-          </CardContent>
-        </Card>
+        <div className="container mx-auto pt-16 pb-8 px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl">
+          {/* Header Content */}
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
+            <div className="space-y-4">
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
+                User Management
+              </h1>
+              <p className="text-lg text-muted-foreground flex items-center gap-2 max-w-2xl">
+                Manage user accounts, roles, and permissions.
+                <Sparkles className="h-4 w-4 text-[#2cafdd]" />
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportCSV}
+                disabled={users.length === 0 || isLoading}
+                className="h-10 bg-background/50 backdrop-blur-sm border-primary/10 hover:bg-background/80"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isLoading}
+                className="h-10 bg-background/50 backdrop-blur-sm border-primary/10 hover:bg-background/80"
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  setSelectedUser(undefined)
+                  setIsFormOpen(true)
+                }}
+                className="h-10 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add User
+              </Button>
+            </div>
+          </div>
 
-        <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-            <UserCheck className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeUsers}</div>
-            <p className="text-xs text-muted-foreground">Currently active</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Staff Members</CardTitle>
-            <Briefcase className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.staffMembers}</div>
-            <p className="text-xs text-muted-foreground">Support staff</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Departments</CardTitle>
-            <Building2 className="h-4 w-4 text-amber-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.departmentCount}</div>
-            <p className="text-xs text-muted-foreground">Unique departments</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Users Table Section */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold tracking-tight">All Users</h3>
-
-        <div className="rounded-xl border border-primary/10 bg-card/50 backdrop-blur-xl shadow-sm">
-          <div className="p-4 border-b border-primary/5">
-             <UserFilters
+          {/* Controls Section */}
+          <div className="flex flex-col gap-6 bg-background/40 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-xl shadow-[#1f3463]/5">
+            <UserFilters
               onFilterChange={handleFilterChange}
               departments={departments}
             />
           </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-7xl space-y-8">
+        {/* Stats Cards */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="bg-background/40 backdrop-blur-md border border-white/10 shadow-lg shadow-[#1f3463]/5 hover:shadow-xl hover:shadow-[#1f3463]/10 transition-all duration-300 group">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Total Users</CardTitle>
+              <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+                <Users className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">{stats.totalUsers}</div>
+              <p className="text-xs text-muted-foreground mt-1">All user accounts in system</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-background/40 backdrop-blur-md border border-white/10 shadow-lg shadow-[#1f3463]/5 hover:shadow-xl hover:shadow-[#1f3463]/10 transition-all duration-300 group">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Active Users</CardTitle>
+              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20 transition-colors">
+                <UserCheck className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">{stats.activeUsers}</div>
+              <p className="text-xs text-muted-foreground mt-1">Currently active accounts</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-background/40 backdrop-blur-md border border-white/10 shadow-lg shadow-[#1f3463]/5 hover:shadow-xl hover:shadow-[#1f3463]/10 transition-all duration-300 group">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Staff Members</CardTitle>
+              <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500 group-hover:bg-blue-500/20 transition-colors">
+                <Briefcase className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">{stats.staffMembers}</div>
+              <p className="text-xs text-muted-foreground mt-1">Support staff and admins</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-background/40 backdrop-blur-md border border-white/10 shadow-lg shadow-[#1f3463]/5 hover:shadow-xl hover:shadow-[#1f3463]/10 transition-all duration-300 group">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Departments</CardTitle>
+              <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500 group-hover:bg-amber-500/20 transition-colors">
+                <Building2 className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">{stats.departmentCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">Unique departments</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Users Table Section */}
+        <div className="rounded-2xl border border-white/10 bg-background/40 backdrop-blur-md shadow-lg shadow-[#1f3463]/5 overflow-hidden">
           <div className="p-0">
             {isLoading ? (
               <div className="flex h-64 items-center justify-center">
@@ -379,7 +407,7 @@ export function UsersView() {
                 onPageChange={handlePageChange}
                 onEdit={handleEdit}
                 onBulkAction={handleBulkAction}
-                onRefresh={fetchUsers}
+                onRefresh={handleRefresh}
               />
             )}
           </div>
