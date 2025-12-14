@@ -214,218 +214,220 @@ export default function FeedbackManagementPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Feedback Management</h2>
-          <p className="text-muted-foreground">
-            View and analyze ticket satisfaction ratings
-          </p>
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Feedback Management</h2>
+            <p className="text-muted-foreground">
+              View and analyze ticket satisfaction ratings
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCSV}
+              disabled={feedback.length === 0}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={fetchFeedback} disabled={isLoading}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportCSV}
-            disabled={feedback.length === 0}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
-          </Button>
-          <Button variant="outline" size="sm" onClick={fetchFeedback} disabled={isLoading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-      </div>
 
-      {/* Summary Cards */}
-      {summary && (
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Total Feedback</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.totalFeedback}</div>
-              <p className="text-xs text-muted-foreground">All time responses</p>
-            </CardContent>
-          </Card>
+        {/* Summary Cards */}
+        {summary && (
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Total Feedback</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{summary.totalFeedback}</div>
+                <p className="text-xs text-muted-foreground">All time responses</p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold">{summary.averageRating}</span>
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              </div>
-              <p className="text-xs text-muted-foreground">Out of 5 stars</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Positive Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {summary.ratingDistribution
-                  .filter((d) => d.rating >= 4)
-                  .reduce((sum, d) => sum + d.percentage, 0)}%
-              </div>
-              <p className="text-xs text-muted-foreground">4+ star ratings</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Recent Trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {summary.recentTrend.length > 0 ? (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-green-500" />
-                  <span className="text-2xl font-bold">
-                    {summary.recentTrend[summary.recentTrend.length - 1]?.avgRating || '-'}
-                  </span>
+                  <span className="text-2xl font-bold">{summary.averageRating}</span>
+                  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                 </div>
-              ) : (
-                <span className="text-2xl font-bold">-</span>
-              )}
-              <p className="text-xs text-muted-foreground">Last 30 days avg</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                <p className="text-xs text-muted-foreground">Out of 5 stars</p>
+              </CardContent>
+            </Card>
 
-      {/* Rating Distribution */}
-      {summary && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Rating Distribution</CardTitle>
-            <CardDescription>Breakdown of feedback by star rating</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {summary.ratingDistribution.reverse().map((d) => (
-                <div key={d.rating} className="flex items-center gap-3">
-                  <div className="flex items-center gap-1 w-20">
-                    <span className="text-sm font-medium">{d.rating}</span>
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  </div>
-                  <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-yellow-400 transition-all"
-                      style={{ width: `${d.percentage}%` }}
-                    />
-                  </div>
-                  <div className="w-20 text-right">
-                    <span className="text-sm text-muted-foreground">
-                      {d.count} ({d.percentage}%)
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Positive Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {summary.ratingDistribution
+                    .filter((d) => d.rating >= 4)
+                    .reduce((sum, d) => sum + d.percentage, 0)}%
+                </div>
+                <p className="text-xs text-muted-foreground">4+ star ratings</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Recent Trend</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {summary.recentTrend.length > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                    <span className="text-2xl font-bold">
+                      {summary.recentTrend[summary.recentTrend.length - 1]?.avgRating || '-'}
                     </span>
                   </div>
-                </div>
-              ))}
+                ) : (
+                  <span className="text-2xl font-bold">-</span>
+                )}
+                <p className="text-xs text-muted-foreground">Last 30 days avg</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Rating Distribution */}
+        {summary && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Rating Distribution</CardTitle>
+              <CardDescription>Breakdown of feedback by star rating</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {summary.ratingDistribution.reverse().map((d) => (
+                  <div key={d.rating} className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 w-20">
+                      <span className="text-sm font-medium">{d.rating}</span>
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    </div>
+                    <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-yellow-400 transition-all"
+                        style={{ width: `${d.percentage}%` }}
+                      />
+                    </div>
+                    <div className="w-20 text-right">
+                      <span className="text-sm text-muted-foreground">
+                        {d.count} ({d.percentage}%)
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Filters */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex gap-4">
+              <Select value={ratingFilter} onValueChange={setRatingFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="All Ratings" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Ratings</SelectItem>
+                  <SelectItem value="5">5 Stars</SelectItem>
+                  <SelectItem value="4">4 Stars</SelectItem>
+                  <SelectItem value="3">3 Stars</SelectItem>
+                  <SelectItem value="2">2 Stars</SelectItem>
+                  <SelectItem value="1">1 Star</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <Select value={ratingFilter} onValueChange={setRatingFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="All Ratings" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Ratings</SelectItem>
-                <SelectItem value="5">5 Stars</SelectItem>
-                <SelectItem value="4">4 Stars</SelectItem>
-                <SelectItem value="3">3 Stars</SelectItem>
-                <SelectItem value="2">2 Stars</SelectItem>
-                <SelectItem value="1">1 Star</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Feedback Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Feedback</CardTitle>
-          <CardDescription>
-            {feedback.length} feedback entr{feedback.length !== 1 ? 'ies' : 'y'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex h-32 items-center justify-center">
-              <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : feedback.length === 0 ? (
-            <div className="flex h-32 flex-col items-center justify-center text-muted-foreground">
-              <MessageSquare className="h-8 w-8 mb-2" />
-              <p>No feedback found</p>
-              <p className="text-sm">Feedback will appear here after tickets are resolved</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Ticket</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Rating</TableHead>
-                  <TableHead>Comment</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {feedback.map((f) => (
-                  <TableRow key={f.id}>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(f.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-sm">{f.ticket?.title || 'Unknown'}</p>
-                        <Badge variant="outline" className="text-xs">
-                          {f.ticket?.category || 'Unknown'}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {f.user?.full_name || 'Unknown'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {renderStars(f.rating)}
-                        <Badge className={getRatingColor(f.rating)}>{f.rating}</Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-xs">
-                      {f.comment ? (
-                        <p className="text-sm text-muted-foreground truncate">{f.comment}</p>
-                      ) : (
-                        <span className="text-sm text-muted-foreground italic">No comment</span>
-                      )}
-                    </TableCell>
+        {/* Feedback Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Feedback</CardTitle>
+            <CardDescription>
+              {feedback.length} feedback entr{feedback.length !== 1 ? 'ies' : 'y'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex h-32 items-center justify-center">
+                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : feedback.length === 0 ? (
+              <div className="flex h-32 flex-col items-center justify-center text-muted-foreground">
+                <MessageSquare className="h-8 w-8 mb-2" />
+                <p>No feedback found</p>
+                <p className="text-sm">Feedback will appear here after tickets are resolved</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Ticket</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Rating</TableHead>
+                    <TableHead>Comment</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {feedback.map((f) => (
+                    <TableRow key={f.id}>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(f.created_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-sm">{f.ticket?.title || 'Unknown'}</p>
+                          <Badge variant="outline" className="text-xs">
+                            {f.ticket?.category || 'Unknown'}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {f.user?.full_name || 'Unknown'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {renderStars(f.rating)}
+                          <Badge className={getRatingColor(f.rating)}>{f.rating}</Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-xs">
+                        {f.comment ? (
+                          <p className="text-sm text-muted-foreground truncate">{f.comment}</p>
+                        ) : (
+                          <span className="text-sm text-muted-foreground italic">No comment</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

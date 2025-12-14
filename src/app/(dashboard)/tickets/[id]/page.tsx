@@ -1,10 +1,13 @@
 import { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
+import Link from 'next/link'
+import { ArrowLeft, Clock } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
 import { createClient } from '@/lib/supabase/server'
 import { getTicketWithRelations } from '@/lib/tickets/queries'
 import { getStaffUsers } from '@/lib/users/queries'
 import { TicketDetail } from '@/components/tickets/ticket-detail'
-import { PageHeader } from '@/components/shared/page-header'
+import { Button } from '@/components/ui/button'
 import { isStaffOrAbove } from '@/lib/types/database'
 import { isValidUUID } from '@/lib/utils'
 
@@ -126,13 +129,54 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
   }))
 
   return (
-    <div className="container max-w-7xl py-8">
-      <PageHeader
-        title={ticket.title}
-        description={`Ticket #${ticket.id.slice(0, 8)}`}
-      />
+    <div className="min-h-screen bg-background relative">
+      {/* Hero Section with Gradient Background */}
+      <div className="relative overflow-hidden bg-background border-b border-border/40 pb-8">
+        {/* Dot Grid Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+        
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1f3463]/10 via-background/50 to-background" />
+        
+        {/* Top Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-[#2cafdd]/20 opacity-20 blur-[100px] rounded-full pointer-events-none" />
 
-      <div className="mt-8">
+        <div className="container mx-auto pt-8 pb-4 px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl">
+          {/* Back Navigation */}
+          <div className="mb-6">
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground -ml-2">
+              <Link href="/tickets">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Tickets
+              </Link>
+            </Button>
+          </div>
+
+          {/* Header Content */}
+          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-4 flex-1 min-w-0">
+              {/* Ticket ID Badge */}
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="inline-flex items-center rounded-full bg-muted/80 px-3 py-1 text-xs font-medium backdrop-blur-sm">
+                  Ticket #{ticket.id.slice(0, 8)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  Created {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}
+                </span>
+              </div>
+              
+              {/* Title */}
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
+                {ticket.title}
+              </h1>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-7xl">
         <TicketDetail
           ticket={ticket}
           comments={comments.items}

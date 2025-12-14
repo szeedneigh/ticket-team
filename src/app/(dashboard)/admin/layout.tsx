@@ -33,9 +33,7 @@ export default async function AdminLayout({
     <div className="flex h-full flex-col">
       {/* Admin Content */}
       <div className="flex-1 overflow-auto">
-        <div className="container mx-auto px-4 py-6 max-w-7xl">
-          {children}
-        </div>
+        {children}
       </div>
     </div>
   )

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
 export default function AuditPage() {
-  redirect('/admin?tab=audit')
+  redirect('/admin/settings?tab=audit')
 }
