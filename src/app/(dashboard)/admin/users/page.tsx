@@ -1,5 +1,9 @@
-import { redirect } from 'next/navigation'
+'use client'
 
-export default function UsersPage() {
-  redirect('/admin?tab=users')
+import { UsersView } from '@/components/admin/views/users-view'
+
+export default function UserManagementPage() {
+  return (
+    <UsersView />
+  )
 }
