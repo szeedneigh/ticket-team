@@ -1,7 +1,7 @@
 /**
  * Admin Layout
  *
- * Layout for admin pages with navigation and access control
+ * Layout for admin pages with access control
  * Only accessible to admin and super_admin roles
  */
 
@@ -29,12 +29,5 @@ export default async function AdminLayout({
     redirect('/dashboard')
   }
 
-  return (
-    <div className="flex h-full flex-col">
-      {/* Admin Content */}
-      <div className="flex-1 overflow-auto">
-        {children}
-      </div>
-    </div>
-  )
+  return <>{children}</>
 }
