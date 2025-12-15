@@ -211,7 +211,7 @@ export function QueuePageClient({
                   <>
                      <div className="mb-4 flex items-center justify-between px-2">
                       <p className="text-sm text-muted-foreground">
-                        Showing {pagination.currentPage * 10 - 9}-{Math.min(pagination.currentPage * 10, pagination.totalCount)} of {pagination.totalCount} unassigned tickets
+                        Showing {((pagination.currentPage - 1) * tickets.length) + 1}-{Math.min(pagination.currentPage * tickets.length, pagination.totalCount)} of {pagination.totalCount} unassigned tickets
                       </p>
                     </div>
                     <TicketList
