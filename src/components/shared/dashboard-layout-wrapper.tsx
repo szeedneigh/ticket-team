@@ -135,7 +135,7 @@ export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrappe
             ref={mainRef} 
             className={cn(
               "flex-1 overflow-y-auto h-full",
-              isChatPage || pathname?.startsWith('/kb') || pathname?.startsWith('/tickets') ? "p-0" : "p-6 lg:p-8"
+              isChatPage || pathname?.startsWith('/kb') || pathname?.startsWith('/tickets') || pathname?.startsWith('/admin') ? "p-0" : "p-6 lg:p-8"
             )}
           >
             {children}
