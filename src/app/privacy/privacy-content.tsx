@@ -17,6 +17,10 @@ const sections = [
 export function PrivacyContent() {
   const [activeSection, setActiveSection] = useState('introduction')
 
+  // Call hooks at top level of component
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 })
+
   // Handle scroll spy
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -60,7 +64,7 @@ export function PrivacyContent() {
       {/* Scroll Progress Bar */}
       <motion.div 
         className="fixed top-0 left-0 right-0 h-1 bg-primary/20 z-[60]"
-        style={{ scaleX: useSpring(useScroll().scrollYProgress, { stiffness: 100, damping: 30 }) }}
+        style={{ scaleX }}
       />
       
       {/* Back Button - Fixed on Desktop */}
