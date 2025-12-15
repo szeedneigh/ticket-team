@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FolderTree, FileText, Settings } from 'lucide-react'
+import { FolderTree, FileText, Settings, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CategoriesView } from '@/components/admin/views/categories-view'
 import { AuditLogView } from '@/components/admin/views/audit-view'
+import { FeedbackView } from '@/components/admin/views/feedback-view'
 import { SettingsView } from '@/components/admin/views/settings-view'
 
 const navItems = [
@@ -23,8 +24,14 @@ const navItems = [
     view: AuditLogView,
   },
   {
+    id: 'feedback',
+    label: 'Feedback',
+    icon: MessageSquare,
+    view: FeedbackView,
+  },
+  {
     id: 'settings',
-    label: 'Settings',
+    label: 'System Settings',
     icon: Settings,
     view: SettingsView,
   },
