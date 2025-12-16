@@ -72,7 +72,7 @@ export function QueuePageClient({
             {/* Header Section */}
             <motion.div variants={itemVariants} className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-8">
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
+                <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
                   Staff Queue
                 </h1>
                 <p className="text-lg text-muted-foreground flex items-center gap-2 max-w-2xl">
@@ -227,7 +227,7 @@ export function QueuePageClient({
                       <div className="bg-primary/5 p-4 rounded-full mb-6 ring-8 ring-primary/5">
                         <Users className="h-12 w-12 text-primary/60" />
                       </div>
-                      <h3 className="text-xl font-bold mb-2">Queue Cleared!</h3>
+                      <h3 className="text-lg font-bold mb-2">Queue Cleared!</h3>
                       <p className="text-muted-foreground max-w-sm">
                         There are no unassigned tickets matching your criteria. Great job keeping the queue moving.
                       </p>
