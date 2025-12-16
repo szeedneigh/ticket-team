@@ -295,7 +295,7 @@ export default function CannedResponsesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Canned Responses</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Canned Responses</h2>
           <p className="text-muted-foreground">
             Quick reply templates for ticket comments
           </p>
