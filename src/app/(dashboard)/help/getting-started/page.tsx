@@ -37,7 +37,7 @@ export default function GettingStartedPage() {
             <Lightbulb className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">Getting Started with Ticket Team</h1>
+            <h1 className="text-2xl font-bold">Getting Started with Ticket Team</h1>
             <p className="text-muted-foreground">
               Everything you need to know to get started
             </p>
