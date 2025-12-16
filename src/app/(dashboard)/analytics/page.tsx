@@ -93,8 +93,8 @@ async function AnalyticsContent() {
               Live Data
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Analytics Overview</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Analytics Overview</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Comprehensive insights and performance metrics for the last 30 days
           </p>
         </div>
@@ -194,9 +194,9 @@ async function AnalyticsContent() {
       </div>
 
       {/* Category Performance Cards */}
-      <div className="space-y-4">
+        <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-semibold">Category Performance</h2>
+          <h2 className="text-lg font-semibold">Category Performance</h2>
           <span className="text-sm text-muted-foreground">Resolution time and ticket count by category</span>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -235,11 +235,11 @@ async function AnalyticsContent() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Tickets</p>
-                  <p className="text-lg font-semibold">{cat.count.toLocaleString()}</p>
+                  <p className="text-base font-semibold">{cat.count.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Avg Resolution</p>
-                  <p className="text-lg font-semibold">{cat.avgResolutionTime}</p>
+                  <p className="text-base font-semibold">{cat.avgResolutionTime}</p>
                 </div>
               </div>
               
