@@ -68,7 +68,7 @@ export default function NewUserPage() {
       </div>
 
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Create New User</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Create New User</h2>
         <p className="text-muted-foreground">
           Add a new user account to the system
         </p>
