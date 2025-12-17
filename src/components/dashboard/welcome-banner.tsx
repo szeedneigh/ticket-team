@@ -78,7 +78,7 @@ export function WelcomeBanner({ user }: WelcomeBannerProps) {
             </motion.div>
             
             <motion.h1 
-              className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-gray-900 dark:from-white dark:via-blue-200 dark:to-white bg-clip-text text-transparent leading-tight"
+              className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-gray-900 dark:from-white dark:via-blue-200 dark:to-white bg-clip-text text-transparent leading-tight"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: 0.2 }}
@@ -104,7 +104,7 @@ export function WelcomeBanner({ user }: WelcomeBannerProps) {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">Time</p>
-                    <p className="text-lg font-bold text-foreground tabular-nums">
+                    <p className="text-base font-bold text-foreground tabular-nums">
                       {currentTime ? currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '--:--'}
                     </p>
                   </div>
