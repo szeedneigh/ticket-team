@@ -122,8 +122,8 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
             <BotIcon className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">AI Chat Analytics</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl font-bold tracking-tight">AI Chat Analytics</h1>
+            <p className="text-sm text-muted-foreground">
               Performance metrics for AI-powered support conversations
             </p>
           </div>
@@ -276,7 +276,7 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
             <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 mb-4">
               <BotIcon className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold">No Common Queries Yet</h3>
+            <h3 className="text-base font-semibold">No Common Queries Yet</h3>
             <p className="text-sm text-muted-foreground mt-1">
               Common queries will appear here once users start having repeated questions
             </p>
@@ -291,7 +291,7 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
             <div className="flex items-center gap-3">
               <SparklesIcon className="h-5 w-5 text-[#0693D2]" />
               <div>
-                <h3 className="text-lg font-semibold">Performance Summary</h3>
+                <h3 className="text-base font-semibold">Performance Summary</h3>
                 <p className="text-sm text-muted-foreground">
                   Key metrics for AI chat effectiveness
                 </p>
@@ -344,19 +344,19 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
               {/* Stats Grid */}
               <div className="grid gap-4 pt-4 border-t border-white/20 md:grid-cols-3">
                 <div className="text-center p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30">
-                  <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                     {aiData.summary.helpfulCount}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">Helpful Responses</p>
                 </div>
                 <div className="text-center p-4 rounded-xl bg-red-50 dark:bg-red-950/30">
-                  <p className="text-3xl font-bold text-red-600 dark:text-red-400">
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                     {aiData.summary.notHelpfulCount}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">Not Helpful</p>
                 </div>
                 <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/30">
-                  <p className="text-3xl font-bold text-slate-600 dark:text-slate-400">
+                  <p className="text-2xl font-bold text-slate-600 dark:text-slate-400">
                     {aiData.helpfulnessDistribution.noFeedback}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">No Feedback</p>
