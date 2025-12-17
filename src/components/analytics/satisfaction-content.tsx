@@ -199,7 +199,7 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
             <HeartIcon className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Satisfaction Analytics</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Satisfaction Analytics</h1>
             <p className="text-muted-foreground">
               Customer feedback and satisfaction metrics
             </p>
@@ -287,7 +287,7 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
       <motion.div variants={itemVariants}>
         <div className="rounded-2xl border border-white/30 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-xl overflow-hidden shadow-lg">
           <div className="border-b border-white/20 p-6">
-            <h3 className="text-lg font-semibold">Rating Breakdown</h3>
+            <h3 className="text-base font-semibold">Rating Breakdown</h3>
             <p className="text-sm text-muted-foreground">
               Detailed distribution of satisfaction ratings
             </p>
