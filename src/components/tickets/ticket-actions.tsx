@@ -167,7 +167,7 @@ export function TicketActions({
         {/* Gradient accent */}
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1f3463] via-[#2cafdd] to-[#1f3463]" />
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-base flex items-center gap-2">
             ⚙️ Ticket Management
           </CardTitle>
         </CardHeader>
