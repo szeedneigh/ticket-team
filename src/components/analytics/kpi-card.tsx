@@ -140,7 +140,7 @@ export function KPICard({
         ) : (
           <>
             <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-bold tracking-tight text-foreground">
+              <span className="text-2xl font-bold tracking-tight text-foreground">
                 {value}
               </span>
               {trend && (
