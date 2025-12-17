@@ -32,7 +32,7 @@ export function StatsCardExample() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{totalTickets}</div>
+          <div className="text-2xl font-bold">{totalTickets}</div>
           <p className="text-xs text-muted-foreground mt-1">
             +12% from last month
           </p>
@@ -47,7 +47,7 @@ export function StatsCardExample() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold gradient-text">
+          <div className="text-2xl font-bold gradient-text">
             {resolvedTickets}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
@@ -129,7 +129,7 @@ export function PremiumKPIDashboard() {
       <Card className="card-glow">
         <CardContent className="pt-6">
           <div className="text-center">
-            <div className="text-4xl font-bold mb-2">{openTickets}</div>
+            <div className="text-2xl font-bold mb-2">{openTickets}</div>
             <div className="text-sm text-muted-foreground">Open Tickets</div>
           </div>
         </CardContent>
@@ -138,7 +138,7 @@ export function PremiumKPIDashboard() {
       <Card className="card-glow">
         <CardContent className="pt-6">
           <div className="text-center">
-            <div className="text-4xl font-bold gradient-text mb-2">
+            <div className="text-2xl font-bold gradient-text mb-2">
               {avgResponseTime}h
             </div>
             <div className="text-sm text-muted-foreground">Avg Response</div>
@@ -149,7 +149,7 @@ export function PremiumKPIDashboard() {
       <Card className="card-glow">
         <CardContent className="pt-6">
           <div className="text-center">
-            <div className="text-4xl font-bold mb-2">{satisfaction}%</div>
+            <div className="text-2xl font-bold mb-2">{satisfaction}%</div>
             <div className="text-sm text-muted-foreground">Satisfaction</div>
           </div>
         </CardContent>
