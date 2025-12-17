@@ -199,7 +199,7 @@ export function StaffPerformanceContent({
             <UsersIcon className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Staff Performance</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Staff Performance</h1>
             <p className="text-muted-foreground">
               Team productivity and workload distribution
             </p>
@@ -245,7 +245,7 @@ export function StaffPerformanceContent({
         <motion.div className="space-y-4" variants={itemVariants}>
           <div className="flex items-center gap-3">
             <TrophyIcon className="h-5 w-5 text-yellow-500" />
-            <h2 className="text-xl font-semibold">Top Performers</h2>
+            <h2 className="text-lg font-semibold">Top Performers</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {topPerformers.map((staff, index) => (
@@ -262,7 +262,7 @@ export function StaffPerformanceContent({
                 </div>
                 
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 text-lg font-bold">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 text-base font-bold">
                     {staff.userName.charAt(0)}
                   </div>
                   <div>
