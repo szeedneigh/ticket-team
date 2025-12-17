@@ -318,10 +318,10 @@ export function UsersView() {
             {/* Header Content */}
             <motion.div variants={itemVariants} className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
             <div className="space-y-4">
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
+              <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
                 User Management
               </h1>
-              <p className="text-lg text-muted-foreground flex items-center gap-2 max-w-2xl">
+              <p className="text-sm md:text-base text-muted-foreground flex items-center gap-2 max-w-2xl">
                 Manage user accounts, roles, and permissions.
                 <Sparkles className="h-4 w-4 text-[#2cafdd]" />
               </p>
@@ -390,7 +390,7 @@ export function UsersView() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stats.totalUsers}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.totalUsers}</div>
               <p className="text-xs text-muted-foreground mt-1">All user accounts in system</p>
             </CardContent>
           </Card>
@@ -403,7 +403,7 @@ export function UsersView() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stats.activeUsers}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.activeUsers}</div>
               <p className="text-xs text-muted-foreground mt-1">Currently active accounts</p>
             </CardContent>
           </Card>
@@ -416,7 +416,7 @@ export function UsersView() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stats.staffMembers}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.staffMembers}</div>
               <p className="text-xs text-muted-foreground mt-1">Support staff and admins</p>
             </CardContent>
           </Card>
@@ -429,7 +429,7 @@ export function UsersView() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stats.departmentCount}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.departmentCount}</div>
               <p className="text-xs text-muted-foreground mt-1">Unique departments</p>
             </CardContent>
           </Card>
