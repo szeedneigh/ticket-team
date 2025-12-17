@@ -101,7 +101,7 @@ export function ChatWelcome({
 
         {/* Welcome Text */}
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-[#1f3463] to-[#2cafdd] bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-[#1f3463] to-[#2cafdd] bg-clip-text text-transparent">
             Hi{userName ? ` ${userName}` : ''}! 👋
           </h1>
           <p className="text-lg text-muted-foreground">
