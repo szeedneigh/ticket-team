@@ -138,7 +138,7 @@ export const CategoryChart = memo(function CategoryChart({
       className
     )}>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        <CardTitle className="text-base font-semibold">{title}</CardTitle>
         {description && <CardDescription className="text-muted-foreground">{description}</CardDescription>}
       </CardHeader>
       <CardContent>
