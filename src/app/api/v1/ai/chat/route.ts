@@ -30,7 +30,6 @@ import { trackStreamingError } from '@/lib/monitoring/error-tracking'
 import { logger } from '@/lib/logger'
 import {
   checkRateLimit,
-  retryWithBackoff,
   withCircuitBreaker,
 } from '@/lib/chat/rate-limiter'
 
@@ -122,7 +121,7 @@ export async function POST(request: NextRequest) {
     let body: ChatRequestBody
     try {
       body = await request.json()
-    } catch (error) {
+    } catch {
       return new Response(
         JSON.stringify({
           type: 'error',
