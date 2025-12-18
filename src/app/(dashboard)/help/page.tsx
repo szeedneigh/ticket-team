@@ -9,7 +9,6 @@ import {
   BookOpen, 
   MessageSquare, 
   FileQuestion, 
-  Video, 
   Lightbulb, 
   Search,
   ArrowRight,
