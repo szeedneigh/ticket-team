@@ -54,7 +54,7 @@ const SIGNED_URL_EXPIRY = 3600 // 1 hour in seconds
 export async function uploadTicketAttachment(
   file: File,
   ticketId: string,
-  userId: string
+  _userId: string
 ): Promise<UploadResult> {
   try {
     const supabase = await createClient()
