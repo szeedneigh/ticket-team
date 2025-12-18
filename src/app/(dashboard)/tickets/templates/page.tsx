@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, RefreshCw, Search, Edit2, Trash2, Copy, FileText, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -88,7 +88,7 @@ export default function TicketTemplatesPage() {
   })
 
   // Fetch templates
-  const fetchTemplates = async () => {
+  const fetchTemplates = useCallback(async () => {
     setIsLoading(true)
     try {
       const supabase = createClient()
@@ -120,10 +120,10 @@ export default function TicketTemplatesPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [categoryFilter, toast])
 
   // Fetch categories
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const supabase = createClient()
       const { data } = await supabase
@@ -136,12 +136,12 @@ export default function TicketTemplatesPage() {
     } catch (error) {
       console.error('Error fetching categories:', error)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchTemplates()
     fetchCategories()
-  }, [categoryFilter])
+  }, [fetchTemplates, fetchCategories])
 
   // Filter templates by search
   const filteredTemplates = templates.filter(template =>
