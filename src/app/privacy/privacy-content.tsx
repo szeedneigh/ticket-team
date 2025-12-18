@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useSpring } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, Shield, Lock, Eye, FileText, Database, Menu, X } from 'lucide-react'
+import { ArrowLeft, Shield, Lock, Eye, FileText, Database } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
 
