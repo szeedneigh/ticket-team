@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { TicketFilters } from '@/components/tickets/ticket-filters'
 import { TicketList } from '@/components/tickets/ticket-list'
 import { StatsCard } from '@/components/dashboard/stats-card'
-import type { TicketFilters as TTicketFilters } from '@/lib/types/tickets'
 import type { TicketWithUser } from '@/lib/types/tickets'
 
 interface QueuePageClientProps {
