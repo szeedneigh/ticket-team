@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
 import { UAParser } from 'ua-parser-js'
 
-interface SessionInfo {
+interface _SessionInfo {
   session_id: string
   device_type: 'desktop' | 'mobile' | 'tablet'
   browser: string
@@ -61,7 +61,7 @@ export async function getClientIP(): Promise<string> {
  * @param supabase - Optional authenticated Supabase client (recommended for OAuth callbacks)
  */
 export async function trackNewSession(
-  userId: string, 
+  userId: string,
   sessionId: string,
   supabase?: Awaited<ReturnType<typeof createClient>>
 ) {
