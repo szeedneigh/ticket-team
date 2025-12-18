@@ -6,9 +6,9 @@ import {
   generateChatStreamResponse,
   isQuotaExhaustedError,
   extractRetryDelay,
-  type ChatGenerationParams,
+  type ChatGenerationParams as _ChatGenerationParams,
   type ChatGenerationResponse,
-  type ChatStreamChunk,
+  type ChatStreamChunk as _ChatStreamChunk,
 } from '@/lib/ai/client'
 import {
   CHAT_SYSTEM_INSTRUCTION,
@@ -20,7 +20,7 @@ import {
   type KBArticle,
 } from '@/lib/chat/prompts'
 import {
-  trackStreamingError,
+  trackStreamingError as _trackStreamingError,
   classifyError,
 } from '@/lib/monitoring/error-tracking'
 import {
