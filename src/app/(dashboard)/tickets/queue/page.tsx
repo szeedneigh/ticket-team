@@ -147,7 +147,6 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
   // Calculate queue statistics
   const highPriorityCount = queueTickets.filter(t => t.priority === 'high').length
   const mediumPriorityCount = queueTickets.filter(t => t.priority === 'medium').length
-  const lowPriorityCount = queueTickets.filter(t => t.priority === 'low').length
 
   // Calculate oldest ticket age (in days)
   let oldestTicketDays = 0
