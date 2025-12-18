@@ -139,7 +139,7 @@ class LRUCache<T> {
 // Embedding Cache
 // ============================================================================
 
-interface EmbeddingCacheEntry {
+interface _EmbeddingCacheEntry {
   embedding: number[]
   query: string
 }
