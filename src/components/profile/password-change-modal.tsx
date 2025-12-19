@@ -55,7 +55,7 @@ function PasswordChangeModalComponent({ open, onOpenChange }: PasswordChangeModa
       } else {
         toast.error(result.error || 'Failed to change password')
       }
-    } catch (error) {
+    } catch {
       toast.error('An unexpected error occurred')
     } finally {
       setIsLoading(false)
