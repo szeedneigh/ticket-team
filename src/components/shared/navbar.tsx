@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { Search, PanelLeft } from 'lucide-react'
+import { PanelLeft } from 'lucide-react'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import type { User } from '@/lib/types/users'
 
