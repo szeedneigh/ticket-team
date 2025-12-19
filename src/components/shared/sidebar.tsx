@@ -225,7 +225,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto min-h-0 scrollbar-none">
-        {filteredNavItems.map((item, index) => {
+        {filteredNavItems.map((item) => {
             // Check if this route matches the current path
             const isExactMatch = pathname === item.href
             const isChildMatch = pathname.startsWith(item.href + '/')
