@@ -8,7 +8,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, X, Filter } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -172,6 +172,7 @@ export function UserFilters({
             department: department !== 'all' ? department : null,
             status: activeStatus !== 'all' ? activeStatus : null,
           })
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             .filter(([_, value]) => value)
             .length}{' '}
           filter(s) applied
