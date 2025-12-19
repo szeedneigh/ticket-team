@@ -6,11 +6,13 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Trash2, RefreshCw, GripVertical } from 'lucide-react'
+import { Plus, Trash2, RefreshCw, GripVertical, Building2, Users } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import {
   DndContext,
   closestCenter,
@@ -78,21 +80,22 @@ function SortableRow({
   }
 
   return (
-    <TableRow ref={setNodeRef} style={style}>
+    <TableRow ref={setNodeRef} style={style} className="group">
       <TableCell className="w-[40px]">
         <button
-          className="cursor-grab active:cursor-grabbing touch-none"
+          className="cursor-grab active:cursor-grabbing touch-none p-1 rounded hover:bg-muted transition-colors"
           {...attributes}
           {...listeners}
         >
-          <GripVertical className="h-5 w-5 text-muted-foreground" />
+          <GripVertical className="h-4 w-4 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
         </button>
       </TableCell>
-      <TableCell className="font-medium">{department.name}</TableCell>
+      <TableCell className="font-medium text-foreground">{department.name}</TableCell>
       <TableCell>
-        {department.user_count !== undefined && (
-          <Badge variant="secondary">{department.user_count} users</Badge>
-        )}
+        <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+          <Users className="h-3.5 w-3.5" />
+          <span>{department.user_count || 0} users</span>
+        </div>
       </TableCell>
       <TableCell>
         <Button
@@ -100,8 +103,9 @@ function SortableRow({
           size="sm"
           onClick={() => onDelete(department.id)}
           disabled={isSaving || isLoading}
+          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
         >
-          <Trash2 className="h-4 w-4 text-destructive" />
+          <Trash2 className="h-4 w-4" />
         </Button>
       </TableCell>
     </TableRow>
@@ -127,11 +131,7 @@ export function DepartmentSettings() {
     })
   )
 
-  useEffect(() => {
-    loadDepartments()
-  }, [])
-
-  const loadDepartments = async () => {
+  const loadDepartments = useCallback(async () => {
     setIsLoading(true)
     try {
       const result = await getDepartments()
@@ -155,7 +155,11 @@ export function DepartmentSettings() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [toast])
+
+  useEffect(() => {
+    loadDepartments()
+  }, [loadDepartments])
 
   const handleAddDepartment = async () => {
     if (!newDeptName.trim()) {
@@ -177,7 +181,6 @@ export function DepartmentSettings() {
           description: `Department "${newDeptName.trim()}" added`,
         })
         setNewDeptName('')
-        // Reload departments to get updated list
         await loadDepartments()
       } else {
         toast({
@@ -218,7 +221,6 @@ export function DepartmentSettings() {
           title: 'Success',
           description: 'Department deleted',
         })
-        // Reload departments to get updated list
         await loadDepartments()
       } else {
         toast({
@@ -253,23 +255,19 @@ export function DepartmentSettings() {
       return
     }
 
-    // Optimistically update UI
     const newDepartments = arrayMove(departments, oldIndex, newIndex)
     setDepartments(newDepartments)
 
-    // Prepare updates with new display_order values
     const updates = newDepartments.map((dept, index) => ({
       id: dept.id,
-      display_order: (index + 1) * 10, // Use multiples of 10
+      display_order: (index + 1) * 10,
     }))
 
-    // Save to database
     setIsSaving(true)
     try {
       const result = await reorderDepartments(updates)
 
       if (!result.success) {
-        // Revert on error
         setDepartments(departments)
         toast({
           title: 'Error',
@@ -281,11 +279,9 @@ export function DepartmentSettings() {
           title: 'Success',
           description: 'Departments reordered successfully',
         })
-        // Reload to get fresh data
         await loadDepartments()
       }
     } catch (error) {
-      // Revert on error
       setDepartments(departments)
       console.error('Error reordering departments:', error)
       toast({
@@ -300,49 +296,75 @@ export function DepartmentSettings() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-12">
         <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Add New Department */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Add New Department</h3>
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-lg font-medium leading-none">Departments</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Configure organizational teams and reorder them for dropdowns.
+          </p>
+        </div>
         <div className="flex gap-2">
-          <div className="flex-1">
-            <Input
-              placeholder="Department name"
-              value={newDeptName}
-              onChange={(e) => setNewDeptName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleAddDepartment()
-                }
-              }}
-            />
-          </div>
-          <Button onClick={handleAddDepartment} disabled={isSaving || isLoading}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add
+          <Button variant="outline" size="sm" onClick={loadDepartments} disabled={isSaving || isLoading}>
+            <RefreshCw className="mr-2 h-3.5 w-3.5" />
+            Refresh
           </Button>
         </div>
       </div>
 
+      <Separator className="my-6" />
+
+      {/* Add New Department */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 text-primary/80">
+          <Plus className="h-4 w-4" />
+          <h4 className="font-semibold text-sm uppercase tracking-wider">Create Department</h4>
+        </div>
+        
+        <div className="flex gap-3 max-w-lg">
+          <Input
+            placeholder="e.g. Information Technology"
+            value={newDeptName}
+            onChange={(e) => setNewDeptName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleAddDepartment()
+            }}
+            className="flex-1"
+          />
+          <Button
+          onClick={handleAddDepartment}
+          disabled={isSaving || isLoading}
+          className="shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all bg-gradient-to-r from-[#1f3463] to-[#2cafdd] hover:opacity-90 text-white border-0"
+        >
+          Add Department
+        </Button>
+        </div>
+      </section>
+
+      <Separator className="my-6" />
+
       {/* Departments List */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Existing Departments</h3>
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 text-primary/80">
+          <Building2 className="h-4 w-4" />
+          <h4 className="font-semibold text-sm uppercase tracking-wider">Department List</h4>
+        </div>
 
         {departments.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-8 text-center">
+          <div className="rounded-lg border border-dashed p-8 text-center bg-muted/20">
             <p className="text-muted-foreground">
-              No departments yet. Add your first department above.
+              No departments defined yet. Add one above to get started.
             </p>
           </div>
         ) : (
-          <div className="rounded-lg border">
+          <div className="rounded-lg border bg-card/50 overflow-hidden">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -350,11 +372,11 @@ export function DepartmentSettings() {
             >
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="hover:bg-transparent">
                     <TableHead className="w-[40px]"></TableHead>
-                    <TableHead>Department Name</TableHead>
+                    <TableHead>Name</TableHead>
                     <TableHead>Users</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -377,15 +399,7 @@ export function DepartmentSettings() {
             </DndContext>
           </div>
         )}
-      </div>
-
-      {/* Refresh Button */}
-      <div className="flex justify-end gap-2 pt-4 border-t">
-        <Button variant="outline" onClick={loadDepartments} disabled={isSaving || isLoading}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
+      </section>
     </div>
   )
 }
