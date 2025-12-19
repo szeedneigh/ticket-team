@@ -134,7 +134,7 @@ const DAYS_OF_WEEK = [
   { value: 6, label: 'Sat' }
 ]
 
-function NotificationsTabComponent({ user }: NotificationsTabProps) {
+function NotificationsTabComponent({}: NotificationsTabProps) {
   const [isPending, startTransition] = useTransition()
   const [isLoading, setIsLoading] = useState(true)
   const [preferences, setPreferences] = useState<NotificationPreferences>({
