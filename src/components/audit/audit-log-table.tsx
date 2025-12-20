@@ -71,18 +71,6 @@ export const AuditLogTable = memo(function AuditLogTable({
     }
   }, [])
 
-  // Memoize render value function
-  const renderValue = useCallback((value: string | null) => {
-    if (!value || value === 'null') return <span className="text-muted-foreground">—</span>
-    if (value.length > 50) {
-      return (
-        <span className="text-xs" title={value}>
-          {value.substring(0, 50)}...
-        </span>
-      )
-    }
-    return <span className="text-xs">{value}</span>
-  }, [])
 
   // Generate page numbers - memoize expensive computation
   const pageNumbers = useMemo(() => {
