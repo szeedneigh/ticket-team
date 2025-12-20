@@ -66,7 +66,11 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
     <Badge
       variant="outline"
-      className={cn(colorClass, className)}
+      className={cn(
+        colorClass, 
+        'transition-all duration-200 hover:scale-105 hover:shadow-sm',
+        className
+      )}
       aria-label={`Status: ${label}`}
     >
       <span className="mr-1" aria-hidden="true">

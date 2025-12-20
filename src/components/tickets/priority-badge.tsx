@@ -77,7 +77,12 @@ export function PriorityBadge({
   return (
     <Badge
       variant="outline"
-      className={cn(colorClass, className)}
+      className={cn(
+        colorClass, 
+        'transition-all duration-200 hover:scale-105 hover:shadow-sm',
+        priority === 'high' && 'animate-pulse',
+        className
+      )}
       aria-label={ariaLabel}
     >
       {showIcon && (

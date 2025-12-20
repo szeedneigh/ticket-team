@@ -47,7 +47,6 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [files, setFiles] = useState<File[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [subcategories, setSubcategories] = useState<Category[]>([])
 
   const {
@@ -76,7 +75,6 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
       const category = categories.find((c) => c.name === categoryValue)
       if (category) {
         setSubcategories(category.subcategories)
-        setSelectedCategory(categoryValue)
       } else {
         setSubcategories([])
       }
@@ -84,7 +82,6 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
       setValue('subcategory', null)
     } else {
       setSubcategories([])
-      setSelectedCategory('')
     }
   }, [categoryValue, categories, setValue])
 

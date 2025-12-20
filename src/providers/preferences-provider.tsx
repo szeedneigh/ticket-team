@@ -29,8 +29,12 @@ export function PreferencesProvider({ children, initialPreferences }: Preference
     const result = await getUserPreferences()
     if (result.success && result.data) {
       setPreferences(result.data)
-      // Only set theme on the very first load, never override after that
-      if (!themeInitialized && result.data.theme) {
+      // Only set theme if no localStorage theme exists (first login scenario)
+      // This respects user changes that haven't been saved to DB yet
+      const storedTheme = typeof window !== 'undefined' 
+        ? localStorage.getItem('ticket-team-theme') 
+        : null
+      if (!storedTheme && !themeInitialized && result.data.theme) {
         setTheme(result.data.theme)
         setThemeInitialized(true)
       }
@@ -44,16 +48,23 @@ export function PreferencesProvider({ children, initialPreferences }: Preference
     await loadPreferences()
   }
 
-  // Initial load - set theme only once
+  // Initial load - only set theme if next-themes hasn't stored one yet
   useEffect(() => {
-    if (initialPreferences?.theme && !themeInitialized) {
-      setTheme(initialPreferences.theme)
-      setThemeInitialized(true)
+    // Check if next-themes already has a stored theme in localStorage
+    const storedTheme = typeof window !== 'undefined' 
+      ? localStorage.getItem('ticket-team-theme') 
+      : null
+
+    if (initialPreferences) {
+      // Only apply database theme if no locally stored theme exists
+      // This respects user changes that haven't been saved to DB yet
+      if (!storedTheme && initialPreferences.theme && !themeInitialized) {
+        setTheme(initialPreferences.theme)
+        setThemeInitialized(true)
+      }
       applyNonThemePreferences(initialPreferences)
-    } else if (!initialPreferences) {
-      loadPreferences()
     } else {
-      applyNonThemePreferences(initialPreferences)
+      loadPreferences()
     }
   }, [])
 

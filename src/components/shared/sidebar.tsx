@@ -15,7 +15,8 @@ import {
   TrendingUp,
   Settings2,
   X,
-  LogOut
+  LogOut,
+  Award
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { User } from '@/lib/types/users'
@@ -72,6 +73,12 @@ const navItems: NavItem[] = [
     roles: ['staff', 'admin', 'super_admin']
   },
   {
+    title: 'My Performance',
+    href: '/performance',
+    icon: Award,
+    roles: ['staff', 'admin', 'super_admin']
+  },
+  {
     title: 'User Management',
     href: '/admin/users',
     icon: Users,
@@ -84,7 +91,7 @@ const navItems: NavItem[] = [
     roles: ['admin', 'super_admin']
   },
   {
-    title: 'Settings',
+    title: 'System Settings',
     href: '/admin/settings',
     icon: Settings2,
     roles: ['super_admin']
@@ -110,6 +117,7 @@ function useIsMobile() {
 
 export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: SidebarProps) {
   const pathname = usePathname()
+  const [pendingHref, setPendingHref] = useState<string | null>(null)
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const isMobile = useIsMobile()
 
@@ -130,6 +138,8 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
     if (isMobile && isMobileOpen) {
       setIsMobileOpen(false)
     }
+    // Clear pending state when navigation completes
+    setPendingHref(null)
   }, [pathname, isMobile, isMobileOpen, setIsMobileOpen])
 
   const filteredNavItems = navItems.filter(item =>
@@ -215,29 +225,57 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto min-h-0 scrollbar-none">
-          {filteredNavItems.map((item, index) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+        {filteredNavItems.map((item) => {
+            // Check if this route matches the current path
+            const isExactMatch = pathname === item.href
+            const isChildMatch = pathname.startsWith(item.href + '/')
+            
+            // Prevent parent routes from highlighting when a more specific child route exists
+            // e.g., /tickets should NOT highlight when on /tickets/queue
+            const hasMoreSpecificMatch = filteredNavItems.some(other => 
+              other.href !== item.href && 
+              other.href.startsWith(item.href + '/') && 
+              (pathname === other.href || pathname.startsWith(other.href + '/'))
+            )
+            
+            const isActuallyActive = isExactMatch || (isChildMatch && !hasMoreSpecificMatch)
+            // Optimistic highlighting: show active state immediately on click
+            const isActive = pendingHref === item.href || isActuallyActive
             
             const LinkContent = (
               <Link
                 href={item.href}
-                onClick={() => isMobileOpen && setIsMobileOpen(false)}
+                onClick={() => {
+                  setPendingHref(item.href)
+                  if (isMobileOpen) setIsMobileOpen(false)
+                }}
                 className={cn(
-                  "relative flex items-center w-full h-12 px-3.5 rounded-xl transition-all duration-300 group",
+                  "relative flex items-center w-full h-12 px-3.5 rounded-xl transition-colors duration-200 group",
                   isCollapsed && !isMobile ? "justify-center px-0" : "",
                   isActive 
-                    ? "bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.05)] border border-white/10" 
+                    ? "text-white" 
                     : "text-white/70 hover:text-white hover:bg-white/5"
                 )}
               >
+                {/* Active Background - Smooth animated pill */}
+                {isActive && (
+                  <motion.div
+                    layoutId="sidebar-active-bg"
+                    className="absolute inset-0 bg-white/10 rounded-xl border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.05)]"
+                    initial={false}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                    style={{ zIndex: 0 }}
+                  />
+                )}
+                
                 {/* Active Indicator (Left Border Glow) */}
                 {isActive && (
                   <motion.div
-                    layoutId="activeIndicator"
+                    layoutId="sidebar-active-indicator"
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-400 rounded-r-full shadow-[0_0_10px_#22d3ee]"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 24 }}
-                    transition={{ duration: 0.2 }}
+                    initial={false}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                    style={{ zIndex: 1 }}
                   />
                 )}
 

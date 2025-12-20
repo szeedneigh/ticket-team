@@ -96,7 +96,7 @@ function ProfileOverviewTabComponent({ user, ticketStats }: ProfileOverviewTabPr
               <div className="flex-1 pt-16 md:pt-20 space-y-1 w-full">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                   <div className="space-y-2">
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">
                       {user.full_name}
                     </h1>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -179,7 +179,7 @@ function ProfileOverviewTabComponent({ user, ticketStats }: ProfileOverviewTabPr
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Tickets</p>
-                  <h3 className="text-3xl font-bold mt-2 text-foreground">{ticketStats.total}</h3>
+                  <h3 className="text-2xl font-bold mt-2 text-foreground">{ticketStats.total}</h3>
                 </div>
                 <div className="p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
                   <Ticket className="h-5 w-5" />
@@ -195,7 +195,7 @@ function ProfileOverviewTabComponent({ user, ticketStats }: ProfileOverviewTabPr
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Open Tickets</p>
-                  <h3 className="text-3xl font-bold mt-2 text-orange-500">{ticketStats.open}</h3>
+                  <h3 className="text-2xl font-bold mt-2 text-orange-500">{ticketStats.open}</h3>
                 </div>
                 <div className="p-3 rounded-xl bg-orange-500/10 text-orange-500 group-hover:bg-orange-500/20 transition-colors">
                   <Clock className="h-5 w-5" />
@@ -214,7 +214,7 @@ function ProfileOverviewTabComponent({ user, ticketStats }: ProfileOverviewTabPr
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Resolved</p>
-                  <h3 className="text-3xl font-bold mt-2 text-green-500">{ticketStats.resolved}</h3>
+                  <h3 className="text-2xl font-bold mt-2 text-green-500">{ticketStats.resolved}</h3>
                 </div>
                 <div className="p-3 rounded-xl bg-green-500/10 text-green-500 group-hover:bg-green-500/20 transition-colors">
                   <CheckCircle className="h-5 w-5" />

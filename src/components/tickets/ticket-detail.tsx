@@ -6,7 +6,6 @@ import { Paperclip, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { StatusBadge } from './status-badge'
 import { PriorityBadge } from './priority-badge'
@@ -110,48 +109,51 @@ export function TicketDetail({
       {/* Main Content */}
       <div className="lg:col-span-2 space-y-6">
         {/* Ticket Header */}
-        <Card>
-          <CardHeader>
+        <Card className="relative overflow-hidden bg-background/60 backdrop-blur-md border-white/10 shadow-xl">
+          {/* Subtle gradient accent */}
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1f3463] via-[#2cafdd] to-[#1f3463]" />
+          
+          <CardHeader className="pb-4">
             <div className="flex items-start justify-between gap-4">
-              <div className="space-y-2 flex-1">
+              <div className="space-y-3 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <StatusBadge status={ticket.status} />
                   <PriorityBadge priority={ticket.priority} />
                 </div>
-                <CardTitle className="text-2xl">{ticket.title}</CardTitle>
-                <CardDescription>
-                  Ticket #{ticket.id.slice(0, 8)} • Submitted{' '}
-                  {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}
-                </CardDescription>
               </div>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-6">
             {/* Description */}
-            <div>
-              <h3 className="text-sm font-semibold mb-2">Description</h3>
-              <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+            <div className="rounded-xl bg-muted/30 p-4 border border-border/50">
+              <h3 className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#2cafdd]" />
+                Description
+              </h3>
+              <p className="text-sm whitespace-pre-wrap text-muted-foreground leading-relaxed">
                 {ticket.description}
               </p>
             </div>
 
-            {/* Metadata */}
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Category</p>
-                <p className="text-sm font-medium">
+            {/* Metadata Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="rounded-lg bg-muted/20 p-3 border border-border/30 hover:border-border/50 transition-colors">
+                <p className="text-xs text-muted-foreground mb-1">Category</p>
+                <p className="text-sm font-medium text-foreground truncate">
                   {ticket.category}
-                  {ticket.subcategory && ` / ${ticket.subcategory}`}
+                  {ticket.subcategory && (
+                    <span className="text-muted-foreground"> / {ticket.subcategory}</span>
+                  )}
                 </p>
               </div>
 
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Submitted By</p>
+              <div className="rounded-lg bg-muted/20 p-3 border border-border/30 hover:border-border/50 transition-colors">
+                <p className="text-xs text-muted-foreground mb-1">Submitted By</p>
                 <div className="flex items-center gap-2">
-                  <Avatar className="h-6 w-6">
+                  <Avatar className="h-5 w-5 ring-2 ring-background">
                     <AvatarImage src={ticket.user?.avatar_url || undefined} />
-                    <AvatarFallback className="text-xs">
+                    <AvatarFallback className="text-[10px] bg-gradient-to-br from-[#1f3463] to-[#2cafdd] text-white">
                       {ticket.user?.full_name
                         ?.split(' ')
                         .map((n) => n[0])
@@ -159,17 +161,17 @@ export function TicketDetail({
                         .toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium">{ticket.user?.full_name || 'Unknown'}</span>
+                  <span className="text-sm font-medium truncate">{ticket.user?.full_name || 'Unknown'}</span>
                 </div>
               </div>
 
-              {ticket.assigned_to && ticket.assigned_user && (
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Assigned To</p>
+              {ticket.assigned_to && ticket.assigned_user ? (
+                <div className="rounded-lg bg-muted/20 p-3 border border-border/30 hover:border-border/50 transition-colors">
+                  <p className="text-xs text-muted-foreground mb-1">Assigned To</p>
                   <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
+                    <Avatar className="h-5 w-5 ring-2 ring-background">
                       <AvatarImage src={ticket.assigned_user.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs">
+                      <AvatarFallback className="text-[10px] bg-gradient-to-br from-[#2cafdd] to-[#1f3463] text-white">
                         {ticket.assigned_user.full_name
                           ?.split(' ')
                           .map((n) => n[0])
@@ -177,14 +179,19 @@ export function TicketDetail({
                           .toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium">{ticket.assigned_user.full_name}</span>
+                    <span className="text-sm font-medium truncate">{ticket.assigned_user.full_name}</span>
                   </div>
+                </div>
+              ) : (
+                <div className="rounded-lg bg-muted/20 p-3 border border-border/30 border-dashed">
+                  <p className="text-xs text-muted-foreground mb-1">Assigned To</p>
+                  <p className="text-sm text-muted-foreground italic">Unassigned</p>
                 </div>
               )}
 
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Last Updated</p>
-                <p className="text-sm">
+              <div className="rounded-lg bg-muted/20 p-3 border border-border/30 hover:border-border/50 transition-colors">
+                <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
+                <p className="text-sm font-medium">
                   {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
                 </p>
               </div>
@@ -192,38 +199,48 @@ export function TicketDetail({
 
             {/* Attachments */}
             {attachments.length > 0 && (
-              <>
-                <Separator />
-                <div>
-                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Paperclip className="h-4 w-4" />
-                    Attachments ({attachments.length})
-                  </h3>
-                  <div className="space-y-2">
-                    {attachments.map((attachment) => (
-                      <AttachmentItem key={attachment.id} attachment={attachment} />
-                    ))}
-                  </div>
+              <div className="rounded-xl bg-muted/20 p-4 border border-border/30">
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <Paperclip className="h-4 w-4 text-[#2cafdd]" />
+                  Attachments
+                  <span className="text-xs font-normal text-muted-foreground">({attachments.length})</span>
+                </h3>
+                <div className="space-y-2">
+                  {attachments.map((attachment) => (
+                    <AttachmentItem key={attachment.id} attachment={attachment} />
+                  ))}
                 </div>
-              </>
+              </div>
             )}
           </CardContent>
         </Card>
 
         {/* Timeline */}
-        <div>
-          <h2 className="text-lg font-semibold mb-4">Activity Timeline</h2>
-          <TicketTimeline
-            activities={activities}
-            comments={comments}
-            isStaff={isStaff}
-          />
-        </div>
+        <Card className="relative overflow-hidden bg-background/60 backdrop-blur-md border-white/10 shadow-xl">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#2cafdd]/50 via-[#1f3463]/50 to-[#2cafdd]/50" />
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#2cafdd] animate-pulse" />
+              Activity Timeline
+            </CardTitle>
+            <CardDescription>Track all changes and updates to this ticket</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TicketTimeline
+              activities={activities}
+              comments={comments}
+              isStaff={isStaff}
+            />
+          </CardContent>
+        </Card>
 
         {/* Comments Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Comments & Discussion</CardTitle>
+        <Card className="relative overflow-hidden bg-background/60 backdrop-blur-md border-white/10 shadow-xl">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1f3463]/50 via-[#2cafdd]/50 to-[#1f3463]/50" />
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2">
+              💬 Comments & Discussion
+            </CardTitle>
             <CardDescription>
               {isStaff
                 ? 'Add public comments or internal notes (visible only to staff)'
@@ -232,14 +249,17 @@ export function TicketDetail({
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Comment Input */}
-            <CommentBox ticketId={ticket.id} isStaff={isStaff} />
-
-            <Separator />
+            <div className="rounded-xl bg-muted/20 p-4 border border-border/30">
+              <CommentBox ticketId={ticket.id} isStaff={isStaff} />
+            </div>
 
             {/* Comment List */}
             <div>
-              <h3 className="text-sm font-medium mb-4">
-                All Comments ({comments.length})
+              <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+                All Comments
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                  {comments.length}
+                </span>
               </h3>
               <CommentList comments={comments} />
             </div>
@@ -323,26 +343,26 @@ function AttachmentItem({ attachment }: AttachmentItemProps) {
   }
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50 hover:bg-muted transition-colors">
+    <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background/50 hover:bg-muted/50 hover:border-border hover:shadow-sm transition-all duration-200 group">
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <span className="text-2xl flex-shrink-0">{getFileIcon(attachment.mime_type)}</span>
+        <span className="text-2xl flex-shrink-0 group-hover:scale-110 transition-transform duration-200">{getFileIcon(attachment.mime_type)}</span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{attachment.filename}</p>
+          <p className="text-sm font-medium truncate group-hover:text-[#2cafdd] transition-colors">{attachment.filename}</p>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{formatBytes(attachment.size_bytes)}</span>
+            <span className="px-1.5 py-0.5 rounded bg-muted">{formatBytes(attachment.size_bytes)}</span>
             <span>•</span>
             <span>{attachment.user.full_name}</span>
           </div>
         </div>
       </div>
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
         onClick={handleDownload}
         disabled={isDownloading}
-        className="flex-shrink-0"
+        className="flex-shrink-0 hover:bg-[#2cafdd]/10 hover:text-[#2cafdd] hover:border-[#2cafdd]/50 transition-all duration-200"
       >
-        <Download className={`h-4 w-4 ${isDownloading ? 'animate-pulse' : ''}`} />
+        <Download className={`h-4 w-4 ${isDownloading ? 'animate-bounce' : ''}`} />
         <span className="sr-only">
           {isDownloading ? 'Downloading...' : `Download ${attachment.filename}`}
         </span>

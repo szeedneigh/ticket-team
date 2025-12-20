@@ -6,13 +6,17 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Save, RefreshCw } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { Save, RefreshCw, Clock, TicketIcon, FileBox, ChevronRight } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import {
   getSystemConfig,
   updateSystemConfig,
@@ -29,17 +33,29 @@ const DEFAULT_CONFIG: SystemConfig = {
   allowed_attachment_types: 'pdf,doc,docx,xls,xlsx,jpg,jpeg,png,gif',
 }
 
+// Animation variants for staggered list items
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0 }
+}
+
 export function SystemConfigSettings() {
   const { toast } = useToast()
   const [config, setConfig] = useState<SystemConfig>(DEFAULT_CONFIG)
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
-  useEffect(() => {
-    loadConfig()
-  }, [])
-
-  const loadConfig = async () => {
+  const loadConfig = useCallback(async () => {
     setIsLoading(true)
     try {
       const saved = await getSystemConfig()
@@ -56,7 +72,11 @@ export function SystemConfigSettings() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [toast])
+
+  useEffect(() => {
+    loadConfig()
+  }, [loadConfig])
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -89,65 +109,135 @@ export function SystemConfigSettings() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-12">
         <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* SLA Settings */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">SLA (Service Level Agreement)</h3>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="sla-response">First Response Time (hours)</Label>
-            <Input
-              id="sla-response"
-              type="number"
-              min="1"
-              max="168"
-              value={config.sla_response_hours}
-              onChange={(e) =>
-                setConfig({ ...config, sla_response_hours: parseInt(e.target.value) || 24 })
-              }
-            />
-            <p className="text-sm text-muted-foreground">
-              Maximum time for first response to a new ticket
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="sla-resolution">Resolution Time (hours)</Label>
-            <Input
-              id="sla-resolution"
-              type="number"
-              min="1"
-              max="720"
-              value={config.sla_resolution_hours}
-              onChange={(e) =>
-                setConfig({ ...config, sla_resolution_hours: parseInt(e.target.value) || 72 })
-              }
-            />
-            <p className="text-sm text-muted-foreground">
-              Maximum time to resolve a ticket
-            </p>
-          </div>
+    <motion.div 
+      className="space-y-8 p-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium leading-none">General Configuration</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage core system behaviors and policies.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={loadConfig} disabled={isSaving} className="hover:bg-muted/50 transition-colors">
+            <RefreshCw className="mr-2 h-3.5 w-3.5" />
+            Reset
+          </Button>
+          <Button 
+            size="sm" 
+            onClick={handleSave} 
+            disabled={isSaving}
+            className="shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all bg-gradient-to-r from-[#1f3463] to-[#2cafdd] hover:opacity-90 text-white border-0"
+          >
+            <Save className="mr-2 h-3.5 w-3.5" />
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
         </div>
       </div>
 
-      {/* Ticket Management */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Ticket Management</h3>
+      <Separator className="opacity-50" />
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-4">
+      {/* SLA Settings */}
+      <motion.section variants={itemVariants} className="space-y-4">
+        <div className="flex items-center gap-2 text-primary/80 mb-4">
+          <div className="p-1.5 rounded-md bg-blue-500/10 text-blue-500">
+            <Clock className="h-4 w-4" />
+          </div>
+          <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Service Level Agreements (SLA)</h4>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Response Time Card */}
+          <div className="group relative overflow-hidden rounded-xl border bg-background/50 hover:bg-background/80 transition-all duration-300 hover:shadow-md hover:border-primary/20">
+            <div className="p-5 flex flex-col gap-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h5 className="font-medium text-foreground">Response Time</h5>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                    Target time for initial agent response to a new ticket.
+                  </p>
+                </div>
+                <div className="p-2 rounded-full bg-muted group-hover:bg-primary/5 transition-colors">
+                  <Clock className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+              </div>
+              <Separator className="opacity-50" />
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  min="1"
+                  max="168"
+                  value={config.sla_response_hours}
+                  onChange={(e) =>
+                    setConfig({ ...config, sla_response_hours: parseInt(e.target.value) || 24 })
+                  }
+                  className="w-24 h-9 font-mono bg-muted/30 border-muted-foreground/20 focus:border-primary/50 focus:bg-background transition-all"
+                />
+                <span className="text-sm font-medium text-muted-foreground">Hours</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Resolution Time Card */}
+          <div className="group relative overflow-hidden rounded-xl border bg-background/50 hover:bg-background/80 transition-all duration-300 hover:shadow-md hover:border-primary/20">
+            <div className="p-5 flex flex-col gap-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h5 className="font-medium text-foreground">Resolution Time</h5>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                    Target time to fully resolve and close a ticket.
+                  </p>
+                </div>
+                <div className="p-2 rounded-full bg-muted group-hover:bg-primary/5 transition-colors">
+                  <Clock className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+              </div>
+              <Separator className="opacity-50" />
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  min="1"
+                  max="720"
+                  value={config.sla_resolution_hours}
+                  onChange={(e) =>
+                    setConfig({ ...config, sla_resolution_hours: parseInt(e.target.value) || 72 })
+                  }
+                  className="w-24 h-9 font-mono bg-muted/30 border-muted-foreground/20 focus:border-primary/50 focus:bg-background transition-all"
+                />
+                <span className="text-sm font-medium text-muted-foreground">Hours</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Ticket Management */}
+      <motion.section variants={itemVariants} className="space-y-4">
+        <div className="flex items-center gap-2 text-primary/80 mb-4">
+          <div className="p-1.5 rounded-md bg-emerald-500/10 text-emerald-500">
+            <TicketIcon className="h-4 w-4" />
+          </div>
+          <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Ticket Workflow</h4>
+        </div>
+        
+        <div className="rounded-xl border bg-background/50 divide-y divide-border/40 overflow-hidden">
+          {/* Setting Row Item 1 */}
+          <div className="group flex items-center justify-between p-4 hover:bg-muted/30 transition-all duration-200">
             <div className="space-y-0.5">
-              <Label htmlFor="auto-assignment">Auto-Assignment</Label>
+              <Label htmlFor="auto-assignment" className="text-base font-medium cursor-pointer group-hover:text-primary transition-colors">Auto-Assignment</Label>
               <p className="text-sm text-muted-foreground">
-                Automatically assign new tickets to available staff
+                Automatically distribute incoming tickets to available staff members.
               </p>
             </div>
             <Switch
@@ -156,14 +246,16 @@ export function SystemConfigSettings() {
               onCheckedChange={(checked) =>
                 setConfig({ ...config, auto_assignment_enabled: checked })
               }
+              className="data-[state=checked]:bg-primary shadow-sm"
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border p-4">
+          {/* Setting Row Item 2 */}
+          <div className="group flex items-center justify-between p-4 hover:bg-muted/30 transition-all duration-200">
             <div className="space-y-0.5">
-              <Label htmlFor="allow-reassignment">Allow Ticket Reassignment</Label>
+              <Label htmlFor="allow-reassignment" className="text-base font-medium cursor-pointer group-hover:text-primary transition-colors">Allow Reassignment</Label>
               <p className="text-sm text-muted-foreground">
-                Allow staff to reassign tickets to other team members
+                Enable staff to transfer ticket ownership to other agents.
               </p>
             </div>
             <Switch
@@ -172,14 +264,16 @@ export function SystemConfigSettings() {
               onCheckedChange={(checked) =>
                 setConfig({ ...config, allow_ticket_reassignment: checked })
               }
+              className="data-[state=checked]:bg-primary shadow-sm"
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border p-4">
+          {/* Setting Row Item 3 */}
+          <div className="group flex items-center justify-between p-4 hover:bg-muted/30 transition-all duration-200">
             <div className="space-y-0.5">
-              <Label htmlFor="require-notes">Require Resolution Notes</Label>
+              <Label htmlFor="require-notes" className="text-base font-medium cursor-pointer group-hover:text-primary transition-colors">Mandatory Resolution Notes</Label>
               <p className="text-sm text-muted-foreground">
-                Staff must provide notes when resolving tickets
+                Require agents to provide a summary when marking a ticket as resolved.
               </p>
             </div>
             <Switch
@@ -188,58 +282,71 @@ export function SystemConfigSettings() {
               onCheckedChange={(checked) =>
                 setConfig({ ...config, require_resolution_notes: checked })
               }
+              className="data-[state=checked]:bg-primary shadow-sm"
             />
           </div>
         </div>
-      </div>
+      </motion.section>
 
       {/* File Upload Settings */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">File Uploads</h3>
+      <motion.section variants={itemVariants} className="space-y-4">
+        <div className="flex items-center gap-2 text-primary/80 mb-4">
+          <div className="p-1.5 rounded-md bg-amber-500/10 text-amber-500">
+            <FileBox className="h-4 w-4" />
+          </div>
+          <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Attachments & Storage</h4>
+        </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="max-size">Maximum File Size (MB)</Label>
-            <Input
-              id="max-size"
-              type="number"
-              min="1"
-              max="50"
-              value={config.max_attachment_size_mb}
-              onChange={(e) =>
-                setConfig({ ...config, max_attachment_size_mb: parseInt(e.target.value) || 10 })
-              }
-            />
+        <div className="rounded-xl border bg-background/50 divide-y divide-border/40 overflow-hidden">
+          {/* Max Size Row */}
+          <div className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 hover:bg-muted/30 transition-all duration-200">
+            <div className="space-y-0.5">
+              <Label htmlFor="max-size" className="text-base font-medium cursor-pointer group-hover:text-primary transition-colors">Maximum File Size</Label>
+              <p className="text-sm text-muted-foreground">
+                Limit the maximum size of individual file attachments.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Input
+                id="max-size"
+                type="number"
+                min="1"
+                max="50"
+                value={config.max_attachment_size_mb}
+                onChange={(e) =>
+                  setConfig({ ...config, max_attachment_size_mb: parseInt(e.target.value) || 10 })
+                }
+                className="w-20 h-9 font-mono bg-muted/30 border-muted-foreground/20 focus:border-primary/50 focus:bg-background transition-all"
+              />
+              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">MB</span>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="allowed-types">Allowed File Types</Label>
-            <Input
-              id="allowed-types"
-              placeholder="pdf,doc,docx,jpg,png"
-              value={config.allowed_attachment_types}
-              onChange={(e) =>
-                setConfig({ ...config, allowed_attachment_types: e.target.value })
-              }
-            />
-            <p className="text-sm text-muted-foreground">
-              Comma-separated list of allowed extensions
-            </p>
+          {/* Allowed Types Row */}
+          <div className="group flex flex-col gap-3 p-4 hover:bg-muted/30 transition-all duration-200">
+            <div className="space-y-0.5">
+              <Label htmlFor="allowed-types" className="text-base font-medium cursor-pointer group-hover:text-primary transition-colors">Allowed Extensions</Label>
+              <p className="text-sm text-muted-foreground">
+                Comma-separated list of file extensions allowed for upload permissions.
+              </p>
+            </div>
+            <div className="relative">
+              <Input
+                id="allowed-types"
+                placeholder="e.g. pdf,doc,docx,jpg,png"
+                value={config.allowed_attachment_types}
+                onChange={(e) =>
+                  setConfig({ ...config, allowed_attachment_types: e.target.value })
+                }
+                className="font-mono text-sm bg-muted/30 border-muted-foreground/20 focus:border-primary/50 focus:bg-background transition-all pl-9"
+              />
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50">
+                <FileBox className="h-4 w-4" />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Save Button */}
-      <div className="flex justify-end gap-2 pt-4 border-t">
-        <Button variant="outline" onClick={loadConfig} disabled={isSaving}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Reset
-        </Button>
-        <Button onClick={handleSave} disabled={isSaving}>
-          <Save className="mr-2 h-4 w-4" />
-          {isSaving ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </div>
-    </div>
+      </motion.section>
+    </motion.div>
   )
 }

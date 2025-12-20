@@ -22,9 +22,19 @@ export async function GET(request: Request) {
   const origin = requestUrl.origin
   const next = requestUrl.searchParams.get('next') ?? '/dashboard'
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth/callback/route.ts:26',message:'OAuth callback started',data:{hasCode:!!code,origin,next},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+  // #endregion
+
   if (code) {
     const supabase = await createClient()
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth/callback/route.ts:32',message:'Before exchangeCodeForSession',data:{code:code.substring(0,10)+'...'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+    // #endregion
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth/callback/route.ts:36',message:'After exchangeCodeForSession',data:{hasData:!!data,hasError:!!error,errorMsg:error?.message,userEmail:data?.user?.email,userId:data?.user?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2,H3'})}).catch(()=>{});
+    // #endregion
 
     if (!error && data.user && data.session) {
       // Validate email domain
@@ -41,7 +51,8 @@ export async function GET(request: Request) {
           'blocked',
           userId,
           undefined,
-          'invalid_domain'
+          'invalid_domain',
+          supabase
         )
 
         // Clean up: Delete from public.users first (due to FK constraint)
@@ -63,11 +74,19 @@ export async function GET(request: Request) {
         )
       }
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth/callback/route.ts:68',message:'Before update last login',data:{userId:data.user.id,email:data.user.email},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
+      // #endregion
+
       // Update last login
       const { error: updateError } = await supabase
         .from('users')
         .update({ last_login: new Date().toISOString() })
         .eq('id', data.user.id)
+
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth/callback/route.ts:77',message:'After update last login',data:{hasUpdateError:!!updateError,updateErrorMsg:updateError?.message,updateErrorCode:updateError?.code},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4,H5'})}).catch(()=>{});
+      // #endregion
 
       if (updateError) {
         logger.error('Failed to update last login', { userId: data.user.id, error: updateError.message })
@@ -75,14 +94,22 @@ export async function GET(request: Request) {
 
       // Track the new session (use session ID, not access token for security)
       const sessionId = data.session.user?.id || data.user.id
-      await trackNewSession(data.user.id, sessionId)
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth/callback/route.ts:79',message:'Before trackNewSession',data:{userId:data.user.id,sessionId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2,H3'})}).catch(()=>{});
+      // #endregion
+      await trackNewSession(data.user.id, sessionId, supabase)
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth/callback/route.ts:84',message:'After trackNewSession',data:{success:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2,H3'})}).catch(()=>{});
+      // #endregion
 
       // Log successful login (don't log access token)
       await logLoginAttempt(
         email || 'unknown',
         'success',
         data.user.id,
-        sessionId
+        sessionId,
+        undefined,
+        supabase
       )
 
       // Success - redirect to dashboard or requested page
@@ -99,7 +126,8 @@ export async function GET(request: Request) {
           'failed',
           authUser.id,
           undefined,
-          'auth_exchange_failed'
+          'auth_exchange_failed',
+          supabase
         )
       }
     }

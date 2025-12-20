@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, RefreshCw, Search, Edit2, Trash2, Copy, MessageSquare, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -77,7 +77,7 @@ export default function CannedResponsesPage() {
   })
 
   // Fetch responses
-  const fetchResponses = async () => {
+  const fetchResponses = useCallback(async () => {
     setIsLoading(true)
     try {
       const supabase = createClient()
@@ -109,11 +109,11 @@ export default function CannedResponsesPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [categoryFilter, toast])
 
   useEffect(() => {
     fetchResponses()
-  }, [categoryFilter])
+  }, [fetchResponses])
 
   // Filter responses by search
   const filteredResponses = responses.filter(response =>
@@ -295,7 +295,7 @@ export default function CannedResponsesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Canned Responses</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Canned Responses</h2>
           <p className="text-muted-foreground">
             Quick reply templates for ticket comments
           </p>

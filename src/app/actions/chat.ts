@@ -26,7 +26,6 @@ import {
   formatTicketDescription,
   suggestPriority,
   type TicketPreparation,
-  type StaffSuggestion,
 } from '@/lib/chat/escalation-utils'
 import type {
   ChatSessionWithMessages,
@@ -79,8 +78,8 @@ export async function createChatSession(): Promise<
       data: { sessionId },
     }
   } catch (error) {
-    logger.error('Error creating chat session', { 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    logger.error('Error creating chat session', {
+      error: error instanceof Error ? error.message : 'Unknown error'
     })
     return {
       success: false,
@@ -122,7 +121,7 @@ export async function deleteChatSession(
       data: undefined,
     }
   } catch (error) {
-    logger.error('Error deleting chat session', { 
+    logger.error('Error deleting chat session', {
       error: error instanceof Error ? error.message : 'Unknown error',
       sessionId
     })
@@ -171,8 +170,8 @@ export async function getUserChatSessions(params?: {
       data: sessions,
     }
   } catch (error) {
-    logger.error('Error fetching chat sessions', { 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    logger.error('Error fetching chat sessions', {
+      error: error instanceof Error ? error.message : 'Unknown error'
     })
     return {
       success: false,
@@ -214,7 +213,7 @@ export async function getChatSession(
       data: session,
     }
   } catch (error) {
-    logger.error('Error fetching chat session', { 
+    logger.error('Error fetching chat session', {
       error: error instanceof Error ? error.message : 'Unknown error',
       sessionId
     })
@@ -295,7 +294,7 @@ export async function submitFeedback(
       data: undefined,
     }
   } catch (error) {
-    logger.error('Error submitting feedback', { 
+    logger.error('Error submitting feedback', {
       error: error instanceof Error ? error.message : 'Unknown error',
       interactionId: params.interactionId
     })
@@ -373,11 +372,27 @@ export async function prepareTicketFromChat(params: {
       .eq('session_id', params.sessionId)
       .order('created_at', { ascending: true })
 
+    // Debug logging
+    logger.info('[prepareTicketFromChat] Session query:', {
+      sessionId: params.sessionId,
+      interactionId: params.interactionId,
+      foundInteractions: sessionInteractions?.length ?? 0,
+    })
+
     if (sessionError || !sessionInteractions) {
+      logger.error('[prepareTicketFromChat] Session query failed:', { error: sessionError?.message })
       return {
         success: false,
         error: 'Failed to retrieve conversation history',
       }
+    }
+
+    // More debug logging
+    if (sessionInteractions.length > 0) {
+      logger.info('[prepareTicketFromChat] First query in session:', {
+        query: sessionInteractions[0].query.substring(0, 50),
+        created: sessionInteractions[0].created_at,
+      })
     }
 
     // Convert to ChatMessage format
@@ -429,8 +444,8 @@ export async function prepareTicketFromChat(params: {
       conversation: conversationContext,
     })
 
-    // Format description
-    const suggestedDescription = formatTicketDescription({
+    // Format description (concise summary instead of full chat dump)
+    const suggestedDescription = await formatTicketDescription({
       conversation: conversationContext,
       contextArticles,
     })
@@ -461,7 +476,7 @@ export async function prepareTicketFromChat(params: {
       },
     }
   } catch (error) {
-    logger.error('Error preparing ticket', { 
+    logger.error('Error preparing ticket', {
       error: error instanceof Error ? error.message : 'Unknown error',
       sessionId: params.sessionId,
       interactionId: params.interactionId
@@ -557,7 +572,7 @@ export async function createTicketFromChat(params: {
       .single()
 
     if (ticketError || !ticket) {
-      logger.error('Error creating ticket', { 
+      logger.error('Error creating ticket', {
         error: ticketError?.message,
         sessionId: params.sessionId,
         interactionId: params.interactionId
@@ -576,7 +591,7 @@ export async function createTicketFromChat(params: {
       data: { ticketId: ticket.id },
     }
   } catch (error) {
-    logger.error('Error creating ticket from chat', { 
+    logger.error('Error creating ticket from chat', {
       error: error instanceof Error ? error.message : 'Unknown error',
       sessionId: params.sessionId,
       interactionId: params.interactionId

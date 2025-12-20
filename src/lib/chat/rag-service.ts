@@ -1,23 +1,14 @@
-/**
- * RAG (Retrieval-Augmented Generation) Service
- *
- * This module implements the core RAG pipeline for the AI chat system:
- * 1. Retrieve relevant KB articles using semantic search
- * 2. Augment the prompt with retrieved context
- * 3. Generate grounded responses using Gemini AI
- * 4. Extract citations and calculate confidence
- *
- * @module lib/chat/rag-service
- */
 
 import { createClient } from '@/lib/supabase/server'
 import {
   generateEmbedding,
   generateChatResponse,
   generateChatStreamResponse,
-  type ChatGenerationParams,
+  isQuotaExhaustedError,
+  extractRetryDelay,
+  type ChatGenerationParams as _ChatGenerationParams,
   type ChatGenerationResponse,
-  type ChatStreamChunk,
+  type ChatStreamChunk as _ChatStreamChunk,
 } from '@/lib/ai/client'
 import {
   CHAT_SYSTEM_INSTRUCTION,
@@ -29,7 +20,7 @@ import {
   type KBArticle,
 } from '@/lib/chat/prompts'
 import {
-  trackStreamingError,
+  trackStreamingError as _trackStreamingError,
   classifyError,
 } from '@/lib/monitoring/error-tracking'
 import {
@@ -440,7 +431,7 @@ export async function* streamRAGResponse(
     }
   } catch (error) {
     console.error('Streaming RAG error:', error)
-    
+
     // Determine which stage failed
     let stage: 'embedding' | 'retrieval' | 'generation' | 'parsing' = 'generation'
     if (error instanceof Error) {
@@ -452,7 +443,7 @@ export async function* streamRAGResponse(
         stage = 'parsing'
       }
     }
-    
+
     // Track error for monitoring (userId will be added by caller)
     if (error instanceof Error) {
       console.error('Error details:', {
@@ -462,31 +453,29 @@ export async function* streamRAGResponse(
         stage,
         category: classifyError(error),
       })
-      
+
       // Note: We can't track with userId here since it's not available in this context
       // The API route will handle user-level tracking
     }
 
     // Provide user-friendly error message
     let errorMessage = "I'm having trouble generating a response. Please try again or create a support ticket."
-    
+
     // Provide more specific error messages when possible
     if (error instanceof Error) {
-      const message = error.message.toLowerCase()
-
-      // Quota / rate limit
-      if (
-        message.includes('quota') ||
-        message.includes('429') ||
-        message.includes('high demand') ||
-        message.includes('resource_exhausted')
-      ) {
-        errorMessage = 'Our AI assistant is experiencing high demand. Please try again in a moment.'
-      } else if (message.includes('network') || message.includes('enotfound')) {
+      // Quota / rate limit - use the extracted retry delay if available
+      if (isQuotaExhaustedError(error)) {
+        const retryDelay = extractRetryDelay(error)
+        if (retryDelay && retryDelay > 0) {
+          errorMessage = `Our AI assistant is experiencing high demand. Please try again in ${retryDelay} seconds.`
+        } else {
+          errorMessage = 'Our AI assistant is experiencing high demand. Please try again in a moment.'
+        }
+      } else if (error.message.toLowerCase().includes('network') || error.message.toLowerCase().includes('enotfound')) {
         errorMessage = 'Connection issue detected. Please check your internet and try again.'
-      } else if (message.includes('failed to retrieve context')) {
+      } else if (error.message.includes('failed to retrieve context')) {
         errorMessage = 'Having trouble accessing the knowledge base. Please try again or create a support ticket.'
-      } else if (message.includes('gemini_api_key')) {
+      } else if (error.message.includes('gemini_api_key')) {
         errorMessage = 'AI service configuration error. Please contact support.'
       }
     }

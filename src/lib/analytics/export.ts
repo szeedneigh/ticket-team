@@ -12,7 +12,7 @@ import type {
   StaffPerformance,
   PriorityDistribution,
   StatusDistribution,
-  CategoryDistribution,
+  CategoryDistribution as _CategoryDistribution,
   SatisfactionBreakdown,
   AIAnalyticsData,
   TrendData,
@@ -201,7 +201,7 @@ export function exportTicketAnalytics(
   if (format === 'pdf') {
     // Generate HTML for PDF
     const html = generateTicketAnalyticsPDF(data)
-    printToPDF(html, filename)
+    printToPDF(html)
   }
 }
 
@@ -245,7 +245,7 @@ export function exportStaffPerformance(
 
   if (format === 'pdf') {
     const html = generateStaffPerformancePDF(data)
-    printToPDF(html, filename)
+    printToPDF(html)
   }
 }
 
@@ -312,7 +312,7 @@ export function exportSatisfactionAnalytics(
 
   if (format === 'pdf') {
     const html = generateSatisfactionPDF(data)
-    printToPDF(html, filename)
+    printToPDF(html)
   }
 }
 
@@ -384,7 +384,7 @@ export function exportAIAnalytics(
 
   if (format === 'pdf') {
     const html = generateAIAnalyticsPDF(data)
-    printToPDF(html, filename)
+    printToPDF(html)
   }
 }
 
@@ -710,7 +710,7 @@ function generateAIAnalyticsPDF(data: AIAnalyticsData): string {
 /**
  * Print HTML to PDF using browser print dialog
  */
-function printToPDF(html: string, _filename: string) {
+function printToPDF(html: string) {
   const printWindow = window.open('', '_blank')
   if (!printWindow) {
     throw new Error('Could not open print window. Please allow popups.')

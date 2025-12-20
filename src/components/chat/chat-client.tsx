@@ -76,7 +76,6 @@ export function ChatClient({
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [currentSources, setCurrentSources] = useState<RAGContext[]>([])
-  const [_currentInteractionId, setCurrentInteractionId] = useState<string | null>(null)
   const [shouldShowEscalate, setShouldShowEscalate] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -116,7 +115,6 @@ export function ChatClient({
     streamingContentRef.current = ''
     currentInteractionIdRef.current = null
     setCurrentSources([])
-    setCurrentInteractionId(null)
 
     try {
       // Build conversation history (last 10 messages for context)
@@ -225,8 +223,28 @@ export function ChatClient({
                 streamingContentRef.current = ''
                 setCurrentSources([])
               } else if (chunk.type === 'error') {
-                // Error occurred - throw to be caught by outer catch block
-                throw new Error(chunk.error || 'An error occurred while processing your request')
+                // Server signaled an error; surface to the user and stop streaming gracefully
+                const serverMessage = chunk.error || 'An error occurred while processing your request'
+                
+                // Update UI state without throwing (avoids noisy console errors)
+                setError(serverMessage)
+                toast.error('Chat Error', {
+                  description: serverMessage,
+                  duration: 5000,
+                })
+                
+                // Cancel further streaming and clear transient state
+                await reader.cancel().catch(() => null)
+                setIsStreaming(false)
+                setStreamingContent('')
+                streamingContentRef.current = ''
+                currentInteractionIdRef.current = null
+                setCurrentSources([])
+
+                // Remove the optimistic user message since the request failed
+                setMessages(prev => prev.slice(0, -1))
+
+                return
               }
             } catch (parseError) {
               // Log parsing errors for debugging
@@ -505,7 +523,7 @@ export function ChatClient({
                               onClick={handleEscalateClick}
                               variant="default"
                               size="sm"
-                              className="w-full shrink-0 bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 sm:w-auto"
+                              className="w-full shrink-0 bg-gradient-to-r from-[#1f3463] to-[#2cafdd] text-white shadow-md hover:shadow-lg hover:opacity-90 transition-all duration-200 sm:w-auto"
                             >
                               Create Ticket
                             </EscalateButton>

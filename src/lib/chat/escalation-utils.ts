@@ -358,36 +358,122 @@ export async function generateTicketTitle(
   query: string,
   conversation: ChatMessage[]
 ): Promise<string> {
+  // Debug logging
+  console.log('[Escalation] generateTicketTitle called with:', {
+    queryLength: query.length,
+    conversationLength: conversation.length,
+  })
+
   try {
-    const titlePrompt = `Create a concise ticket title (5-10 words) for this IT support request.
-Use title case. Be specific and descriptive.
+    // Build conversation context for better understanding
+    const allMessages = conversation
+      .slice(0, 6)
+      .map(m => `${m.role === 'user' ? 'USER' : 'AI'}: ${m.content}`)
+      .join('\n')
 
-User's question: "${query}"
+    const titlePrompt = `Generate a short, specific ticket title (5-8 words) for this IT support issue.
 
-${conversation.length > 1 ? `Additional context from conversation:
-${conversation.slice(1, 3).map(m => `${m.role}: ${m.content}`).join('\n')}` : ''}
+CONVERSATION:
+${allMessages || `USER: ${query}`}
 
-Respond with ONLY the title, nothing else. Do not use quotes.`
+RULES:
+- Extract the ACTUAL device/system mentioned (iPhone, laptop, Outlook, printer, etc.)
+- State the SPECIFIC problem (not syncing, won't connect, crashes, etc.)
+- Use Title Case
+- DO NOT make up details not in the conversation
+- DO NOT just repeat the user's question word for word
+
+Examples:
+- "Printer Not Connecting to Computer"
+- "iPhone Email Accounts Not Syncing"
+- "Laptop WiFi Disconnects Randomly"
+
+Title:`
 
     const response = await generateChatResponse({
       prompt: titlePrompt,
-      temperature: 0.4,
-      maxOutputTokens: 50,
+      temperature: 0.2,
+      maxOutputTokens: 40,
     })
 
-    const title = response.text.trim().replace(/^["']|["']$/g, '') // Remove quotes if present
+    let title = response.text.trim()
+    // Clean up: remove quotes, "Title:" prefix, etc.
+    title = title.replace(/^["']|["']$/g, '').replace(/^Title:\s*/i, '').trim()
 
-    // Validate length and return
-    if (title.length > 5 && title.length < 150) {
+    console.log('[Escalation] AI generated title:', title)
+
+    // Validate: must be different from raw query and reasonable length
+    if (title.length > 5 && title.length < 100 && title.toLowerCase() !== query.toLowerCase()) {
       return title
     }
 
-    // Fallback if AI generates invalid title
-    return query.substring(0, 80) + (query.length > 80 ? '...' : '')
+    console.warn('[Escalation] AI title invalid, using fallback')
   } catch (error) {
-    console.error('Title generation error:', error)
-    return query.substring(0, 80) + (query.length > 80 ? '...' : '')
+    console.error('[Escalation] Title generation error:', error)
   }
+
+  // Smart fallback: Extract device/system and problem from query
+  return extractTitleFromQuery(query, conversation)
+}
+
+/**
+ * Extract a meaningful title from the user's query when AI fails.
+ * Looks for common device and problem keywords.
+ */
+function extractTitleFromQuery(query: string, conversation: ChatMessage[]): string {
+  const allText = [query, ...conversation.filter(m => m.role === 'user').map(m => m.content)]
+    .join(' ')
+    .toLowerCase()
+
+  // Common devices/systems
+  const devices = [
+    'printer', 'iphone', 'ipad', 'mac', 'macbook', 'laptop', 'computer', 'pc',
+    'outlook', 'email', 'teams', 'wifi', 'network', 'vpn', 'phone', 'monitor',
+    'keyboard', 'mouse', 'scanner', 'projector', 'zoom', 'excel', 'word',
+  ]
+
+  // Common problems
+  const problems = [
+    'not working', 'not connecting', 'not syncing', 'won\'t connect', 'won\'t start',
+    'not responding', 'crashes', 'freezes', 'slow', 'error', 'can\'t access',
+    'can\'t login', 'can\'t print', 'disconnecting', 'broken', 'failed',
+  ]
+
+  // Find device
+  let device = ''
+  for (const d of devices) {
+    if (allText.includes(d)) {
+      device = d.charAt(0).toUpperCase() + d.slice(1)
+      break
+    }
+  }
+
+  // Find problem
+  let problem = ''
+  for (const p of problems) {
+    if (allText.includes(p)) {
+      problem = p.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+      break
+    }
+  }
+
+  // Build title
+  if (device && problem) {
+    return `${device} ${problem}`
+  } else if (device) {
+    return `${device} Issue`
+  } else if (problem) {
+    return `System ${problem}`
+  }
+
+  // Last resort: clean up the query
+  const cleanQuery = query
+    .replace(/^(I'm |I am |I have |My |The |Hi,? |Hello,? |Hey,? |Help,? )/i, '')
+    .replace(/[.!?]+$/, '')
+    .trim()
+
+  const words = cleanQuery.split(/\s+/).slice(0, 6).join(' ')
+  return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
 // ============================================================================
@@ -395,75 +481,161 @@ Respond with ONLY the title, nothing else. Do not use quotes.`
 // ============================================================================
 
 /**
- * Format comprehensive ticket description from chat context
+ * Create a clean, plain-text ticket description from chat context.
  *
- * Includes:
- * - User's additional context (if provided)
- * - Issue summary
- * - Full conversation history
- * - Referenced KB articles
- *
- * @param params - Formatting parameters
- * @returns Formatted markdown description
+ * Uses plain text formatting (no markdown) since ticket view doesn't render it.
+ * Designed for quick scanning by technicians.
  */
-export function formatTicketDescription(params: {
+export async function formatTicketDescription(params: {
   conversation: ChatMessage[]
   contextArticles: RAGContext[]
   userAdditions?: string
-}): string {
+}): Promise<string> {
   const { conversation, contextArticles, userAdditions } = params
 
-  let description = '**🤖 This ticket was created from an AI chat conversation**\n\n'
+  // Debug logging
+  console.log('[Escalation] formatTicketDescription called with:', {
+    conversationLength: conversation.length,
+    contextArticlesCount: contextArticles.length,
+    hasUserAdditions: !!userAdditions,
+  })
 
-  // User's additional context
+  let description = ''
+
+  // Clean header (plain text)
+  description += '=== ESCALATED FROM AI CHAT ASSISTANT ===\n\n'
+
+  // User's additional context (priority - shown first)
   if (userAdditions && userAdditions.trim()) {
-    description += `**📝 Additional Context from User:**\n\n`
+    description += 'ADDITIONAL NOTES FROM USER:\n'
     description += `${userAdditions}\n\n`
     description += '---\n\n'
   }
 
-  // Issue summary (first user message)
-  if (conversation.length > 0) {
-    description += `**❓ Original Issue:**\n\n`
-    description += `${conversation[0].content}\n\n`
-    description += '---\n\n'
-  }
+  // AI-generated summary (or fallback)
+  const summary = await summarizeConversationForTicket(conversation)
+  description += summary
 
-  // Full conversation history
-  if (conversation.length > 0) {
-    description += `**💬 Chat Conversation History:**\n\n`
-
-    conversation.forEach((msg, index) => {
-      const icon = msg.role === 'user' ? '👤' : '🤖'
-      const label = msg.role === 'user' ? 'User' : 'AI Assistant'
-      const timestamp = msg.timestamp
-        ? new Date(msg.timestamp).toLocaleString()
-        : ''
-
-      description += `**${icon} ${label}**${timestamp ? ` (${timestamp})` : ''}:\n`
-      description += `${msg.content}\n\n`
-    })
-
-    description += '---\n\n'
-  }
-
-  // Referenced KB articles
+  // Referenced KB articles (compact format)
   if (contextArticles.length > 0) {
-    description += `**📚 Referenced Knowledge Base Articles:**\n\n`
-
-    contextArticles.forEach(article => {
-      const relevance = (article.similarity * 100).toFixed(0)
-      description += `- **${article.title}** (${relevance}% relevance)\n`
-      const category = (article.metadata as { category?: string })?.category
-      if (category) {
-        description += `  *Category: ${category}*\n`
-      }
-    })
-
-    description += '\n'
+    description += '\n\n---\n'
+    description += 'Related KB Articles: '
+    const articleTitles = contextArticles.map(article => article.title).join(', ')
+    description += articleTitles
   }
 
+  console.log('[Escalation] Generated description length:', description.length)
   return description
+}
+
+/**
+ * Generate an intelligent, accurate summary for technicians.
+ * 
+ * Uses PLAIN TEXT formatting (no markdown) for compatibility.
+ * Only extracts information actually present in the conversation.
+ */
+async function summarizeConversationForTicket(
+  conversation: ChatMessage[]
+): Promise<string> {
+  // Debug logging
+  console.log('[Escalation] summarizeConversationForTicket called with', conversation.length, 'messages')
+
+  if (!conversation.length) {
+    return 'PROBLEM: No conversation data available.\n\nPlease check the chat session for context.'
+  }
+
+  // Log first message for debugging
+  if (conversation[0]) {
+    console.log('[Escalation] First message role:', conversation[0].role, 'content preview:', conversation[0].content.substring(0, 50))
+  }
+
+  const serialized = conversation
+    .map(msg => `${msg.role === 'user' ? 'USER' : 'AI'}: ${msg.content}`)
+    .join('\n\n')
+
+  try {
+    const response = await generateChatResponse({
+      prompt: `Summarize this IT support chat for a technician. Write in PLAIN TEXT only (no markdown, no asterisks, no special formatting).
+
+CONVERSATION:
+${serialized}
+
+Write a summary with these sections (use CAPS for labels):
+
+PROBLEM:
+What issue is the user reporting? Be specific - quote their words if helpful.
+
+DEVICE/SYSTEM:
+What device or system is affected? (Write "Not specified" if not mentioned in the chat)
+
+WHAT WAS TRIED:
+List any troubleshooting steps mentioned by user or AI. (Write "None mentioned" if nothing was tried)
+
+NEXT STEPS:
+What should the technician do to help?
+
+CRITICAL RULES:
+- Use PLAIN TEXT only - NO asterisks, NO markdown, NO bold
+- ONLY include facts from the conversation above
+- DO NOT invent or assume any details not mentioned
+- If user says "printer", do NOT write "computer"
+- If something isn't mentioned, write "Not specified"
+- Keep it brief and accurate`,
+      temperature: 0.1,
+      maxOutputTokens: 400,
+    })
+
+    const text = response.text.trim()
+    if (text) {
+      console.log('[Escalation] AI summary generated successfully')
+      return text
+    }
+  } catch (error) {
+    console.error('[Escalation] AI summary failed:', error)
+  }
+
+  // Fallback: Create a simple plain-text summary from the PASSED conversation only
+  console.log('[Escalation] Using fallback summary')
+
+  const userMessages = conversation
+    .filter(m => m.role === 'user')
+    .map(m => m.content)
+
+  const firstUserMessage = userMessages[0] || 'No user message found'
+  const allUserContent = userMessages.join(' | ')
+
+  return `PROBLEM:
+User reported: "${truncate(firstUserMessage, 200)}"
+${userMessages.length > 1 ? `Additional context: ${truncate(allUserContent, 150)}` : ''}
+
+WHAT WAS TRIED:
+User consulted AI chat assistant before escalating.
+
+NEXT STEPS:
+Please review the issue and assist the user.`
+}
+
+/**
+ * Build short, recent excerpts without dumping the full transcript.
+ */
+function _buildKeyExcerpts(
+  conversation: ChatMessage[],
+  maxItems: number,
+  maxLength: number
+): string[] {
+  const trimmed = conversation
+    .filter(msg => msg.content && msg.content.trim())
+    .slice(-maxItems)
+
+  return trimmed.map(msg => {
+    const label = msg.role === 'user' ? 'User' : 'AI'
+    return `${label}: ${truncate(msg.content, maxLength)}`
+  })
+}
+
+function truncate(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, maxLength - 3)}...`
 }
 
 // ============================================================================

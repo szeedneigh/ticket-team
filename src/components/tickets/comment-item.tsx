@@ -31,7 +31,6 @@ export interface CommentAttachment {
 }
 
 interface CommentItemProps {
-  id: string
   content: string
   is_internal: boolean
   attachments: CommentAttachment[]
@@ -40,7 +39,6 @@ interface CommentItemProps {
 }
 
 export function CommentItem({
-  id,
   content,
   is_internal,
   attachments,

@@ -163,9 +163,13 @@ export function TicketActions({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Ticket Management</CardTitle>
+      <Card className="relative overflow-hidden bg-background/60 backdrop-blur-md border-white/10 shadow-xl sticky top-6">
+        {/* Gradient accent */}
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1f3463] via-[#2cafdd] to-[#1f3463]" />
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base flex items-center gap-2">
+            ⚙️ Ticket Management
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Status Change (Staff Only) */}

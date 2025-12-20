@@ -412,3 +412,9 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  /* Next.js portal positioning override */
+  nextjs-portal {
+    left: initial !important;
+    top: initial !important;
+  }

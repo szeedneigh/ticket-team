@@ -7,7 +7,25 @@
  * @module lib/utils/sanitize
  */
 
-import DOMPurify from 'dompurify'
+import createDOMPurify, { type Config } from 'dompurify'
+import { JSDOM } from 'jsdom'
+
+// DOMPurify is a factory that needs a Window. Create a single instance that
+// works both on the server (via JSDOM) and in the browser.
+let purifier: ReturnType<typeof createDOMPurify> | null = null
+
+function getPurifier(): ReturnType<typeof createDOMPurify> {
+  if (purifier) return purifier
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const windowRef: any =
+    typeof globalThis.window === 'undefined'
+      ? new JSDOM('').window
+      : globalThis.window
+
+  purifier = createDOMPurify(windowRef)
+  return purifier
+}
 
 /**
  * Sanitizes HTML content to prevent XSS attacks
@@ -18,7 +36,7 @@ import DOMPurify from 'dompurify'
  */
 export function sanitizeHTML(dirty: string): string {
   // Configure DOMPurify with allowed tags from Tiptap editor
-  const config = {
+  const config: Config = {
     ALLOWED_TAGS: [
       // Text formatting
       'p', 'br', 'strong', 'em', 'u', 's', 'code', 'pre', 'mark',
@@ -51,7 +69,7 @@ export function sanitizeHTML(dirty: string): string {
     ADD_ATTR: ['target'],
   }
 
-  return DOMPurify.sanitize(dirty, config)
+  return getPurifier().sanitize(dirty, config)
 }
 
 /**
@@ -62,11 +80,11 @@ export function sanitizeHTML(dirty: string): string {
  * @returns The sanitized HTML string
  */
 export function sanitizeHTMLStrict(dirty: string): string {
-  const config = {
+  const config: Config = {
     ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'code'],
     ALLOWED_ATTR: [],
     ALLOW_DATA_ATTR: false,
   }
 
-  return DOMPurify.sanitize(dirty, config)
+  return getPurifier().sanitize(dirty, config)
 }

@@ -19,8 +19,9 @@ import type { EmbeddingRequest } from '@/lib/types/ai'
 
 const AI_MODELS = {
   EMBEDDING: 'text-embedding-004',
-  CHAT: 'gemini-2.0-flash',
-  CHAT_PRO: 'gemini-2.5-flash',
+  CHAT: 'gemini-2.5-flash',  // Verified working with free tier
+  CHAT_PRO: 'gemini-2.5-pro',
+  CHAT_FALLBACK: 'gemini-2.0-flash',  // Fallback (may have quota limits)
 } as const
 
 const RETRY_CONFIG = {
@@ -119,12 +120,54 @@ async function withRetry<T>(
 }
 
 /**
+ * Check if error is a quota exhausted / rate limit error (429)
+ */
+export function isQuotaExhaustedError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase()
+    return (
+      message.includes('429') ||
+      message.includes('quota') ||
+      message.includes('resource_exhausted') ||
+      message.includes('rate limit')
+    )
+  }
+  return false
+}
+
+/**
+ * Extract retry delay in seconds from Gemini API error response
+ * Returns null if no retry delay found
+ */
+export function extractRetryDelay(error: unknown): number | null {
+  if (error instanceof Error) {
+    // Look for patterns like "retryDelay": "37s" or "Please retry in 37.408303613s"
+    const retryDelayMatch = error.message.match(/retry(?:Delay)?[":]?\s*["']?(\d+(?:\.\d+)?)/i)
+    if (retryDelayMatch) {
+      return Math.ceil(parseFloat(retryDelayMatch[1]))
+    }
+    // Also check for "Please wait X seconds"
+    const waitMatch = error.message.match(/wait\s+(\d+)\s*second/i)
+    if (waitMatch) {
+      return parseInt(waitMatch[1], 10)
+    }
+  }
+  return null
+}
+
+/**
  * Normalize AI API errors to user-friendly messages
  */
-function normalizeAIError(error: unknown): Error {
+function normalizeAIError(error: unknown, retrySeconds?: number | null): Error {
   if (error instanceof Error) {
     // API quota exceeded
-    if (error.message.includes('quota') || error.message.includes('429')) {
+    if (isQuotaExhaustedError(error)) {
+      const delay = retrySeconds ?? extractRetryDelay(error)
+      if (delay && delay > 0) {
+        return new Error(
+          `Our AI assistant is experiencing high demand. Please try again in ${delay} seconds.`
+        )
+      }
       return new Error(
         'Our AI assistant is experiencing high demand. Please try again in a moment.'
       )
@@ -380,58 +423,83 @@ export async function generateChatStreamResponse(
     topK = 40,
   } = params
 
-  try {
-    const ai = getAIClient()
+  const ai = getAIClient()
 
-    // Build contents array with conversation history
-    const contents = [
-      ...conversationHistory,
-      {
-        role: 'user' as const,
-        parts: [{ text: prompt }],
-      },
-    ]
+  // Build contents array with conversation history
+  const contents = [
+    ...conversationHistory,
+    {
+      role: 'user' as const,
+      parts: [{ text: prompt }],
+    },
+  ]
 
-    const response = await withRetry(
-      async () => {
-        return await ai.models.generateContentStream({
-          model: AI_MODELS.CHAT,
-          contents,
-          config: {
-            systemInstruction,
-            temperature,
-            maxOutputTokens,
-            topP,
-            topK,
-          },
-        })
-      },
-      {
-        onRetry: (attempt, error) => {
-          console.warn(`Stream generation retry ${attempt}/3:`, error.message)
-        },
-      }
-    )
-
-    // Return async generator that yields chunks
-    return (async function* () {
-      try {
-        for await (const chunk of response) {
-          yield {
-            text: chunk.text || '',
-            finishReason: chunk.candidates?.[0]?.finishReason,
-            usageMetadata: chunk.usageMetadata,
-          }
-        }
-      } catch (error) {
-        console.error('Stream processing error:', error)
-        throw normalizeAIError(error)
-      }
-    })()
-  } catch (error) {
-    console.error('Stream generation error:', error)
-    throw normalizeAIError(error)
+  const config = {
+    systemInstruction,
+    temperature,
+    maxOutputTokens,
+    topP,
+    topK,
   }
+
+  // Try primary model first, then fallback on quota exhaustion
+  const modelsToTry = [AI_MODELS.CHAT, AI_MODELS.CHAT_FALLBACK]
+  let lastError: Error | null = null
+
+  for (const model of modelsToTry) {
+    try {
+      const response = await withRetry(
+        async () => {
+          return await ai.models.generateContentStream({
+            model,
+            contents,
+            config,
+          })
+        },
+        {
+          onRetry: (attempt, error) => {
+            console.warn(`Stream generation retry ${attempt}/3 (${model}):`, error.message)
+          },
+        }
+      )
+
+      // Log which model was used (helpful for monitoring)
+      if (model !== AI_MODELS.CHAT) {
+        console.info(`Using fallback model: ${model}`)
+      }
+
+      // Return async generator that yields chunks
+      return (async function* () {
+        try {
+          for await (const chunk of response) {
+            yield {
+              text: chunk.text || '',
+              finishReason: chunk.candidates?.[0]?.finishReason,
+              usageMetadata: chunk.usageMetadata,
+            }
+          }
+        } catch (error) {
+          console.error('Stream processing error:', error)
+          throw normalizeAIError(error)
+        }
+      })()
+    } catch (error) {
+      lastError = error as Error
+
+      // If it's a quota exhaustion error and we have a fallback, try the next model
+      if (isQuotaExhaustedError(error) && model !== modelsToTry[modelsToTry.length - 1]) {
+        console.warn(`Model ${model} quota exhausted, trying fallback model...`)
+        continue
+      }
+
+      // For non-quota errors or last model, throw the normalized error
+      console.error('Stream generation error:', error)
+      throw normalizeAIError(error)
+    }
+  }
+
+  // Should not reach here, but just in case
+  throw normalizeAIError(lastError || new Error('All models failed'))
 }
 
 // ============================================================================

@@ -120,10 +120,10 @@ export default async function TicketsPage({ searchParams }: PageProps) {
           {/* Header Content */}
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
             <div className="space-y-4">
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
+              <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
                 My Tickets
               </h1>
-              <p className="text-lg text-muted-foreground flex items-center gap-2 max-w-2xl">
+              <p className="text-sm md:text-base text-muted-foreground flex items-center gap-2 max-w-2xl">
                 Manage and track your support requests. We&apos;re here to help.
                 <Sparkles className="h-4 w-4 text-[#2cafdd]" />
               </p>

@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/table'
 import { StatusCell } from './status-cell'
 import type { TicketWithUser } from '@/lib/types/tickets'
-import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 
 interface TicketTableProps {
@@ -66,7 +65,7 @@ export function TicketTable({ tickets }: TicketTableProps) {
     <>
       {/* Mobile Card View */}
       <div className="block md:hidden space-y-4">
-        {tickets.map((ticket, index) => {
+        {tickets.map((ticket) => {
           const ticketNumber = `Ticket# ${ticket.id.slice(0, 8).toUpperCase()}`
           const formattedDate = formatRelativeDate(ticket.created_at)
 
@@ -75,7 +74,6 @@ export function TicketTable({ tickets }: TicketTableProps) {
               key={ticket.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
             >
               <Link
                 href={`/tickets/${ticket.id}`}
@@ -114,7 +112,7 @@ export function TicketTable({ tickets }: TicketTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tickets.map((ticket, index) => {
+            {tickets.map((ticket) => {
               const ticketNumber = `Ticket# ${ticket.id.slice(0, 8).toUpperCase()}`
               const formattedDate = formatRelativeDate(ticket.created_at)
 

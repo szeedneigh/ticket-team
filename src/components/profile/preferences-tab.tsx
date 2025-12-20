@@ -24,7 +24,7 @@ import {
   Type
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getUserPreferences, updateUserPreferences, type UserPreferences } from '@/app/actions/preferences'
+import { getUserPreferences, updateUserPreferences } from '@/app/actions/preferences'
 import type { User } from '@/lib/types/users'
 import { usePreferences } from '@/providers/preferences-provider'
 
@@ -34,13 +34,11 @@ interface PreferencesTabProps {
 
 // Theme preview card component
 function ThemePreviewCard({
-  theme,
   icon: Icon,
   label,
   selected,
   onClick
 }: {
-  theme: string
   icon: React.ElementType
   label: string
   selected: boolean
@@ -64,12 +62,11 @@ function ThemePreviewCard({
   )
 }
 
-export function PreferencesTab({ user }: PreferencesTabProps) {
+export function PreferencesTab({}: PreferencesTabProps) {
   const { refreshPreferences } = usePreferences()
   const { setTheme: setNextTheme } = useTheme()
   const [isPending, startTransition] = useTransition()
   const [isLoading, setIsLoading] = useState(true)
-  const [preferences, setPreferences] = useState<UserPreferences | null>(null)
 
   // Form state
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system')
@@ -88,7 +85,6 @@ export function PreferencesTab({ user }: PreferencesTabProps) {
     async function loadPreferences() {
       const result = await getUserPreferences()
       if (result.success && result.data) {
-        setPreferences(result.data)
 
         // Populate form with existing preferences (with default fallbacks)
         setTheme((result.data.theme as 'light' | 'dark' | 'system') || 'system')
@@ -184,7 +180,6 @@ export function PreferencesTab({ user }: PreferencesTabProps) {
               <Label className="text-sm font-medium mb-3 block">Theme</Label>
               <div className="grid grid-cols-3 gap-4">
                 <ThemePreviewCard
-                  theme="light"
                   icon={Sun}
                   label="Light"
                   selected={theme === 'light'}
@@ -194,7 +189,6 @@ export function PreferencesTab({ user }: PreferencesTabProps) {
                   }}
                 />
                 <ThemePreviewCard
-                  theme="dark"
                   icon={Moon}
                   label="Dark"
                   selected={theme === 'dark'}
@@ -204,7 +198,6 @@ export function PreferencesTab({ user }: PreferencesTabProps) {
                   }}
                 />
                 <ThemePreviewCard
-                  theme="system"
                   icon={Monitor}
                   label="System"
                   selected={theme === 'system'}

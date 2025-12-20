@@ -62,31 +62,38 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
   const categories = JSON.parse(JSON.stringify(categoriesData))
   const allTags = JSON.parse(JSON.stringify(allTagsData))
 
-  const serializedArticles = articles.map(article => ({
-    id: article.id,
-    title: article.title,
-    content: article.content,
-    summary: article.summary,
-    category: article.category,
-    subcategory: article.subcategory,
-    tags: article.tags,
-    author_id: article.author_id,
-    status: article.status,
-    view_count: article.view_count,
-    helpful_votes: article.helpful_votes,
-    total_votes: article.total_votes,
-    embedding: article.embedding,
-    source_ticket_id: article.source_ticket_id,
-    created_at: article.created_at,
-    updated_at: article.updated_at,
-    published_at: article.published_at,
-    author: {
-      id: article.author.id,
-      full_name: article.author.full_name,
-      email: article.author.email,
-      avatar_url: article.author.avatar_url
+  const serializedArticles = articles.map((article) => {
+    return {
+      id: article.id,
+      title: article.title,
+      content: article.content,
+      summary: article.summary,
+      category: article.category,
+      subcategory: article.subcategory,
+      tags: article.tags,
+      author_id: article.author_id,
+      status: article.status,
+      view_count: article.view_count,
+      helpful_votes: article.helpful_votes,
+      total_votes: article.total_votes,
+      embedding: article.embedding,
+      source_ticket_id: article.source_ticket_id,
+      created_at: article.created_at,
+      updated_at: article.updated_at,
+      published_at: article.published_at,
+      author: article.author ? {
+        id: article.author.id,
+        full_name: article.author.full_name,
+        email: article.author.email,
+        avatar_url: article.author.avatar_url
+      } : {
+        id: article.author_id,
+        full_name: 'Unknown Author',
+        email: '',
+        avatar_url: null
+      }
     }
-  }))
+  })
 
   // Check if user can create articles
   const canCreate = isStaffOrAbove(user.role)
@@ -113,10 +120,10 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
         <div className="container mx-auto py-20 md:py-32 px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="space-y-4">
-              <h1 className="text-4xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
+              <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
                 Knowledge Base
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                 Everything you need to know about using the platform. Find answers, guides, and best practices.
               </p>
             </div>
@@ -150,7 +157,7 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
                 <EmptyMedia variant="icon" className="bg-muted/50 p-4 rounded-full mb-4">
                   <BookOpen className="h-8 w-8 text-muted-foreground" />
                 </EmptyMedia>
-                <EmptyTitle className="text-xl font-semibold">No Articles Yet</EmptyTitle>
+                <EmptyTitle className="text-lg font-semibold">No Articles Yet</EmptyTitle>
                 <EmptyDescription className="text-muted-foreground max-w-md mx-auto mt-2">
                   {canCreate
                     ? "Get started by creating your first knowledge base article."

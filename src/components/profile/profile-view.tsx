@@ -83,7 +83,7 @@ function ProfileViewComponent({ user, onEdit, ticketStats }: ProfileViewProps) {
               <div className="flex flex-col items-center">
                 <AvatarUpload user={user} />
                 <div className="mt-6 text-center space-y-3">
-                  <h1 className="text-3xl font-bold text-[var(--brand-primary)]">
+                  <h1 className="text-2xl font-bold text-[var(--brand-primary)]">
                     {user.full_name}
                   </h1>
                   <Badge variant={getRoleBadgeVariant(user.role)} className="mt-2 px-4 py-1 text-sm font-semibold">
@@ -166,7 +166,7 @@ function ProfileViewComponent({ user, onEdit, ticketStats }: ProfileViewProps) {
           transition={{ duration: 0.2, delay: 0.1, ease: [0.2, 0.7, 0.2, 1] }}
         >
           <Card className="p-6 bg-card shadow-[var(--elev-3)] rounded-[20px] border border-[var(--brand-primary)]/10">
-            <h2 className="text-xl font-bold text-[var(--brand-primary)] mb-6">
+            <h2 className="text-lg font-bold text-[var(--brand-primary)] mb-6">
               Activity Statistics
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -177,7 +177,7 @@ function ProfileViewComponent({ user, onEdit, ticketStats }: ProfileViewProps) {
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Tickets</p>
-                  <p className="text-3xl font-bold text-[var(--brand-primary)]">{ticketStats.total}</p>
+                  <p className="text-2xl font-bold text-[var(--brand-primary)]">{ticketStats.total}</p>
                 </div>
               </div>
 
@@ -188,7 +188,7 @@ function ProfileViewComponent({ user, onEdit, ticketStats }: ProfileViewProps) {
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Open Tickets</p>
-                  <p className="text-3xl font-bold text-[var(--brand-accent)]">{ticketStats.open}</p>
+                  <p className="text-2xl font-bold text-[var(--brand-accent)]">{ticketStats.open}</p>
                 </div>
               </div>
 
@@ -199,7 +199,7 @@ function ProfileViewComponent({ user, onEdit, ticketStats }: ProfileViewProps) {
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Resolved</p>
-                  <p className="text-3xl font-bold text-green-500">{ticketStats.resolved}</p>
+                  <p className="text-2xl font-bold text-green-500">{ticketStats.resolved}</p>
                 </div>
               </div>
             </div>

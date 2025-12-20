@@ -102,10 +102,18 @@ export async function getArticles(
 
   const { data, error, count } = await query
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'queries.ts:103',message:'Query result',data:{dataLength:data?.length,hasError:!!error,count,firstArticleAuthorId:data?.[0]?.author_id,firstArticleAuthor:data?.[0]?.author},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A,B,E'})}).catch(()=>{});
+  // #endregion
+
   if (error) {
     console.error('Error fetching articles:', error)
     throw new Error('Failed to fetch articles')
   }
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'queries.ts:112',message:'Before type cast',data:{articlesWithNullAuthor:data?.filter(a=>!a.author).length,totalArticles:data?.length,sampleNullAuthorArticle:data?.find(a=>!a.author)},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A,B,D'})}).catch(()=>{});
+  // #endregion
 
   return {
     articles: (data as KnowledgeArticleWithAuthor[]) || [],
