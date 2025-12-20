@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { X, Minus, Maximize2, MessageCircle } from 'lucide-react'
+import { X, Minus, MessageCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,7 +36,6 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
     isOpen,
     isMinimized,
     activeSessionId,
-    sessions,
     currentMessages,
     openWidget,
     closeWidget,
