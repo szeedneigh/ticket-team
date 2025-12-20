@@ -52,10 +52,6 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
   // Fetch articles with sorting
   const { articles, total, per_page } = await getArticles(filters, page, 20, sortBy)
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:53',message:'Articles fetched',data:{articlesCount:articles.length,articlesWithNullAuthor:articles.filter(a=>!a.author).map(a=>({id:a.id,title:a.title,author_id:a.author_id,author:a.author}))},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A,B,C,D'})}).catch(()=>{});
-  // #endregion
-
   // Fetch categories and tags for filters
   const [categoriesData, allTagsData] = await Promise.all([
     getCategories(),
@@ -66,15 +62,7 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
   const categories = JSON.parse(JSON.stringify(categoriesData))
   const allTags = JSON.parse(JSON.stringify(allTagsData))
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:65',message:'Before serialization',data:{firstArticle:articles[0],firstArticleAuthorType:typeof articles[0]?.author,hasNullAuthors:articles.some(a=>a.author===null)},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A,E'})}).catch(()=>{});
-  // #endregion
-
-  const serializedArticles = articles.map((article, index) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:73',message:'Mapping article',data:{index,articleId:article.id,title:article.title,authorId:article.author_id,authorIsNull:article.author===null,authorIsUndefined:article.author===undefined,authorValue:article.author},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A,B,D,E'})}).catch(()=>{});
-    // #endregion
-    
+  const serializedArticles = articles.map((article) => {
     return {
       id: article.id,
       title: article.title,
