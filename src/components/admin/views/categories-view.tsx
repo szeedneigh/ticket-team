@@ -242,6 +242,8 @@ export function CategoriesView() {
           <Button
             size="sm"
             onClick={() => setShowAddForm(true)}
+            style={{ backgroundImage: 'linear-gradient(to right, #1f3463, #2cafdd)' }}
+            className="shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all hover:opacity-90 text-white border-0"
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Category
