@@ -38,7 +38,6 @@ export function CommentList({
       {comments.map((comment) => (
         <CommentItem
           key={comment.id}
-          id={comment.id}
           content={comment.content}
           is_internal={comment.is_internal}
           attachments={(comment.attachments as unknown as CommentAttachment[]) || []}

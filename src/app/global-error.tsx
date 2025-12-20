@@ -1,4 +1,5 @@
 "use client";
+// Global error boundary
 
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";

@@ -618,7 +618,7 @@ Please review the issue and assist the user.`
 /**
  * Build short, recent excerpts without dumping the full transcript.
  */
-function buildKeyExcerpts(
+function _buildKeyExcerpts(
   conversation: ChatMessage[],
   maxItems: number,
   maxLength: number

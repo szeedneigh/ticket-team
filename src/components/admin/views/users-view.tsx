@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { Plus, Download, RefreshCw, Users, UserCheck, Briefcase, Building2, Sparkles } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -17,16 +17,17 @@ import { createClient } from '@/lib/supabase/client'
 import { getAllUsers, getDepartments } from '@/lib/users/queries'
 import { bulkUpdateUsers } from '@/app/actions/users'
 import { UserTable, UserFilters, UserForm } from '@/components/users'
+import { UsersViewSkeleton } from '@/components/admin/users-view-skeleton'
 import type { User } from '@/lib/types/users'
 import type { UserRole } from '@/lib/types/database'
 
 export function UsersView() {
-  const router = useRouter()
   const { toast } = useToast()
   
   const [users, setUsers] = useState<User[]>([])
   const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [page, setPage] = useState(1)
   const [perPage] = useState(10)
   const [search, setSearch] = useState('')
@@ -108,6 +109,7 @@ export function UsersView() {
       })
     } finally {
       setIsLoading(false)
+      setIsInitialLoad(false)
     }
   }
 
@@ -262,8 +264,38 @@ export function UsersView() {
     }
   }
 
+  // Show skeleton on initial load
+  if (isInitialLoad) {
+    return <UsersViewSkeleton />
+  }
+
+  // Staggered animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.05
+      }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: 'spring' as const,
+        stiffness: 100,
+        damping: 15
+      }
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-background relative animate-in fade-in zoom-in-95 duration-500">
+    <div className="min-h-screen bg-background relative">
       {/* Hero Section with Gradient Background */}
       <div className="relative overflow-hidden bg-background border-b border-border/40 pb-12">
         {/* Dot Grid Pattern */}
@@ -276,13 +308,18 @@ export function UsersView() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-[#2cafdd]/20 opacity-20 blur-[100px] rounded-full pointer-events-none" />
 
         <div className="container mx-auto pt-16 pb-8 px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl">
-          {/* Header Content */}
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Header Content */}
+            <motion.div variants={itemVariants} className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
             <div className="space-y-4">
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
+              <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
                 User Management
               </h1>
-              <p className="text-lg text-muted-foreground flex items-center gap-2 max-w-2xl">
+              <p className="text-sm md:text-base text-muted-foreground flex items-center gap-2 max-w-2xl">
                 Manage user accounts, roles, and permissions.
                 <Sparkles className="h-4 w-4 text-[#2cafdd]" />
               </p>
@@ -322,21 +359,27 @@ export function UsersView() {
                 Add User
               </Button>
             </div>
-          </div>
+          </motion.div>
 
           {/* Controls Section */}
-          <div className="flex flex-col gap-6 bg-background/40 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-xl shadow-[#1f3463]/5">
+          <motion.div variants={itemVariants} className="flex flex-col gap-6 bg-background/40 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-xl shadow-[#1f3463]/5">
             <UserFilters
               onFilterChange={handleFilterChange}
               departments={departments}
             />
-          </div>
+          </motion.div>
+          </motion.div>
         </div>
       </div>
 
-      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-7xl space-y-8">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-7xl space-y-8"
+      >
         {/* Stats Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <motion.div variants={itemVariants} className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Card className="bg-background/40 backdrop-blur-md border border-white/10 shadow-lg shadow-[#1f3463]/5 hover:shadow-xl hover:shadow-[#1f3463]/10 transition-all duration-300 group">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Total Users</CardTitle>
@@ -345,7 +388,7 @@ export function UsersView() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stats.totalUsers}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.totalUsers}</div>
               <p className="text-xs text-muted-foreground mt-1">All user accounts in system</p>
             </CardContent>
           </Card>
@@ -358,7 +401,7 @@ export function UsersView() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stats.activeUsers}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.activeUsers}</div>
               <p className="text-xs text-muted-foreground mt-1">Currently active accounts</p>
             </CardContent>
           </Card>
@@ -371,7 +414,7 @@ export function UsersView() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stats.staffMembers}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.staffMembers}</div>
               <p className="text-xs text-muted-foreground mt-1">Support staff and admins</p>
             </CardContent>
           </Card>
@@ -384,14 +427,14 @@ export function UsersView() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stats.departmentCount}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.departmentCount}</div>
               <p className="text-xs text-muted-foreground mt-1">Unique departments</p>
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
 
         {/* Users Table Section */}
-        <div className="rounded-2xl border border-white/10 bg-background/40 backdrop-blur-md shadow-lg shadow-[#1f3463]/5 overflow-hidden">
+        <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-background/40 backdrop-blur-md shadow-lg shadow-[#1f3463]/5 overflow-hidden">
           <div className="p-0">
             {isLoading ? (
               <div className="flex h-64 items-center justify-center">
@@ -411,8 +454,8 @@ export function UsersView() {
               />
             )}
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Create/Edit User Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>

@@ -120,7 +120,7 @@ function AvatarUploadComponent({ user, className }: AvatarUploadProps) {
             alt={user.full_name || 'User avatar'}
             className="object-cover"
           />
-          <AvatarFallback className="bg-[var(--brand-primary)] text-white text-3xl font-bold">
+          <AvatarFallback className="bg-[var(--brand-primary)] text-white text-2xl font-bold">
             {getInitials()}
           </AvatarFallback>
         </Avatar>

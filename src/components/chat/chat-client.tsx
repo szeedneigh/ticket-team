@@ -76,7 +76,6 @@ export function ChatClient({
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [currentSources, setCurrentSources] = useState<RAGContext[]>([])
-  const [_currentInteractionId, setCurrentInteractionId] = useState<string | null>(null)
   const [shouldShowEscalate, setShouldShowEscalate] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -116,7 +115,6 @@ export function ChatClient({
     streamingContentRef.current = ''
     currentInteractionIdRef.current = null
     setCurrentSources([])
-    setCurrentInteractionId(null)
 
     try {
       // Build conversation history (last 10 messages for context)

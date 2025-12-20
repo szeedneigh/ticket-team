@@ -52,6 +52,10 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
   // Fetch articles with sorting
   const { articles, total, per_page } = await getArticles(filters, page, 20, sortBy)
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:53',message:'Articles fetched',data:{articlesCount:articles.length,articlesWithNullAuthor:articles.filter(a=>!a.author).map(a=>({id:a.id,title:a.title,author_id:a.author_id,author:a.author}))},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A,B,C,D'})}).catch(()=>{});
+  // #endregion
+
   // Fetch categories and tags for filters
   const [categoriesData, allTagsData] = await Promise.all([
     getCategories(),
@@ -62,31 +66,46 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
   const categories = JSON.parse(JSON.stringify(categoriesData))
   const allTags = JSON.parse(JSON.stringify(allTagsData))
 
-  const serializedArticles = articles.map(article => ({
-    id: article.id,
-    title: article.title,
-    content: article.content,
-    summary: article.summary,
-    category: article.category,
-    subcategory: article.subcategory,
-    tags: article.tags,
-    author_id: article.author_id,
-    status: article.status,
-    view_count: article.view_count,
-    helpful_votes: article.helpful_votes,
-    total_votes: article.total_votes,
-    embedding: article.embedding,
-    source_ticket_id: article.source_ticket_id,
-    created_at: article.created_at,
-    updated_at: article.updated_at,
-    published_at: article.published_at,
-    author: {
-      id: article.author.id,
-      full_name: article.author.full_name,
-      email: article.author.email,
-      avatar_url: article.author.avatar_url
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:65',message:'Before serialization',data:{firstArticle:articles[0],firstArticleAuthorType:typeof articles[0]?.author,hasNullAuthors:articles.some(a=>a.author===null)},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A,E'})}).catch(()=>{});
+  // #endregion
+
+  const serializedArticles = articles.map((article, index) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:73',message:'Mapping article',data:{index,articleId:article.id,title:article.title,authorId:article.author_id,authorIsNull:article.author===null,authorIsUndefined:article.author===undefined,authorValue:article.author},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A,B,D,E'})}).catch(()=>{});
+    // #endregion
+    
+    return {
+      id: article.id,
+      title: article.title,
+      content: article.content,
+      summary: article.summary,
+      category: article.category,
+      subcategory: article.subcategory,
+      tags: article.tags,
+      author_id: article.author_id,
+      status: article.status,
+      view_count: article.view_count,
+      helpful_votes: article.helpful_votes,
+      total_votes: article.total_votes,
+      embedding: article.embedding,
+      source_ticket_id: article.source_ticket_id,
+      created_at: article.created_at,
+      updated_at: article.updated_at,
+      published_at: article.published_at,
+      author: article.author ? {
+        id: article.author.id,
+        full_name: article.author.full_name,
+        email: article.author.email,
+        avatar_url: article.author.avatar_url
+      } : {
+        id: article.author_id,
+        full_name: 'Unknown Author',
+        email: '',
+        avatar_url: null
+      }
     }
-  }))
+  })
 
   // Check if user can create articles
   const canCreate = isStaffOrAbove(user.role)
@@ -113,10 +132,10 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
         <div className="container mx-auto py-20 md:py-32 px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="space-y-4">
-              <h1 className="text-4xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
+              <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
                 Knowledge Base
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                 Everything you need to know about using the platform. Find answers, guides, and best practices.
               </p>
             </div>
@@ -150,7 +169,7 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
                 <EmptyMedia variant="icon" className="bg-muted/50 p-4 rounded-full mb-4">
                   <BookOpen className="h-8 w-8 text-muted-foreground" />
                 </EmptyMedia>
-                <EmptyTitle className="text-xl font-semibold">No Articles Yet</EmptyTitle>
+                <EmptyTitle className="text-lg font-semibold">No Articles Yet</EmptyTitle>
                 <EmptyDescription className="text-muted-foreground max-w-md mx-auto mt-2">
                   {canCreate
                     ? "Get started by creating your first knowledge base article."

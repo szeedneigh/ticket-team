@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, memo } from 'react'
+import { useEffect, useState, useCallback, memo } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,7 +14,6 @@ import {
   AlertCircle,
   TrendingUp,
   Calendar,
-  Filter,
   ExternalLink,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -58,11 +57,7 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
   const [stats, setStats] = useState<TicketStats | null>(null)
   const [recentTickets, setRecentTickets] = useState<RecentTicket[]>([])
 
-  useEffect(() => {
-    fetchActivityData()
-  }, [user.id])
-
-  const fetchActivityData = async () => {
+  const fetchActivityData = useCallback(async () => {
     try {
       setIsLoading(true)
       const supabase = createClient()
@@ -105,16 +100,28 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
         .order('created_at', { ascending: false })
         .limit(5)
 
-      setRecentTickets(ticketsData || [])
+      setRecentTickets(
+        (ticketsData || []).map((ticket) => ({
+          id: ticket.id,
+          ticket_number: ticket.ticket_number,
+          title: ticket.title,
+          status: ticket.status,
+          created_at: ticket.created_at,
+        }))
+      )
 
       // Fetch activity timeline from ticket_activities
-      const { data: activitiesData } = await supabase
+      const { data: activityData } = await supabase
         .from('ticket_activities')
         .select(`
           id,
+          ticket_id,
           action,
           created_at,
-          ticket:tickets(id, ticket_number, title)
+          tickets (
+            id,
+            title
+          )
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -126,21 +133,19 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
         id: string
         action: string
         created_at: string
-        ticket?: {
+        tickets?: {
           id: string
-          ticket_number?: string
           title?: string
         }[] | {
           id: string
-          ticket_number?: string
           title?: string
         } | null
       }
 
-      const timeline: ActivityItem[] = (activitiesData || []).map((activity) => {
+      const timeline: ActivityItem[] = (activityData || []).map((activity) => {
         const row = activity as unknown as ActivityRow
         // Handle both array and object ticket response from Supabase
-        const ticketData = Array.isArray(row.ticket) ? row.ticket[0] : row.ticket
+        const ticketData = Array.isArray(row.tickets) ? row.tickets[0] : row.tickets
         return {
           id: row.id,
           type: row.action.includes('created') ? 'ticket_created' : 'ticket_updated',
@@ -157,7 +162,11 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [user.id])
+
+  useEffect(() => {
+    fetchActivityData()
+  }, [fetchActivityData])
 
   const getActivityIcon = (type: ActivityItem['type']) => {
     switch (type) {

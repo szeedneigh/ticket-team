@@ -9,7 +9,6 @@ import {
   BookOpen, 
   MessageSquare, 
   FileQuestion, 
-  Video, 
   Lightbulb, 
   Search,
   ArrowRight,
@@ -41,8 +40,8 @@ export default function HelpCenterPage() {
           </div>
         </div>
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">How can we help you?</h1>
-          <p className="text-xl text-muted-foreground">
+          <h1 className="text-3xl font-bold">How can we help you?</h1>
+          <p className="text-base text-muted-foreground">
             Search our help center or browse by category
           </p>
         </div>

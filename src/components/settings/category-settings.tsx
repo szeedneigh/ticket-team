@@ -6,12 +6,14 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, Trash2, RefreshCw, Save, FolderTree } from 'lucide-react'
+import { Plus, Trash2, RefreshCw, FolderTree, Tag, Info } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import {
   Table,
   TableBody,
@@ -32,7 +34,6 @@ import Link from 'next/link'
 import {
   getCategories,
   createCategory,
-  updateCategory,
   deleteCategory,
 } from '@/app/actions/categories'
 
@@ -56,11 +57,7 @@ export function CategorySettings() {
   })
   const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    loadCategories()
-  }, [])
-
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     setIsLoading(true)
     try {
       const result = await getCategories()
@@ -84,7 +81,11 @@ export function CategorySettings() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [toast])
+
+  useEffect(() => {
+    loadCategories()
+  }, [loadCategories])
 
   const handleAddCategory = async () => {
     if (!newCategory.name.trim()) {
@@ -164,42 +165,6 @@ export function CategorySettings() {
     }
   }
 
-  const handleToggleActive = async (id: string) => {
-    const category = categories.find((c) => c.id === id)
-    if (!category) return
-
-    setIsLoading(true)
-    try {
-      const result = await updateCategory({
-        id,
-        is_active: !category.is_active,
-      })
-
-      if (result.success) {
-        toast({
-          title: 'Success',
-          description: `Category ${!category.is_active ? 'activated' : 'deactivated'}`,
-        })
-        // Reload categories to get updated list
-        await loadCategories()
-      } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to update category',
-          variant: 'destructive',
-        })
-      }
-    } catch (error) {
-      console.error('Error updating category:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to update category',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const getTypeLabel = (type: Category['type']) => {
     switch (type) {
@@ -214,18 +179,35 @@ export function CategorySettings() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-12">
         <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-lg font-medium leading-none">Categories</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Organize tickets and knowledge base articles.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={loadCategories} disabled={isLoading}>
+            <RefreshCw className="mr-2 h-3.5 w-3.5" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      <Separator className="my-6" />
+
       {/* Info Banner */}
-      <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
+      <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-4 mb-6">
         <div className="flex items-start gap-3">
-          <FolderTree className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+          <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
           <div className="flex-1">
             <p className="text-sm text-blue-900 dark:text-blue-100">
               For advanced category management with hierarchy and drag-and-drop, visit the{' '}
@@ -241,14 +223,18 @@ export function CategorySettings() {
       </div>
 
       {/* Add New Category */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Add New Category</h3>
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="cat-name">Name</Label>
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 text-primary/80">
+          <Plus className="h-4 w-4" />
+          <h4 className="font-semibold text-sm uppercase tracking-wider">Create Category</h4>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-12 items-end">
+          <div className="md:col-span-5 space-y-2">
+            <Label htmlFor="cat-name">Category Name</Label>
             <Input
               id="cat-name"
-              placeholder="Category name"
+              placeholder="e.g. Hardware Support"
               value={newCategory.name}
               onChange={(e) =>
                 setNewCategory({ ...newCategory, name: e.target.value })
@@ -261,8 +247,8 @@ export function CategorySettings() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="cat-type">Type</Label>
+          <div className="md:col-span-4 space-y-2">
+            <Label htmlFor="cat-type">Applies To</Label>
             <Select
               value={newCategory.type}
               onValueChange={(value: Category['type']) =>
@@ -280,63 +266,75 @@ export function CategorySettings() {
             </Select>
           </div>
 
-          <div className="flex items-end">
-            <Button onClick={handleAddCategory} className="w-full">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Category
-            </Button>
+          <div className="md:col-span-3">
+            <Button
+        onClick={handleAddCategory}
+        className="w-full shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all bg-gradient-to-r from-[#1f3463] to-[#2cafdd] hover:opacity-90 text-white border-0"
+      >
+        Add Category
+      </Button>
           </div>
         </div>
-      </div>
+      </section>
+
+      <Separator className="my-6" />
 
       {/* Categories List */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Existing Categories</h3>
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 text-primary/80">
+          <Tag className="h-4 w-4" />
+          <h4 className="font-semibold text-sm uppercase tracking-wider">Existing Categories</h4>
+        </div>
 
         {categories.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-8 text-center">
+          <div className="rounded-lg border border-dashed p-8 text-center bg-muted/20">
             <p className="text-muted-foreground">
               No categories yet. Add your first category above.
             </p>
           </div>
         ) : (
-          <div className="rounded-lg border">
+          <div className="rounded-lg border bg-card/50 overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Usage</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {categories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.name}</TableCell>
+                  <TableRow key={category.id} className="group">
+                    <TableCell className="font-medium text-foreground">{category.name}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{getTypeLabel(category.type)}</Badge>
+                      <Badge variant="outline" className="text-xs font-normal">
+                        {getTypeLabel(category.type)}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         {category.ticket_count !== undefined && category.ticket_count > 0 && (
-                          <Badge variant="secondary">
+                          <Badge variant="secondary" className="font-normal text-xs">
                             {category.ticket_count} tickets
                           </Badge>
                         )}
                         {category.article_count !== undefined && category.article_count > 0 && (
-                          <Badge variant="secondary">
+                          <Badge variant="secondary" className="font-normal text-xs">
                             {category.article_count} articles
                           </Badge>
                         )}
                         {!category.ticket_count && !category.article_count && (
-                          <span className="text-sm text-muted-foreground">Unused</span>
+                          <span className="text-sm text-muted-foreground text-xs">Unused</span>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={category.is_active ? 'default' : 'secondary'}>
+                      <Badge 
+                        variant={category.is_active ? 'default' : 'secondary'}
+                        className={category.is_active ? "bg-green-500/15 text-green-700 dark:text-green-400 hover:bg-green-500/25 border-green-500/20 shadow-none" : ""}
+                      >
                         {category.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
@@ -345,8 +343,9 @@ export function CategorySettings() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteCategory(category.id)}
+                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -355,15 +354,7 @@ export function CategorySettings() {
             </Table>
           </div>
         )}
-      </div>
-
-      {/* Refresh Button - Categories are saved immediately on each action */}
-      <div className="flex justify-end gap-2 pt-4 border-t">
-        <Button variant="outline" onClick={loadCategories} disabled={isLoading}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
+      </section>
     </div>
   )
 }

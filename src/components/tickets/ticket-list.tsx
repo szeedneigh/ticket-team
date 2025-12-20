@@ -27,7 +27,6 @@ export function TicketList({
   tickets,
   currentPage,
   totalPages,
-  totalCount,
   className,
 }: TicketListProps) {
   const router = useRouter()

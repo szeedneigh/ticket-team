@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { TicketFilters } from '@/components/tickets/ticket-filters'
 import { TicketList } from '@/components/tickets/ticket-list'
 import { StatsCard } from '@/components/dashboard/stats-card'
-import type { TicketFilters as TTicketFilters } from '@/lib/types/tickets'
 import type { TicketWithUser } from '@/lib/types/tickets'
 
 interface QueuePageClientProps {
@@ -72,7 +71,7 @@ export function QueuePageClient({
             {/* Header Section */}
             <motion.div variants={itemVariants} className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-8">
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
+                <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
                   Staff Queue
                 </h1>
                 <p className="text-lg text-muted-foreground flex items-center gap-2 max-w-2xl">
@@ -211,7 +210,7 @@ export function QueuePageClient({
                   <>
                      <div className="mb-4 flex items-center justify-between px-2">
                       <p className="text-sm text-muted-foreground">
-                        Showing {pagination.currentPage * 10 - 9}-{Math.min(pagination.currentPage * 10, pagination.totalCount)} of {pagination.totalCount} unassigned tickets
+                        Showing {((pagination.currentPage - 1) * tickets.length) + 1}-{Math.min(pagination.currentPage * tickets.length, pagination.totalCount)} of {pagination.totalCount} unassigned tickets
                       </p>
                     </div>
                     <TicketList
@@ -227,7 +226,7 @@ export function QueuePageClient({
                       <div className="bg-primary/5 p-4 rounded-full mb-6 ring-8 ring-primary/5">
                         <Users className="h-12 w-12 text-primary/60" />
                       </div>
-                      <h3 className="text-xl font-bold mb-2">Queue Cleared!</h3>
+                      <h3 className="text-lg font-bold mb-2">Queue Cleared!</h3>
                       <p className="text-muted-foreground max-w-sm">
                         There are no unassigned tickets matching your criteria. Great job keeping the queue moving.
                       </p>

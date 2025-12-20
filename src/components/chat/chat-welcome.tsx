@@ -13,7 +13,7 @@
 
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Bot, Mail, Printer, Wifi, Lock, MessageSquare } from 'lucide-react'
+import { Mail, Printer, Wifi, Lock, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 // ============================================================================
@@ -101,7 +101,7 @@ export function ChatWelcome({
 
         {/* Welcome Text */}
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-[#1f3463] to-[#2cafdd] bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-[#1f3463] to-[#2cafdd] bg-clip-text text-transparent">
             Hi{userName ? ` ${userName}` : ''}! 👋
           </h1>
           <p className="text-lg text-muted-foreground">

@@ -7,15 +7,15 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type {
-  Ticket,
+  Ticket as _Ticket,
   TicketWithUser,
   TicketFilters,
-  TicketComment,
+  TicketComment as _TicketComment,
   TicketCommentWithUser,
-  TicketActivity,
+  TicketActivity as _TicketActivity,
   TicketActivityWithUser,
   PagedTicketListResponse,
-  TimePeriod,
+  TimePeriod as _TimePeriod,
 } from '@/lib/types/tickets'
 import type { TicketStatus, TicketPriority } from '@/lib/types/database'
 import { PAGINATION } from '@/lib/constants'

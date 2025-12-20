@@ -829,6 +829,158 @@ export async function getStaffPerformanceMetrics(
 }
 
 /**
+ * Get individual staff member's own performance metrics
+ * Staff can only view their own performance
+ *
+ * @param userId - User ID of the staff member
+ * @param dateRange - Optional date range filter
+ * @returns Individual performance data
+ */
+export async function getMyPerformanceMetrics(
+  userId: string,
+  dateRange?: DateRange
+): Promise<StaffPerformance | null> {
+  const supabase = await createClient()
+
+  // Verify user is staff (staff, admin, or super_admin)
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('id, full_name, email, role')
+    .eq('id', userId)
+    .single()
+
+  if (userError || !userData) {
+    throw new Error('User not found')
+  }
+
+  if (!['staff', 'admin', 'super_admin'].includes(userData.role)) {
+    throw new Error('Unauthorized: Staff access required')
+  }
+
+  const range = dateRange || getDefaultDateRange()
+
+  try {
+    // Get tickets assigned to this user
+    const { data: tickets, error: ticketsError } = await supabase
+      .from('tickets')
+      .select('id, assigned_to, status, created_at, resolved_at')
+      .eq('assigned_to', userId)
+      .gte('created_at', range.start.toISOString())
+      .lte('created_at', range.end.toISOString())
+
+    if (ticketsError) {
+      throw new Error(`Failed to fetch tickets: ${ticketsError.message}`)
+    }
+
+    const staffTickets = tickets || []
+    const resolvedTickets = staffTickets.filter(
+      (t) => t.status === 'resolved' || t.status === 'closed'
+    )
+
+    // Calculate avg resolution time
+    let avgResolutionTimeHours = 0
+    if (resolvedTickets.length > 0) {
+      const totalTime = resolvedTickets.reduce((sum, ticket) => {
+        if (!ticket.resolved_at) return sum
+        const created = new Date(ticket.created_at).getTime()
+        const resolved = new Date(ticket.resolved_at).getTime()
+        return sum + (resolved - created) / (1000 * 60 * 60)
+      }, 0)
+      avgResolutionTimeHours = totalTime / resolvedTickets.length
+    }
+
+    // Calculate first response time
+    let avgResponseTimeHours = 0
+    const ticketIds = staffTickets.map((t) => t.id)
+
+    if (ticketIds.length > 0) {
+      const { data: comments, error: commentsError } = await supabase
+        .from('ticket_comments')
+        .select('ticket_id, created_at')
+        .eq('user_id', userId)
+        .in('ticket_id', ticketIds)
+        .order('created_at', { ascending: true })
+
+      if (!commentsError && comments) {
+        // Find first comment for each ticket
+        const firstCommentMap = new Map<string, Date>()
+        for (const comment of comments) {
+          if (!firstCommentMap.has(comment.ticket_id)) {
+            firstCommentMap.set(comment.ticket_id, new Date(comment.created_at))
+          }
+        }
+
+        // Calculate response times
+        const responseTimes: number[] = []
+        for (const [ticketId, commentTime] of firstCommentMap) {
+          const ticket = staffTickets.find((t) => t.id === ticketId)
+          if (ticket) {
+            const ticketCreated = new Date(ticket.created_at).getTime()
+            const responseTime = (commentTime.getTime() - ticketCreated) / (1000 * 60 * 60)
+            responseTimes.push(responseTime)
+          }
+        }
+
+        if (responseTimes.length > 0) {
+          avgResponseTimeHours = responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length
+        }
+      }
+    }
+
+    // Calculate satisfaction score
+    let satisfactionScore = 0
+    if (ticketIds.length > 0) {
+      const { data: feedback, error: feedbackError } = await supabase
+        .from('ticket_feedback')
+        .select('rating')
+        .in('ticket_id', ticketIds)
+
+      if (!feedbackError && feedback && feedback.length > 0) {
+        const ratings = feedback.map((f) => f.rating).filter((r): r is number => r !== null)
+        if (ratings.length > 0) {
+          satisfactionScore = Math.round(
+            (ratings.reduce((sum, r) => sum + r, 0) / ratings.length) * 10
+          ) / 10
+        }
+      }
+    }
+
+    // Calculate overdue tickets
+    const now = new Date().getTime()
+    const overdueTickets = staffTickets.filter((ticket) => {
+      if (ticket.status === 'resolved' || ticket.status === 'closed') return false
+      const created = new Date(ticket.created_at).getTime()
+      const ageInHours = (now - created) / (1000 * 60 * 60)
+      const threshold = 24 // Default threshold
+      return ageInHours > threshold
+    }).length
+
+    return {
+      userId: userData.id,
+      userName: userData.full_name || 'Unknown',
+      email: userData.email,
+      ticketsResolved: resolvedTickets.length,
+      ticketsAssigned: staffTickets.length,
+      avgResolutionTime: formatDuration(avgResolutionTimeHours),
+      avgResolutionTimeHours,
+      avgResponseTime: avgResponseTimeHours > 0 ? formatDuration(avgResponseTimeHours) : '-',
+      avgResponseTimeHours,
+      satisfactionScore,
+      activeTickets: staffTickets.filter((t) =>
+        ['open', 'in_progress'].includes(t.status)
+      ).length,
+      overdueTickets,
+    }
+  } catch (error) {
+    logger.error('Error fetching personal performance', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId,
+    })
+    throw error
+  }
+}
+
+/**
  * Get peak hours and days analysis
  *
  * @param userId - User ID making the request

@@ -26,7 +26,6 @@ import {
   formatTicketDescription,
   suggestPriority,
   type TicketPreparation,
-  type StaffSuggestion,
 } from '@/lib/chat/escalation-utils'
 import type {
   ChatSessionWithMessages,

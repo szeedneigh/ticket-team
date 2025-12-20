@@ -28,13 +28,19 @@ export async function middleware(request: NextRequest) {
 
   // Content Security Policy (CSP)
   // Note: This is a strict policy. Adjust as needed for your application.
+  // In development, we relax the policy for Turbopack HMR and server actions
+  const isDev = process.env.NODE_ENV === 'development'
+
   const cspHeader = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.sentry-cdn.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' blob: data: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co https://*.sentry.io wss://*.supabase.co",
+    // Allow connections to self (server actions), Supabase, Sentry, and localhost in dev
+    isDev
+      ? "connect-src 'self' http://localhost:* ws://localhost:* https://*.supabase.co https://*.sentry.io wss://*.supabase.co"
+      : "connect-src 'self' https://*.supabase.co https://*.sentry.io wss://*.supabase.co",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

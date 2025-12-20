@@ -197,12 +197,6 @@ export function usePresence({
    * Handle page unload (set offline before leaving)
    */
   const handleBeforeUnload = () => {
-    // Use sendBeacon for reliable status update before page closes
-    const blob = new Blob(
-      [JSON.stringify({ is_online: false, last_seen: new Date().toISOString() })],
-      { type: 'application/json' }
-    )
-
     // sendBeacon could be used for reliable status update
     // Note: This would require an API endpoint to handle the beacon
     // For now, we'll rely on the cleanup in useEffect

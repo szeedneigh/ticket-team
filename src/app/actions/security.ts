@@ -172,7 +172,7 @@ export async function revokeSession(sessionId: string): Promise<ActionResult> {
     const supabase = await createClient()
 
     // Call database function to revoke
-    const { data, error } = await supabase.rpc('revoke_user_session', {
+    const { error } = await supabase.rpc('revoke_user_session', {
       p_session_id: sessionId,
       p_revoked_by: user.id,
       p_reason: 'User revoked via security settings'

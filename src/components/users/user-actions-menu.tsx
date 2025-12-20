@@ -8,7 +8,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreVertical, Edit, UserX, UserCheck, Shield, Trash2 } from 'lucide-react'
+import { MoreVertical, Edit, UserX, UserCheck, Shield } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,

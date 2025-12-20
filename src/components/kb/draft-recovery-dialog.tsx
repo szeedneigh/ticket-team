@@ -39,14 +39,12 @@ interface DraftRecoveryDialogProps {
   storageKey: string
   onRecover: (data: DraftData) => void
   onDiscard: () => void
-  currentData?: Partial<DraftData>
 }
 
 export function DraftRecoveryDialog({
   storageKey,
   onRecover,
   onDiscard,
-  currentData
 }: DraftRecoveryDialogProps) {
   const [open, setOpen] = useState(false)
   const [draftData, setDraftData] = useState<DraftData | null>(null)

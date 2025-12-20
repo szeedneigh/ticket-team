@@ -42,7 +42,7 @@ export default function FAQPage() {
             <FileQuestion className="h-6 w-6 text-green-600 dark:text-green-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">Frequently Asked Questions</h1>
+            <h1 className="text-2xl font-bold">Frequently Asked Questions</h1>
             <p className="text-muted-foreground">
               Find answers to common questions about Ticket Team
             </p>

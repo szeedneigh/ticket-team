@@ -14,7 +14,6 @@ import type { ChartDataPoint } from '@/lib/types/dashboard'
 export async function getTicketVolumeTrend(userId: string, isStaff: boolean): Promise<ChartDataPoint[]> {
     const supabase = await createClient()
     const days = 7
-    const endDate = new Date()
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days + 1)
     startDate.setHours(0, 0, 0, 0)

@@ -250,7 +250,6 @@ export function KBEditorForm({ article, existingTags = [], mode }: KBEditorFormP
           storageKey={storageKey}
           onRecover={handleRecoverDraft}
           onDiscard={clearSaved}
-          currentData={formData}
         />
       )}
 

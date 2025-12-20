@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useSpring } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, Shield, Lock, Eye, FileText, Database, Menu, X } from 'lucide-react'
+import { ArrowLeft, Shield, Lock, Eye, FileText, Database } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
 
@@ -16,6 +16,10 @@ const sections = [
 
 export function PrivacyContent() {
   const [activeSection, setActiveSection] = useState('introduction')
+
+  // Call hooks at top level of component
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 })
 
   // Handle scroll spy
   useEffect(() => {
@@ -60,7 +64,7 @@ export function PrivacyContent() {
       {/* Scroll Progress Bar */}
       <motion.div 
         className="fixed top-0 left-0 right-0 h-1 bg-primary/20 z-[60]"
-        style={{ scaleX: useSpring(useScroll().scrollYProgress, { stiffness: 100, damping: 30 }) }}
+        style={{ scaleX }}
       />
       
       {/* Back Button - Fixed on Desktop */}

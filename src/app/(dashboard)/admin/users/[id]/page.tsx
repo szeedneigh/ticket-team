@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Activity, RefreshCw, Edit2, Check, X } from 'lucide-react'
+import { ArrowLeft, Activity, RefreshCw, Edit2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,

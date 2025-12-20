@@ -6,13 +6,15 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Save, RefreshCw, Send } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { Save, RefreshCw, Send, Mail, Bell, FileText } from 'lucide-react'
 import { getSetting, updateSetting } from '@/lib/settings/actions'
 
 interface EmailConfig {
@@ -51,11 +53,7 @@ export function EmailSettings() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
-  useEffect(() => {
-    loadConfig()
-  }, [])
-
-  const loadConfig = async () => {
+  const loadConfig = useCallback(async () => {
     setIsLoading(true)
     try {
       const saved = await getSetting<EmailConfig>('email_notifications_config')
@@ -72,7 +70,11 @@ export function EmailSettings() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [toast])
+
+  useEffect(() => {
+    loadConfig()
+  }, [loadConfig])
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -116,114 +118,168 @@ export function EmailSettings() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-12">
         <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Email Notifications */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Email Notifications</h3>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="notifications-enabled">Enabled</Label>
-            <Switch
-              id="notifications-enabled"
-              checked={config.notifications_enabled}
-              onCheckedChange={(checked) =>
-                setConfig({ ...config, notifications_enabled: checked })
-              }
-            />
-          </div>
-        </div>
-
-        <div className="space-y-3 rounded-lg border p-4">
-          <p className="text-sm text-muted-foreground mb-2">
-            Configure which events trigger email notifications
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-lg font-medium leading-none">Email Configuration</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage outgoing email settings and notification triggers.
           </p>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="notify-new-ticket">New Ticket Created</Label>
-            <Switch
-              id="notify-new-ticket"
-              checked={config.notify_on_new_ticket}
-              onCheckedChange={(checked) =>
-                setConfig({ ...config, notify_on_new_ticket: checked })
-              }
-              disabled={!config.notifications_enabled}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="notify-assignment">Ticket Assigned</Label>
-            <Switch
-              id="notify-assignment"
-              checked={config.notify_on_assignment}
-              onCheckedChange={(checked) =>
-                setConfig({ ...config, notify_on_assignment: checked })
-              }
-              disabled={!config.notifications_enabled}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="notify-status">Status Changed</Label>
-            <Switch
-              id="notify-status"
-              checked={config.notify_on_status_change}
-              onCheckedChange={(checked) =>
-                setConfig({ ...config, notify_on_status_change: checked })
-              }
-              disabled={!config.notifications_enabled}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="notify-comment">New Comment Added</Label>
-            <Switch
-              id="notify-comment"
-              checked={config.notify_on_new_comment}
-              onCheckedChange={(checked) =>
-                setConfig({ ...config, notify_on_new_comment: checked })
-              }
-              disabled={!config.notifications_enabled}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="notify-resolution">Ticket Resolved</Label>
-            <Switch
-              id="notify-resolution"
-              checked={config.notify_on_resolution}
-              onCheckedChange={(checked) =>
-                setConfig({ ...config, notify_on_resolution: checked })
-              }
-              disabled={!config.notifications_enabled}
-            />
-          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleTestEmail} disabled={isSaving} className="hover:bg-muted/50 transition-colors">
+            <Send className="mr-2 h-3.5 w-3.5" />
+            Test Email
+          </Button>
+          <Button 
+          size="sm" 
+          onClick={handleSave} 
+          disabled={isSaving}
+          className="shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all bg-gradient-to-r from-[#1f3463] to-[#2cafdd] hover:opacity-90 text-white border-0"
+        >
+          <Save className="mr-2 h-3.5 w-3.5" />
+          {isSaving ? 'Saving...' : 'Save Changes'}
+        </Button>
         </div>
       </div>
 
-      {/* Email Configuration */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Email Configuration</h3>
+      <Separator className="my-6" />
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="from-name">From Name</Label>
+      {/* Global Notifications Switch */}
+      <div className="flex items-center justify-between rounded-lg border bg-card p-4">
+        <div className="flex items-center gap-4">
+          <div className="p-2 bg-primary/10 rounded-full">
+            <Bell className="h-5 w-5 text-primary" />
+          </div>
+          <div className="space-y-0.5">
+            <Label htmlFor="notifications-enabled" className="text-base">System Notifications</Label>
+            <p className="text-sm text-muted-foreground">
+              Enable or disable all email notifications globally.
+            </p>
+          </div>
+        </div>
+        <Switch
+          id="notifications-enabled"
+          checked={config.notifications_enabled}
+          onCheckedChange={(checked) =>
+            setConfig({ ...config, notifications_enabled: checked })
+          }
+        />
+      </div>
+
+      {/* Email Notifications */}
+      <section className="space-y-4 pt-4">
+        <div className="flex items-center gap-2 text-primary/80">
+          <Mail className="h-4 w-4" />
+          <h4 className="font-semibold text-sm uppercase tracking-wider">Notification Events</h4>
+        </div>
+        
+        <Card className="bg-card/50 border-input/50 shadow-none">
+          <CardContent className="p-0">
+            <div className="divide-y divide-border/50">
+              <div className="flex items-center justify-between p-4 bg-muted/20">
+                <Label htmlFor="notify-new-ticket" className="font-normal cursor-pointer flex-1">
+                  New Ticket Created
+                </Label>
+                <Switch
+                  id="notify-new-ticket"
+                  checked={config.notify_on_new_ticket}
+                  onCheckedChange={(checked) =>
+                    setConfig({ ...config, notify_on_new_ticket: checked })
+                  }
+                  disabled={!config.notifications_enabled}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-muted/20">
+                <Label htmlFor="notify-assignment" className="font-normal cursor-pointer flex-1">
+                  Ticket Assigned
+                </Label>
+                <Switch
+                  id="notify-assignment"
+                  checked={config.notify_on_assignment}
+                  onCheckedChange={(checked) =>
+                    setConfig({ ...config, notify_on_assignment: checked })
+                  }
+                  disabled={!config.notifications_enabled}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-muted/20">
+                <Label htmlFor="notify-status" className="font-normal cursor-pointer flex-1">
+                  Status Changed
+                </Label>
+                <Switch
+                  id="notify-status"
+                  checked={config.notify_on_status_change}
+                  onCheckedChange={(checked) =>
+                    setConfig({ ...config, notify_on_status_change: checked })
+                  }
+                  disabled={!config.notifications_enabled}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-muted/20">
+                <Label htmlFor="notify-comment" className="font-normal cursor-pointer flex-1">
+                  New Comment Added
+                </Label>
+                <Switch
+                  id="notify-comment"
+                  checked={config.notify_on_new_comment}
+                  onCheckedChange={(checked) =>
+                    setConfig({ ...config, notify_on_new_comment: checked })
+                  }
+                  disabled={!config.notifications_enabled}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-muted/20">
+                <Label htmlFor="notify-resolution" className="font-normal cursor-pointer flex-1">
+                  Ticket Resolved
+                </Label>
+                <Switch
+                  id="notify-resolution"
+                  checked={config.notify_on_resolution}
+                  onCheckedChange={(checked) =>
+                    setConfig({ ...config, notify_on_resolution: checked })
+                  }
+                  disabled={!config.notifications_enabled}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <Separator className="my-6" />
+
+      {/* Email Configuration */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 text-primary/80">
+          <div className="h-4 w-4 rounded-full border-2 border-primary/60" />
+          <h4 className="font-semibold text-sm uppercase tracking-wider">Sender Identity</h4>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-3">
+            <Label htmlFor="from-name">Sender Name</Label>
             <Input
               id="from-name"
-              placeholder="LVCC IT Support"
+              placeholder="e.g. LVCC IT Support"
               value={config.from_name}
               onChange={(e) => setConfig({ ...config, from_name: e.target.value })}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="from-email">From Email</Label>
+          <div className="space-y-3">
+            <Label htmlFor="from-email">Sender Email</Label>
             <Input
               id="from-email"
               type="email"
@@ -233,8 +289,8 @@ export function EmailSettings() {
             />
           </div>
 
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="reply-to">Reply-To Email</Label>
+          <div className="space-y-3 md:col-span-2">
+            <Label htmlFor="reply-to">Reply-To Address</Label>
             <Input
               id="reply-to"
               type="email"
@@ -244,21 +300,27 @@ export function EmailSettings() {
             />
           </div>
         </div>
-      </div>
+      </section>
+
+      <Separator className="my-6" />
 
       {/* Email Templates */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Email Subject Templates</h3>
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 text-primary/80">
+          <FileText className="h-4 w-4" />
+          <h4 className="font-semibold text-sm uppercase tracking-wider">Subject Templates</h4>
+        </div>
+        
         <p className="text-sm text-muted-foreground">
-          Use {'{ticket_id}'} and {'{ticket_title}'} as placeholders
+          Customize email subject lines. Available variables: <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{'{{ticket_id}}'}</code>, <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{'{{ticket_title}}'}</code>
         </p>
 
-        <div className="space-y-4">
+        <div className="grid gap-4">
           <div className="space-y-2">
-            <Label htmlFor="subject-created">Ticket Created</Label>
+            <Label htmlFor="subject-created">New Ticket Subject</Label>
             <Input
               id="subject-created"
-              placeholder="New Support Ticket: {{ticket_id}}"
+              className="font-mono text-sm"
               value={config.ticket_created_subject}
               onChange={(e) =>
                 setConfig({ ...config, ticket_created_subject: e.target.value })
@@ -267,10 +329,10 @@ export function EmailSettings() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subject-assigned">Ticket Assigned</Label>
+            <Label htmlFor="subject-assigned">Ticket Assigned Subject</Label>
             <Input
               id="subject-assigned"
-              placeholder="Ticket Assigned: {{ticket_id}}"
+              className="font-mono text-sm"
               value={config.ticket_assigned_subject}
               onChange={(e) =>
                 setConfig({ ...config, ticket_assigned_subject: e.target.value })
@@ -279,10 +341,10 @@ export function EmailSettings() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subject-resolved">Ticket Resolved</Label>
+            <Label htmlFor="subject-resolved">Ticket Resolved Subject</Label>
             <Input
               id="subject-resolved"
-              placeholder="Ticket Resolved: {{ticket_id}}"
+              className="font-mono text-sm"
               value={config.ticket_resolved_subject}
               onChange={(e) =>
                 setConfig({ ...config, ticket_resolved_subject: e.target.value })
@@ -290,23 +352,7 @@ export function EmailSettings() {
             />
           </div>
         </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex justify-end gap-2 pt-4 border-t">
-        <Button variant="outline" onClick={handleTestEmail} disabled={isSaving}>
-          <Send className="mr-2 h-4 w-4" />
-          Send Test Email
-        </Button>
-        <Button variant="outline" onClick={loadConfig} disabled={isSaving}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Reset
-        </Button>
-        <Button onClick={handleSave} disabled={isSaving}>
-          <Save className="mr-2 h-4 w-4" />
-          {isSaving ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </div>
+      </section>
     </div>
   )
 }

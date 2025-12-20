@@ -5,7 +5,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
-import type { User } from '@/lib/types'
+import type { User as _User } from '@/lib/types'
 
 // ============================================================================
 // Activity Timeline Types
@@ -81,8 +81,8 @@ export async function getUserActivityTimeline(
 
   const activities: ActivityTimelineItem[] = []
 
-  // Build date filter
-  const dateFilter = ''
+  // Build date filter (unused but kept for future use)
+  const _dateFilter = ''
   if (dateFrom || dateTo) {
     // We'll apply date filtering in memory for simplicity
   }

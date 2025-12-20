@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   LayoutDashboard,
@@ -15,7 +15,8 @@ import {
   TrendingUp,
   Settings2,
   X,
-  LogOut
+  LogOut,
+  Award
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { User } from '@/lib/types/users'
@@ -72,6 +73,12 @@ const navItems: NavItem[] = [
     roles: ['staff', 'admin', 'super_admin']
   },
   {
+    title: 'My Performance',
+    href: '/performance',
+    icon: Award,
+    roles: ['staff', 'admin', 'super_admin']
+  },
+  {
     title: 'User Management',
     href: '/admin/users',
     icon: Users,
@@ -84,7 +91,7 @@ const navItems: NavItem[] = [
     roles: ['admin', 'super_admin']
   },
   {
-    title: 'Settings',
+    title: 'System Settings',
     href: '/admin/settings',
     icon: Settings2,
     roles: ['super_admin']
@@ -110,7 +117,6 @@ function useIsMobile() {
 
 export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: SidebarProps) {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const [pendingHref, setPendingHref] = useState<string | null>(null)
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const isMobile = useIsMobile()
@@ -134,7 +140,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
     }
     // Clear pending state when navigation completes
     setPendingHref(null)
-  }, [pathname, searchParams, isMobile, isMobileOpen, setIsMobileOpen])
+  }, [pathname, isMobile, isMobileOpen, setIsMobileOpen])
 
   const filteredNavItems = navItems.filter(item =>
     item.roles.includes(user.role)
@@ -219,10 +225,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto min-h-0 scrollbar-none">
-        {filteredNavItems.map((item, index) => {
-            // Handle admin tab-based routing (e.g., /admin/users -> /admin?tab=users)
-            const isAdminTabRoute = item.href.startsWith('/admin/') && item.href !== '/admin'
-            
+        {filteredNavItems.map((item) => {
             // Check if this route matches the current path
             const isExactMatch = pathname === item.href
             const isChildMatch = pathname.startsWith(item.href + '/')
@@ -235,9 +238,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
               (pathname === other.href || pathname.startsWith(other.href + '/'))
             )
             
-            const isActuallyActive = isAdminTabRoute
-              ? pathname === '/admin' && searchParams.get('tab') === item.href.split('/admin/')[1]
-              : isExactMatch || (isChildMatch && !hasMoreSpecificMatch)
+            const isActuallyActive = isExactMatch || (isChildMatch && !hasMoreSpecificMatch)
             // Optimistic highlighting: show active state immediately on click
             const isActive = pendingHref === item.href || isActuallyActive
             

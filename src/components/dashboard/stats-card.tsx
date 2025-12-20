@@ -195,7 +195,7 @@ export function StatsCard({
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-2">{title}</p>
             <div className="flex items-baseline gap-2">
-              <p className={`text-3xl font-bold tracking-tight ${styles.valueText}`}>{displayValue}</p>
+              <p className={`text-2xl font-bold tracking-tight ${styles.valueText}`}>{displayValue}</p>
             </div>
             
             {description && !trend && (

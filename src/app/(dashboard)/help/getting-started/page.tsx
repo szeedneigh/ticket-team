@@ -5,7 +5,7 @@
  */
 
 import Link from 'next/link'
-import { Lightbulb, ArrowLeft, Check, MessageSquare, BookOpen, Bell, User } from 'lucide-react'
+import { Lightbulb, ArrowLeft, Check, MessageSquare, BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -37,7 +37,7 @@ export default function GettingStartedPage() {
             <Lightbulb className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">Getting Started with Ticket Team</h1>
+            <h1 className="text-2xl font-bold">Getting Started with Ticket Team</h1>
             <p className="text-muted-foreground">
               Everything you need to know to get started
             </p>
