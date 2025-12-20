@@ -13,7 +13,7 @@
 
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Bot, Mail, Printer, Wifi, Lock, MessageSquare } from 'lucide-react'
+import { Mail, Printer, Wifi, Lock, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 // ============================================================================
