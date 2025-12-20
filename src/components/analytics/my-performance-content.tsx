@@ -18,13 +18,10 @@ import {
   Award,
   Zap,
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   BarChart,
   Bar,
-  LineChart,
-  Line,
   PieChart,
   Pie,
   Cell,
@@ -135,7 +132,21 @@ export function MyPerformanceContent({
   ]
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ 
+    active, 
+    payload, 
+    label 
+  }: { 
+    active?: boolean
+    payload?: Array<{ 
+      name?: string
+      value?: number
+      fill?: string
+      color?: string
+      payload?: { value: number; name?: string }
+    }>
+    label?: string
+  }) => {
     if (!active || !payload || !payload[0]) return null
 
     return (
@@ -318,9 +329,9 @@ export function MyPerformanceContent({
                   <Legend 
                     verticalAlign="bottom" 
                     height={36}
-                    formatter={(value, entry: any) => (
+                    formatter={(value, entry: { payload?: { value?: number } }) => (
                       <span className="text-sm">
-                        {value}: <span className="font-semibold">{entry.payload.value}</span>
+                        {value}: <span className="font-semibold">{entry.payload?.value}</span>
                       </span>
                     )}
                   />
@@ -502,7 +513,7 @@ export function MyPerformanceContent({
             {resolutionRate >= 80 && (
               <div className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
                 <span className="mt-0.5">✅</span>
-                <p className="font-medium">Excellent resolution rate! You're closing tickets efficiently</p>
+                <p className="font-medium">Excellent resolution rate! You&apos;re closing tickets efficiently</p>
               </div>
             )}
             {performance.satisfactionScore >= 4.5 && (
@@ -514,7 +525,7 @@ export function MyPerformanceContent({
             {performance.avgResponseTimeHours <= 2 && performance.avgResponseTimeHours > 0 && (
               <div className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
                 <span className="mt-0.5">⚡</span>
-                <p className="font-medium">Great response time! You're providing quick first responses</p>
+                <p className="font-medium">Great response time! You&apos;re providing quick first responses</p>
               </div>
             )}
             {performance.overdueTickets === 0 && performance.ticketsAssigned > 0 && (
