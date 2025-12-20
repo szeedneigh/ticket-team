@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { History, Download, RefreshCw, TrendingUp, Users, Calendar } from 'lucide-react'
+import { Download, RefreshCw, TrendingUp, Users, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
@@ -24,7 +23,6 @@ import type {
 } from '@/lib/types/audit'
 
 export function AuditLogView() {
-  const router = useRouter()
   const { toast } = useToast()
 
   const [logs, setLogs] = useState<AuditLogEntry[]>([])
