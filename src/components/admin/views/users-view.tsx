@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { Plus, Download, RefreshCw, Users, UserCheck, Briefcase, Building2, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -23,7 +22,6 @@ import type { User } from '@/lib/types/users'
 import type { UserRole } from '@/lib/types/database'
 
 export function UsersView() {
-  const router = useRouter()
   const { toast } = useToast()
   
   const [users, setUsers] = useState<User[]>([])
@@ -289,7 +287,7 @@ export function UsersView() {
       opacity: 1,
       y: 0,
       transition: {
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 100,
         damping: 15
       }
