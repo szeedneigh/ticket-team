@@ -189,7 +189,10 @@ export function CategoryForm({ category, categories, onSubmit, onCancel }: Categ
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button type="submit">
+            <Button 
+              type="submit"
+              className="shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all bg-gradient-to-r from-[#1f3463] to-[#2cafdd] hover:opacity-90 text-white border-0"
+            >
               {category ? 'Update Category' : 'Create Category'}
             </Button>
           </DialogFooter>
