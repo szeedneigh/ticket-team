@@ -161,31 +161,13 @@ export function MyPerformanceContent({
 
   return (
     <motion.div
-      className="space-y-6"
+      className="space-y-4 px-6"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      {/* Header */}
-      <motion.div variants={itemVariants} className="flex items-start justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-white shadow-lg">
-            <Award className="h-8 w-8" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">My Performance Dashboard</h1>
-            <p className="text-muted-foreground">
-              Track your personal metrics and achievements
-              {dateRange && (
-                <span className="ml-2 text-sm">
-                  ({new Date(dateRange.start).toLocaleDateString()} - {new Date(dateRange.end).toLocaleDateString()})
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-        
-        {/* Performance Badge */}
+      {/* Overall Performance Badge */}
+      <motion.div variants={itemVariants} className="flex justify-end mb-2">
         <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-white/80 to-white/60 dark:from-white/10 dark:to-white/5 backdrop-blur-xl border border-white/30 dark:border-white/10 px-6 py-4 shadow-lg">
           <span className="text-2xl">{performanceLevel.icon}</span>
           <div>
@@ -198,7 +180,7 @@ export function MyPerformanceContent({
       {/* KPI Cards */}
       <motion.div variants={itemVariants} className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Tickets Resolved */}
-        <Card className="border-white/30 dark:border-white/10 bg-gradient-to-br from-emerald-50/80 to-white/80 dark:from-emerald-950/20 dark:to-white/5 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="border-white/30 dark:border-white/10 bg-gradient-to-br from-emerald-50/80 to-white/80 dark:from-emerald-950/20 dark:to-white/5 backdrop-blur-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-muted-foreground">Tickets Resolved</p>
@@ -224,7 +206,7 @@ export function MyPerformanceContent({
         </Card>
 
         {/* Tickets Assigned */}
-        <Card className="border-white/30 dark:border-white/10 bg-gradient-to-br from-blue-50/80 to-white/80 dark:from-blue-950/20 dark:to-white/5 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="border-white/30 dark:border-white/10 bg-gradient-to-br from-blue-50/80 to-white/80 dark:from-blue-950/20 dark:to-white/5 backdrop-blur-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-muted-foreground">Tickets Assigned</p>
@@ -240,7 +222,7 @@ export function MyPerformanceContent({
         </Card>
 
         {/* Avg Resolution Time */}
-        <Card className="border-white/30 dark:border-white/10 bg-gradient-to-br from-purple-50/80 to-white/80 dark:from-purple-950/20 dark:to-white/5 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="border-white/30 dark:border-white/10 bg-gradient-to-br from-purple-50/80 to-white/80 dark:from-purple-950/20 dark:to-white/5 backdrop-blur-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-muted-foreground">Avg Resolution</p>
@@ -258,7 +240,7 @@ export function MyPerformanceContent({
         </Card>
 
         {/* Satisfaction Score */}
-        <Card className="border-white/30 dark:border-white/10 bg-gradient-to-br from-amber-50/80 to-white/80 dark:from-amber-950/20 dark:to-white/5 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="border-white/30 dark:border-white/10 bg-gradient-to-br from-amber-50/80 to-white/80 dark:from-amber-950/20 dark:to-white/5 backdrop-blur-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-muted-foreground">Satisfaction</p>
