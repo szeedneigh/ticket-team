@@ -10,14 +10,25 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getMyPerformanceMetrics } from '@/lib/analytics/queries'
 import { MyPerformanceContent } from '@/components/analytics/my-performance-content'
+import { PerformanceTimeFilter } from '@/components/analytics/performance-time-filter'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getTimePeriodStartDate } from '@/lib/constants'
+import type { TimePeriod } from '@/lib/types/tickets'
+import { TrendingUp, Sparkles } from 'lucide-react'
 
 export const metadata = {
   title: 'My Performance',
   description: 'View your personal performance metrics and achievements',
 }
 
-async function MyPerformanceData() {
+interface PageProps {
+  searchParams: Promise<{
+    timePeriod?: string
+  }>
+}
+
+async function MyPerformanceData({ searchParams }: PageProps) {
+  const params = await searchParams
   const supabase = await createClient()
 
   // Get authenticated user
@@ -45,17 +56,21 @@ async function MyPerformanceData() {
     redirect('/dashboard')
   }
 
+  // Calculate date range based on filter
+  const end = new Date()
+  const timePeriod = (params.timePeriod as TimePeriod) || 'this_month'
+  const startDateStr = getTimePeriodStartDate(timePeriod)
+  
+  // If 'all' is selected (startDateStr is null), we use a very old date or handle differently
+  // Since query expects a range, let's pick a reasonable default "all time" start if null, e.g. 5 years ago
+  const start = startDateStr ? new Date(startDateStr) : new Date(new Date().setFullYear(new Date().getFullYear() - 5))
+
   // Fetch personal performance data
-  const performance = await getMyPerformanceMetrics(user.id)
+  const performance = await getMyPerformanceMetrics(user.id, { start, end })
 
   if (!performance) {
     redirect('/dashboard')
   }
-
-  // Calculate date range for display
-  const end = new Date()
-  const start = new Date()
-  start.setDate(start.getDate() - 30) // Last 30 days
 
   return (
     <MyPerformanceContent
@@ -74,14 +89,11 @@ function MyPerformanceLoading() {
     <div className="space-y-8">
       {/* Header skeleton */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-14 w-14 rounded-2xl" />
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-56" />
-            <Skeleton className="h-4 w-96" />
-          </div>
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-5 w-96" />
         </div>
-        <Skeleton className="h-16 w-48 rounded-xl" />
+        <Skeleton className="h-10 w-40" />
       </div>
 
       {/* KPI Cards skeleton */}
@@ -124,11 +136,49 @@ function MyPerformanceLoading() {
   )
 }
 
-export default function MyPerformancePage() {
+export default function MyPerformancePage({ searchParams }: PageProps) {
   return (
-    <Suspense fallback={<MyPerformanceLoading />}>
-      <MyPerformanceData />
-    </Suspense>
+    <div className="min-h-screen bg-background relative">
+      {/* Hero Section with Gradient Background */}
+      <div className="relative overflow-hidden bg-background border-b border-border/40 pb-12">
+        {/* Dot Grid Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+        
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1f3463]/10 via-background/50 to-background" />
+        
+        {/* Top Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-[#2cafdd]/20 opacity-20 blur-[100px] rounded-full pointer-events-none" />
+
+        <div className="container mx-auto pt-8 pb-4 px-6 max-w-full relative z-10">
+          {/* Header Content */}
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-4">
+            <div className="space-y-2">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd]">
+                My Performance
+              </h1>
+              <p className="text-sm text-muted-foreground flex items-center gap-2 max-w-2xl">
+                Track your personal metrics, response times, and satisfaction scores.
+                <TrendingUp className="h-4 w-4 text-[#2cafdd]" />
+              </p>
+            </div>
+            
+             {/* Controls Section */}
+            <div className="flex items-center gap-3 bg-background/40 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 shadow-xl shadow-[#1f3463]/5">
+              <Suspense fallback={<Skeleton className="h-10 w-[150px]" />}>
+                <PerformanceTimeFilter defaultValue="this_month" />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto py-6 px-0 max-w-full -mt-8 relative z-20">
+        <Suspense fallback={<MyPerformanceLoading />}>
+          <MyPerformanceData searchParams={searchParams} />
+        </Suspense>
+      </div>
+    </div>
   )
 }
 
