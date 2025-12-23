@@ -113,6 +113,13 @@ export interface StaffPerformance {
   satisfactionScore: number
   activeTickets: number
   overdueTickets: number
+  dailyMetrics: {
+    date: string
+    assigned: number
+    resolved: number
+    avgResponseTime: number
+    satisfactionScore: number
+  }[]
 }
 
 /**
