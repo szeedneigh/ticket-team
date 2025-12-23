@@ -1,10 +1,3 @@
-/**
- * My Performance Page
- *
- * Individual staff performance dashboard - staff can view their own metrics
- * Accessible to staff, admin, and super_admin roles.
- */
-
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -14,7 +7,7 @@ import { PerformanceTimeFilter } from '@/components/analytics/performance-time-f
 import { Skeleton } from '@/components/ui/skeleton'
 import { getTimePeriodStartDate } from '@/lib/constants'
 import type { TimePeriod } from '@/lib/types/tickets'
-import { TrendingUp, Sparkles } from 'lucide-react'
+import { TrendingUp } from 'lucide-react'
 
 export const metadata = {
   title: 'My Performance',
@@ -86,18 +79,9 @@ async function MyPerformanceData({ searchParams }: PageProps) {
 // Loading skeleton
 function MyPerformanceLoading() {
   return (
-    <div className="space-y-8">
-      {/* Header skeleton */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-5 w-96" />
-        </div>
-        <Skeleton className="h-10 w-40" />
-      </div>
-
+    <div className="space-y-6">
       {/* KPI Cards skeleton */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
@@ -150,30 +134,35 @@ export default function MyPerformancePage({ searchParams }: PageProps) {
         {/* Top Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-[#2cafdd]/20 opacity-20 blur-[100px] rounded-full pointer-events-none" />
 
-        <div className="container mx-auto pt-8 pb-4 px-6 max-w-full relative z-10">
+        <div className="container mx-auto pt-16 pb-8 px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl">
           {/* Header Content */}
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-4">
-            <div className="space-y-2">
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd]">
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
+            <div className="space-y-4">
+              <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
                 My Performance
               </h1>
-              <p className="text-sm text-muted-foreground flex items-center gap-2 max-w-2xl">
+              <p className="text-sm md:text-base text-muted-foreground flex items-center gap-2 max-w-2xl">
                 Track your personal metrics, response times, and satisfaction scores.
                 <TrendingUp className="h-4 w-4 text-[#2cafdd]" />
               </p>
             </div>
+          </div>
             
-             {/* Controls Section */}
-            <div className="flex items-center gap-3 bg-background/40 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 shadow-xl shadow-[#1f3463]/5">
-              <Suspense fallback={<Skeleton className="h-10 w-[150px]" />}>
-                <PerformanceTimeFilter defaultValue="this_month" />
-              </Suspense>
+          {/* Controls Section - Integrated into Hero */}
+          <div className="flex flex-col gap-6 bg-background/40 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-xl shadow-[#1f3463]/5">
+            <div className="flex items-center justify-between w-full">
+               <span className="text-sm font-medium text-muted-foreground">Period Selection</span>
+               <div className="flex items-center gap-3">
+                <Suspense fallback={<Skeleton className="h-10 w-[150px]" />}>
+                  <PerformanceTimeFilter defaultValue="this_month" />
+                </Suspense>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto py-6 px-0 max-w-full -mt-8 relative z-20">
+      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-7xl relative z-20">
         <Suspense fallback={<MyPerformanceLoading />}>
           <MyPerformanceData searchParams={searchParams} />
         </Suspense>
