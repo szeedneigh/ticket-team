@@ -15,6 +15,7 @@ import { generateChatResponse } from '@/lib/ai/client'
 import { getTicketContext } from '@/lib/ai/retrieval'
 import { logAutomation, updateAutomationStatus } from '@/lib/ai/events'
 import type { TicketTriageSuggestion, TicketSummary } from '@/lib/types/ai-events'
+import type { TicketComment } from '@/lib/types/tickets'
 
 // ============================================================================
 // Auto-Triage
@@ -165,7 +166,7 @@ Respond ONLY with valid JSON in this exact format:
 }`
 
     const commentsText = context.comments
-      .map((c: any) => `[${new Date(c.created_at).toLocaleDateString()}] ${c.content}`)
+      .map((c: TicketComment) => `[${new Date(c.created_at).toLocaleDateString()}] ${c.content}`)
       .join('\n\n')
 
     const prompt = `Ticket: ${context.ticket.title}
@@ -275,6 +276,7 @@ Please suggest ${maxSuggestions} helpful replies.`
     return []
   }
 }
+
 
 
 
