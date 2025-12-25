@@ -16,8 +16,6 @@ import type {
   LogPromptInput,
   LogAutomationInput,
   AiEvent,
-  AiPromptLog,
-  AiAutomationRun,
 } from '@/lib/types/ai-events'
 
 // ============================================================================
@@ -428,6 +426,7 @@ export async function markEventProcessed(
     return false
   }
 }
+
 
 
 
