@@ -10,7 +10,7 @@
 import { searchAllSources, buildContextString } from '@/lib/ai/retrieval'
 import { generateChatResponse } from '@/lib/ai/client'
 import { logAIEvent, logPrompt } from '@/lib/ai/events'
-import type { RAGSource } from '@/lib/types/ai-events'
+import type { AiEventSurface } from '@/lib/types/ai-events'
 
 // ============================================================================
 // Types
@@ -52,7 +52,7 @@ export async function queryAssistant(
     // 1. Log query event
     const queryEventId = await logAIEvent({
       eventType: 'assistant_query',
-      surface: surface as any,
+      surface: surface as AiEventSurface,
       content: query,
       ticketId,
       sessionId,
@@ -120,7 +120,7 @@ Please provide a helpful response based on the context provided. If you referenc
     // 7. Log response event
     const responseEventId = await logAIEvent({
       eventType: 'assistant_response',
-      surface: surface as any,
+      surface: surface as AiEventSurface,
       content: aiResponse.text,
       ticketId,
       sessionId,
@@ -162,10 +162,7 @@ Please provide a helpful response based on the context provided. If you referenc
  * @param context - Additional context
  * @returns Suggested completions
  */
-export async function getAutoSuggestions(
-  input: string,
-  context?: string
-): Promise<{ suggestions: string[] }> {
+export async function getAutoSuggestions(): Promise<{ suggestions: string[] }> {
   try {
     // For now, return empty suggestions
     // Can be enhanced with RAG-based suggestions later
@@ -175,6 +172,7 @@ export async function getAutoSuggestions(
     return { suggestions: [] }
   }
 }
+
 
 
 
