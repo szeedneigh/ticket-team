@@ -16,9 +16,10 @@ import { generateEmbedding } from '@/lib/ai/client'
 import type {
   RAGSource,
   RAGContext,
-  AiEventSearchResult,
   AiEmbeddingSearchResult,
 } from '@/lib/types/ai-events'
+import type { Ticket, TicketComment } from '@/lib/types/tickets'
+import type { AiEvent } from '@/lib/types/ai-events'
 
 // ============================================================================
 // Configuration
@@ -67,7 +68,18 @@ export async function searchKnowledgeBase(
     }
 
     // 3. Transform results to RAG sources
-    const sources: RAGSource[] = (data || []).map((article: any) => ({
+    interface KBArticleResult {
+      id: string
+      title: string
+      content: string
+      similarity: number
+      category?: string
+      subcategory?: string
+      tags?: string[]
+      view_count?: number
+    }
+    
+    const sources: RAGSource[] = (data || []).map((article: KBArticleResult) => ({
       id: article.id,
       type: 'kb_article' as const,
       title: article.title,
@@ -283,9 +295,9 @@ export function buildContextString(
  * @returns Ticket context
  */
 export async function getTicketContext(ticketId: string): Promise<{
-  ticket: any
-  comments: any[]
-  events: any[]
+  ticket: Ticket | null
+  comments: TicketComment[]
+  events: AiEvent[]
 }> {
   try {
     const supabase = createServiceClient()
@@ -312,19 +324,20 @@ export async function getTicketContext(ticketId: string): Promise<{
       .order('created_at', { ascending: true })
 
     return {
-      ticket: ticket || {},
+      ticket: ticket || null,
       comments: comments || [],
       events: events || [],
     }
   } catch (error) {
     console.error('[getTicketContext] Exception:', error)
     return {
-      ticket: {},
+      ticket: null,
       comments: [],
       events: [],
     }
   }
 }
+
 
 
 
