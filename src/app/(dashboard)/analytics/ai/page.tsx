@@ -1,7 +1,8 @@
 /**
- * AI Chat Analytics Page
+ * AI Observability Page
  *
- * Analytics for AI chat interactions, helpfulness, and escalation rates.
+ * Technical observability metrics for AI system performance, including
+ * response times, error rates, token usage, and model performance.
  * Accessible only to admin and super_admin roles.
  */
 
@@ -9,15 +10,23 @@ import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAIAnalytics } from '@/lib/analytics/queries'
-import { AIAnalyticsContent } from '@/components/analytics/ai-analytics-content'
+import { AIObservabilityContent } from '@/components/analytics/ai-observability-content'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getTimePeriodStartDate } from '@/lib/constants'
+import type { TimePeriod } from '@/lib/types/tickets'
 
 export const metadata = {
-  title: 'Analytics - AI Chat',
-  description: 'AI chat interaction analytics and performance metrics',
+  title: 'Analytics - AI Observability',
+  description: 'AI system performance monitoring and observability metrics',
 }
 
-async function AIAnalyticsData() {
+interface PageProps {
+  searchParams: Promise<{
+    timePeriod?: string
+  }>
+}
+
+async function AIObservabilityData({ searchParams }: PageProps) {
   const supabase = await createClient()
 
   // Get authenticated user
@@ -30,7 +39,7 @@ async function AIAnalyticsData() {
     redirect('/auth/sign-in')
   }
 
-  // Verify user role
+  // Verify user role (admin or super_admin only)
   const { data: userData, error: userError } = await supabase
     .from('users')
     .select('role')
@@ -45,31 +54,40 @@ async function AIAnalyticsData() {
     redirect('/dashboard')
   }
 
-  // Fetch AI analytics data
-  const aiData = await getAIAnalytics(user.id)
+  // Calculate date range based on filter
+  const params = await searchParams
+  const end = new Date()
+  const timePeriod = (params.timePeriod as TimePeriod) || 'this_month'
+  const startDateStr = getTimePeriodStartDate(timePeriod)
+  const start = startDateStr ? new Date(startDateStr) : new Date(new Date().setFullYear(new Date().getFullYear() - 1))
 
-  return <AIAnalyticsContent aiData={aiData} />
+  // Fetch AI analytics data
+  const aiData = await getAIAnalytics(user.id, { start, end })
+
+  return (
+    <AIObservabilityContent
+      aiData={aiData}
+      dateRange={{
+        start: start.toISOString(),
+        end: end.toISOString(),
+      }}
+    />
+  )
 }
 
 // Loading skeleton - only content, navigation is in layout
-function AIAnalyticsLoading() {
+function AIObservabilityLoading() {
   return (
-    <div className="space-y-8">
-      {/* Header skeleton */}
-      <div className="flex items-center gap-4">
-        <Skeleton className="h-12 w-12 rounded-2xl" />
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-80" />
-        </div>
-      </div>
-      
+    <div className="space-y-6">
       {/* KPI Cards skeleton */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-xl border border-white/30 dark:border-white/10 p-5 space-y-3">
+          <div
+            key={i}
+            className="rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-xl border border-white/30 dark:border-white/10 p-5 space-y-3"
+          >
             <div className="flex justify-between">
-              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-28" />
               <Skeleton className="h-9 w-9 rounded-xl" />
             </div>
             <Skeleton className="h-8 w-20" />
@@ -77,31 +95,14 @@ function AIAnalyticsLoading() {
           </div>
         ))}
       </div>
-      
-      {/* Secondary KPIs skeleton */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-xl border border-white/30 dark:border-white/10 p-5 space-y-3">
-            <div className="flex justify-between">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-9 w-9 rounded-xl" />
-            </div>
-            <Skeleton className="h-8 w-20" />
-            <Skeleton className="h-3 w-32" />
-          </div>
-        ))}
-      </div>
-      
-      {/* Volume trend skeleton */}
-      <div className="rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-xl border border-white/30 dark:border-white/10 p-6 space-y-4">
-        <Skeleton className="h-5 w-48" />
-        <Skeleton className="h-[280px] w-full rounded-xl" />
-      </div>
-      
+
       {/* Charts skeleton */}
       <div className="grid gap-6 lg:grid-cols-2">
         {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-xl border border-white/30 dark:border-white/10 p-6 space-y-4">
+          <div
+            key={i}
+            className="rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-xl border border-white/30 dark:border-white/10 p-6 space-y-4"
+          >
             <Skeleton className="h-5 w-40" />
             <Skeleton className="h-[280px] w-full rounded-xl" />
           </div>
@@ -111,10 +112,10 @@ function AIAnalyticsLoading() {
   )
 }
 
-export default function AIAnalyticsPage() {
+export default function AIObservabilityPage({ searchParams }: PageProps) {
   return (
-    <Suspense fallback={<AIAnalyticsLoading />}>
-      <AIAnalyticsData />
+    <Suspense fallback={<AIObservabilityLoading />}>
+      <AIObservabilityData searchParams={searchParams} />
     </Suspense>
   )
 }
