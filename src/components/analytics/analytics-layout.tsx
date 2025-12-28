@@ -10,7 +10,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { BarChartIcon, UsersIcon, HeartIcon, TicketIcon, BotIcon } from 'lucide-react'
+import { BarChartIcon, UsersIcon, HeartIcon, TicketIcon, ActivityIcon } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 const analyticsNavItems = [
@@ -35,9 +35,9 @@ const analyticsNavItems = [
     icon: HeartIcon,
   },
   {
-    title: 'AI Chat',
+    title: 'AI Observability',
     href: '/analytics/ai',
-    icon: BotIcon,
+    icon: ActivityIcon,
   },
 ]
 
