@@ -18,14 +18,14 @@ import {
 } from '@/components/analytics'
 import type { DataTableColumn } from '@/components/analytics'
 import {
-  BotIcon,
-  MessageSquareIcon,
-  ThumbsUpIcon,
-  AlertTriangleIcon,
-  ClockIcon,
-  UsersIcon,
-  SparklesIcon,
-  ZapIcon,
+  Bot,
+  MessageSquare,
+  ThumbsUp,
+  AlertTriangle,
+  Clock,
+  Users,
+  Sparkles,
+  Zap,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { exportAIAnalytics } from '@/lib/analytics/export'
@@ -119,7 +119,7 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
       >
         <div className="flex items-center gap-4">
           <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg">
-            <BotIcon className="h-6 w-6 text-white" />
+            <Bot className="h-6 w-6 text-white" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">AI Chat Analytics</h1>
@@ -138,19 +138,19 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
             title="Total Conversations"
             value={aiData.summary.totalConversations.toLocaleString()}
             description="Unique chat sessions"
-            icon={<BotIcon className="h-4 w-4" />}
+            icon={<Bot className="h-4 w-4" />}
           />
           <KPICard
             title="Total Queries"
             value={aiData.summary.totalQueries.toLocaleString()}
             description="Questions asked"
-            icon={<MessageSquareIcon className="h-4 w-4" />}
+            icon={<MessageSquare className="h-4 w-4" />}
           />
           <KPICard
             title="Helpfulness Rate"
             value={`${aiData.summary.helpfulnessRate}%`}
             description={`${aiData.summary.helpfulCount} helpful / ${aiData.summary.helpfulCount + aiData.summary.notHelpfulCount} rated`}
-            icon={<ThumbsUpIcon className="h-4 w-4" />}
+            icon={<ThumbsUp className="h-4 w-4" />}
             variant={
               aiData.summary.helpfulnessRate >= 70
                 ? 'success'
@@ -163,7 +163,7 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
             title="Escalation Rate"
             value={`${aiData.summary.escalationRate}%`}
             description="Escalated to tickets"
-            icon={<AlertTriangleIcon className="h-4 w-4" />}
+            icon={<AlertTriangle className="h-4 w-4" />}
             variant={
               aiData.summary.escalationRate <= 10
                 ? 'success'
@@ -181,7 +181,7 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
           title="Avg Response Time"
           value={aiData.summary.avgResponseTime}
           description="Time to generate response"
-          icon={<ClockIcon className="h-4 w-4" />}
+          icon={<Clock className="h-4 w-4" />}
           variant={
             aiData.summary.avgResponseTimeMs <= 2000
               ? 'success'
@@ -194,7 +194,7 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
           title="Unique Users"
           value={aiData.summary.uniqueUsers.toLocaleString()}
           description="Users who used AI chat"
-          icon={<UsersIcon className="h-4 w-4" />}
+          icon={<Users className="h-4 w-4" />}
         />
       </motion.div>
 
@@ -274,7 +274,7 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
         ) : (
           <div className="rounded-2xl border border-white/30 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-xl p-12 text-center shadow-lg">
             <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 mb-4">
-              <BotIcon className="h-8 w-8 text-muted-foreground" />
+              <Bot className="h-8 w-8 text-muted-foreground" />
             </div>
             <h3 className="text-base font-semibold">No Common Queries Yet</h3>
             <p className="text-sm text-muted-foreground mt-1">
@@ -289,7 +289,7 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
         <div className="rounded-2xl border border-white/30 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-xl overflow-hidden shadow-lg">
           <div className="border-b border-white/20 p-6">
             <div className="flex items-center gap-3">
-              <SparklesIcon className="h-5 w-5 text-[#0693D2]" />
+              <Sparkles className="h-5 w-5 text-[#0693D2]" />
               <div>
                 <h3 className="text-base font-semibold">Performance Summary</h3>
                 <p className="text-sm text-muted-foreground">
@@ -304,7 +304,7 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
-                    <ThumbsUpIcon className="h-4 w-4 text-emerald-500" />
+                    <ThumbsUp className="h-4 w-4 text-emerald-500" />
                     <span className="font-medium">Helpfulness Rate</span>
                   </div>
                   <span className="font-semibold">{aiData.summary.helpfulnessRate}%</span>
@@ -323,7 +323,7 @@ export function AIAnalyticsContent({ aiData }: AIAnalyticsContentProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
-                    <ZapIcon className="h-4 w-4 text-blue-500" />
+                    <Zap className="h-4 w-4 text-blue-500" />
                     <span className="font-medium">Self-Service Rate</span>
                   </div>
                   <span className="font-semibold">{100 - aiData.summary.escalationRate}%</span>
