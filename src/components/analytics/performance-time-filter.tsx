@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import {
   Select,
   SelectContent,
@@ -18,13 +18,15 @@ import {
 import { TIME_PERIOD } from '@/lib/constants'
 import type { TimePeriod } from '@/lib/types/tickets'
 
-interface PerformanceTimeFilterProps {
+export interface PerformanceTimeFilterProps {
   defaultValue?: TimePeriod
+  basePath?: string
 }
 
-export function PerformanceTimeFilter({ defaultValue = 'this_month' }: PerformanceTimeFilterProps) {
+export function PerformanceTimeFilter({ defaultValue = 'this_month', basePath }: PerformanceTimeFilterProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
 
   const handleChange = (value: TimePeriod) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -35,7 +37,9 @@ export function PerformanceTimeFilter({ defaultValue = 'this_month' }: Performan
       params.set('timePeriod', value)
     }
 
-    router.push(`/performance?${params.toString()}`)
+    // Use provided basePath, or derive from current pathname, or default to /performance
+    const targetPath = basePath || pathname || '/performance'
+    router.push(`${targetPath}?${params.toString()}`)
   }
 
   const currentPeriod = (searchParams.get('timePeriod') as TimePeriod) || defaultValue
