@@ -83,6 +83,7 @@ export function StaffPerformanceContent({
         satisfactionScore: s.satisfactionScore,
         activeTickets: s.activeTickets,
         overdueTickets: s.overdueTickets,
+        dailyMetrics: [],
       })),
       period: {
         start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
