@@ -82,7 +82,11 @@ export function SystemPerformanceContent() {
         }
 
         const performanceMetrics: PerformanceMetrics = {
-          ...webVitals,
+          lcp: webVitals.lcp ?? null,
+          fcp: webVitals.fcp ?? null,
+          cls: webVitals.cls ?? null,
+          fid: webVitals.fid ?? null,
+          ttfb: webVitals.ttfb ?? null,
           apiResponseTime: healthData.checks?.database?.responseTime || null,
           databaseResponseTime: healthData.checks?.database?.responseTime || null,
           errorRate: healthData.status === 'unhealthy' ? 100 : healthData.status === 'degraded' ? 50 : 0,
