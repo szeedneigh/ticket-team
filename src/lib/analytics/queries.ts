@@ -815,6 +815,7 @@ export async function getStaffPerformanceMetrics(
           ['open', 'in_progress'].includes(t.status)
         ).length,
         overdueTickets,
+        dailyMetrics: [],
       })
     }
 
