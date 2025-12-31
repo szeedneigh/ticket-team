@@ -25,6 +25,7 @@ import {
   notifyTicketStatusChange,
 } from '@/lib/email/notifications'
 import { logger } from '@/lib/logger'
+import { logAIEvent } from '@/lib/ai/events'
 
 // ============================================================================
 // Types
@@ -241,6 +242,22 @@ export async function createTicket(
       })
     }
 
+    // 6b. Log AI event for learning (async, don't block)
+    logAIEvent({
+      eventType: 'ticket_created',
+      surface: 'ticket_composer',
+      content: `${validation.data.title}\n\n${validation.data.description}`,
+      ticketId: ticket.id,
+      metadata: {
+        category: validation.data.category,
+        subcategory: validation.data.subcategory,
+        priority: validation.data.priority,
+        attachments_count: attachmentRecords.length,
+      },
+    }).catch(error => {
+      logger.error('AI event logging error', { error })
+    })
+
     // 7. Revalidate relevant paths
     revalidatePath('/tickets')
     revalidatePath(`/tickets/${ticket.id}`)
@@ -402,6 +419,20 @@ export async function updateTicketStatus(
       console.error('Activity logging error:', activityError)
       // Don't fail the update
     }
+
+    // 4b. Log AI event for learning (async, don't block)
+    logAIEvent({
+      eventType: 'ticket_status_change',
+      surface: 'ticket_view',
+      content: `Status changed from ${ticket.status} to ${newStatus}`,
+      ticketId,
+      metadata: {
+        old_status: ticket.status,
+        new_status: newStatus,
+      },
+    }).catch(error => {
+      logger.error('AI event logging error', { error })
+    })
 
     // 5. Revalidate paths
     revalidatePath(`/tickets/${ticketId}`)
@@ -570,6 +601,21 @@ export async function assignTicket(
       })
       // Don't fail the assignment
     }
+
+    // 6b. Log AI event for learning (async, don't block)
+    logAIEvent({
+      eventType: 'ticket_assigned',
+      surface: 'ticket_view',
+      content: `Ticket assigned to ${assigneeName}`,
+      ticketId,
+      metadata: {
+        old_assigned_to: ticket.assigned_to,
+        new_assigned_to: newAssignedTo,
+        assigned_to_name: assigneeName,
+      },
+    }).catch(error => {
+      logger.error('AI event logging error', { error })
+    })
 
     // 7. Revalidate paths
     revalidatePath(`/tickets/${ticketId}`)

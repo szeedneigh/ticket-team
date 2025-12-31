@@ -96,7 +96,7 @@ export function ChatClient({
   }, [messages, onMessagesChange])
 
   // Handle sending a message
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = useCallback(async (message: string) => {
     // Clear any previous errors
     setError(null)
     setShouldShowEscalate(false)
@@ -334,7 +334,7 @@ export function ChatClient({
     } finally {
       setIsStreaming(false)
     }
-  }
+  }, [messages, sessionId, currentSources])
 
   // Handle retry after error
   const handleRetry = useCallback(() => {
@@ -348,7 +348,7 @@ export function ChatClient({
         handleSendMessage(lastUserMessage.content)
       }
     }
-  }, [messages])
+  }, [messages, handleSendMessage])
 
   // Handle escalation button click
   const handleEscalateClick = async () => {
@@ -438,7 +438,7 @@ export function ChatClient({
   // Handle suggested prompt click
   const handlePromptClick = useCallback((prompt: string) => {
     handleSendMessage(prompt)
-  }, [])
+  }, [handleSendMessage])
 
   // Prepare items for virtualized list (messages + streaming + escalation)
   const displayItems = [...messages]

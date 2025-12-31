@@ -21,6 +21,7 @@ import { ACTIVITY_TYPES } from '@/lib/constants/activity-types'
 import { ERROR_MESSAGES } from '@/lib/constants'
 import { notifyTicketComment } from '@/lib/email/notifications'
 import { logger } from '@/lib/logger'
+import { logAIEvent } from '@/lib/ai/events'
 
 // ============================================================================
 // Types
@@ -275,6 +276,23 @@ export async function createComment(
         has_attachments: attachmentMetadata.length > 0,
         attachment_count: attachmentMetadata.length,
       },
+    })
+
+    // 8b. Log AI event for learning (async, don't block)
+    logAIEvent({
+      eventType: 'ticket_comment',
+      surface: 'comment_composer',
+      content: validation.data.content,
+      ticketId: ticket_id,
+      commentId: comment.id,
+      sensitivity: is_internal ? 'internal' : 'internal',
+      metadata: {
+        is_internal,
+        has_attachments: attachmentMetadata.length > 0,
+        attachment_count: attachmentMetadata.length,
+      },
+    }).catch(error => {
+      logger.error('AI event logging error', { error })
     })
 
     // 9. Revalidate ticket detail page

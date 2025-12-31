@@ -1,13 +1,3 @@
-/**
- * Sign In Page
- * 
- * Premium Professional authentication page.
- * Left side: Corporate/University trust aesthetic with deep gradients and clean typography.
- * Right side: Refined, clear authentication interface with subtle structure.
- * 
- * @module app/auth/sign-in/page
-*/
-
 'use client'
 
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button'
@@ -113,7 +103,7 @@ export default function SignInPage() {
                    <ShieldCheck className="h-5 w-5 text-blue-200" />
                 </div>
                 <div className="text-sm">
-                  <span className="font-medium text-white block">Verified System</span>
+                  <span className="font-medium text-white block">TicketTeam</span>
                   <span className="text-white/60">La Verdad Christian College</span>
                 </div>
               </footer>

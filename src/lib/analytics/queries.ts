@@ -815,6 +815,7 @@ export async function getStaffPerformanceMetrics(
           ['open', 'in_progress'].includes(t.status)
         ).length,
         overdueTickets,
+        dailyMetrics: [],
       })
     }
 
@@ -826,6 +827,84 @@ export async function getStaffPerformanceMetrics(
     })
     throw error
   }
+}
+
+/**
+ * Calculate daily metrics from tickets
+ */
+function calculateDailyMetrics(
+  tickets: Array<{
+    id: string
+    created_at: string
+    resolved_at: string | null
+  }>,
+  satisfactionMap: Map<string, number>,
+  commentsMap: Map<string, Date>,
+  range: DateRange
+) {
+  const dailyMap = new Map<string, {
+    assigned: number
+    resolved: number
+    responseTimes: number[]
+    satisfactionScores: number[]
+  }>()
+
+  // Initialize all days in range
+  const current = new Date(range.start)
+  const end = new Date(range.end)
+  while (current <= end) {
+    const key = current.toISOString().split('T')[0]
+    dailyMap.set(key, {
+      assigned: 0,
+      resolved: 0,
+      responseTimes: [],
+      satisfactionScores: []
+    })
+    current.setDate(current.getDate() + 1)
+  }
+
+  tickets.forEach(ticket => {
+    // Assigned (Created)
+    const createdKey = new Date(ticket.created_at).toISOString().split('T')[0]
+    if (dailyMap.has(createdKey)) {
+      dailyMap.get(createdKey)!.assigned++
+
+      // Response Time (attributed to creation date for cohort analysis)
+      if (commentsMap.has(ticket.id)) {
+        const firstResponse = commentsMap.get(ticket.id)!
+        const created = new Date(ticket.created_at).getTime()
+        const diff = (firstResponse.getTime() - created) / (1000 * 60 * 60)
+        dailyMap.get(createdKey)!.responseTimes.push(diff)
+      }
+    }
+
+    // Resolved (attributed to resolution date if in range)
+    if (ticket.resolved_at) {
+      const resolvedKey = new Date(ticket.resolved_at).toISOString().split('T')[0]
+      if (dailyMap.has(resolvedKey)) {
+        dailyMap.get(resolvedKey)!.resolved++
+
+        // Satisfaction (attributed to resolution date)
+        if (satisfactionMap.has(ticket.id)) {
+          dailyMap.get(resolvedKey)!.satisfactionScores.push(satisfactionMap.get(ticket.id)!)
+        }
+      }
+    }
+  })
+
+  return Array.from(dailyMap.entries())
+    .map(([date, data]) => ({
+      date,
+      assigned: data.assigned,
+      resolved: data.resolved,
+      avgResponseTime: data.responseTimes.length > 0
+        ? data.responseTimes.reduce((a, b) => a + b, 0) / data.responseTimes.length
+        : 0,
+      satisfactionScore: data.satisfactionScores.length > 0
+        ? data.satisfactionScores.reduce((a, b) => a + b, 0) / data.satisfactionScores.length
+        : 0
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
 
 /**
@@ -892,6 +971,7 @@ export async function getMyPerformanceMetrics(
     // Calculate first response time
     let avgResponseTimeHours = 0
     const ticketIds = staffTickets.map((t) => t.id)
+    const firstCommentMap = new Map<string, Date>()
 
     if (ticketIds.length > 0) {
       const { data: comments, error: commentsError } = await supabase
@@ -903,7 +983,6 @@ export async function getMyPerformanceMetrics(
 
       if (!commentsError && comments) {
         // Find first comment for each ticket
-        const firstCommentMap = new Map<string, Date>()
         for (const comment of comments) {
           if (!firstCommentMap.has(comment.ticket_id)) {
             firstCommentMap.set(comment.ticket_id, new Date(comment.created_at))
@@ -929,14 +1008,24 @@ export async function getMyPerformanceMetrics(
 
     // Calculate satisfaction score
     let satisfactionScore = 0
+    const ticketSatisfactionMap = new Map<string, number>()
+
     if (ticketIds.length > 0) {
       const { data: feedback, error: feedbackError } = await supabase
         .from('ticket_feedback')
-        .select('rating')
+        .select('ticket_id, rating')
         .in('ticket_id', ticketIds)
 
       if (!feedbackError && feedback && feedback.length > 0) {
-        const ratings = feedback.map((f) => f.rating).filter((r): r is number => r !== null)
+        // Populate map and calculate score
+        const ratings: number[] = []
+        feedback.forEach(f => {
+          if (f.rating !== null) {
+            ratings.push(f.rating)
+            ticketSatisfactionMap.set(f.ticket_id, f.rating)
+          }
+        })
+
         if (ratings.length > 0) {
           satisfactionScore = Math.round(
             (ratings.reduce((sum, r) => sum + r, 0) / ratings.length) * 10
@@ -970,6 +1059,7 @@ export async function getMyPerformanceMetrics(
         ['open', 'in_progress'].includes(t.status)
       ).length,
       overdueTickets,
+      dailyMetrics: calculateDailyMetrics(staffTickets, ticketSatisfactionMap, firstCommentMap, range),
     }
   } catch (error) {
     logger.error('Error fetching personal performance', {
@@ -1199,8 +1289,8 @@ export async function getSatisfactionBreakdown(
     const overallScore =
       totalResponses > 0
         ? Math.round(
-            (feedback!.reduce((sum, f) => sum + f.rating, 0) / totalResponses) * 10
-          ) / 10
+          (feedback!.reduce((sum, f) => sum + f.rating, 0) / totalResponses) * 10
+        ) / 10
         : 0
 
     // Calculate distribution

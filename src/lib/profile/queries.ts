@@ -81,8 +81,7 @@ export async function getUserActivityTimeline(
 
   const activities: ActivityTimelineItem[] = []
 
-  // Build date filter (unused but kept for future use)
-  const _dateFilter = ''
+  // Date filtering is applied in memory below
   if (dateFrom || dateTo) {
     // We'll apply date filtering in memory for simplicity
   }

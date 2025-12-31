@@ -22,6 +22,9 @@ export type { DataTableProps, DataTableColumn } from './data-table'
 export { DateRangePicker } from './date-range-picker'
 export type { DateRangePickerProps } from './date-range-picker'
 
+export { PerformanceTimeFilter } from './performance-time-filter'
+export type { PerformanceTimeFilterProps } from './performance-time-filter'
+
 export { ExportButton, SimpleExportButton } from './export-button'
 export type { ExportButtonProps, SimpleExportButtonProps } from './export-button'
 

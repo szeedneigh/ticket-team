@@ -13,10 +13,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Save, RefreshCw, Clock, TicketIcon, FileBox, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Save, RefreshCw, Clock, TicketIcon, FileBox } from 'lucide-react'
 import {
   getSystemConfig,
   updateSystemConfig,

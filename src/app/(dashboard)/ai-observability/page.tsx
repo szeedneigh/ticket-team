@@ -1,5 +1,5 @@
 /**
- * AI Observability Page
+ * AI Observability Dashboard
  *
  * Technical observability metrics for AI system performance, including
  * response times, error rates, token usage, and model performance.
@@ -16,7 +16,7 @@ import { getTimePeriodStartDate } from '@/lib/constants'
 import type { TimePeriod } from '@/lib/types/tickets'
 
 export const metadata = {
-  title: 'Analytics - AI Observability',
+  title: 'AI Observability | Ticket Team',
   description: 'AI system performance monitoring and observability metrics',
 }
 
@@ -75,7 +75,7 @@ async function AIObservabilityData({ searchParams }: PageProps) {
   )
 }
 
-// Loading skeleton - only content, navigation is in layout
+// Loading skeleton
 function AIObservabilityLoading() {
   return (
     <div className="space-y-6">
@@ -114,8 +114,33 @@ function AIObservabilityLoading() {
 
 export default function AIObservabilityPage({ searchParams }: PageProps) {
   return (
-    <Suspense fallback={<AIObservabilityLoading />}>
-      <AIObservabilityData searchParams={searchParams} />
-    </Suspense>
+    <div className="min-h-screen bg-background relative">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-background border-b border-border/40 pb-12">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1f3463]/10 via-background/50 to-background" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-[#2cafdd]/20 opacity-20 blur-[100px] rounded-full pointer-events-none" />
+
+        <div className="container mx-auto pt-16 pb-8 px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl">
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
+            <div className="space-y-4">
+              <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
+                AI Observability
+              </h1>
+              <p className="text-sm md:text-base text-muted-foreground flex items-center gap-2 max-w-2xl">
+                Monitor AI system performance, response times, and model behavior.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-7xl">
+        <Suspense fallback={<AIObservabilityLoading />}>
+          <AIObservabilityData searchParams={searchParams} />
+        </Suspense>
+      </div>
+    </div>
   )
 }
+

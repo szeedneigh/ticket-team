@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
 import { useTheme } from 'next-themes'
 import { getUserPreferences } from '@/app/actions/preferences'
 import type { UserPreferences } from '@/lib/types/users'
@@ -24,7 +24,7 @@ export function PreferencesProvider({ children, initialPreferences }: Preference
   const { setTheme } = useTheme()
   const [themeInitialized, setThemeInitialized] = useState(false)
 
-  const loadPreferences = async () => {
+  const loadPreferences = useCallback(async () => {
     setIsLoading(true)
     const result = await getUserPreferences()
     if (result.success && result.data) {
@@ -42,7 +42,7 @@ export function PreferencesProvider({ children, initialPreferences }: Preference
       applyNonThemePreferences(result.data)
     }
     setIsLoading(false)
-  }
+  }, [setTheme, themeInitialized])
 
   const refreshPreferences = async () => {
     await loadPreferences()
@@ -66,7 +66,8 @@ export function PreferencesProvider({ children, initialPreferences }: Preference
     } else {
       loadPreferences()
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Intentionally run only on mount
 
   // Apply non-theme preferences when they change
   useEffect(() => {

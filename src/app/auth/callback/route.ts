@@ -11,6 +11,8 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { trackNewSession, logLoginAttempt } from '@/lib/auth/session-tracker'
+import { sendWelcomeEmail } from '@/lib/email/service'
+import { clientEnv } from '@/lib/env/client'
 
 // Force dynamic rendering for OAuth callback
 // This route cannot be statically exported as it processes authentication codes
@@ -78,6 +80,15 @@ export async function GET(request: Request) {
       fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth/callback/route.ts:68',message:'Before update last login',data:{userId:data.user.id,email:data.user.email},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
       // #endregion
 
+      // Check if this is a new user (first login)
+      const { data: userData } = await supabase
+        .from('users')
+        .select('last_login, full_name, role')
+        .eq('id', data.user.id)
+        .single()
+
+      const isNewUser = !userData?.last_login
+
       // Update last login
       const { error: updateError } = await supabase
         .from('users')
@@ -90,6 +101,24 @@ export async function GET(request: Request) {
 
       if (updateError) {
         logger.error('Failed to update last login', { userId: data.user.id, error: updateError.message })
+      }
+
+      // Send welcome email to new users (non-blocking)
+      if (isNewUser && email && userData) {
+        sendWelcomeEmail({
+          to: email,
+          userName: userData.full_name || email.split('@')[0] || 'User',
+          userEmail: email,
+          role: userData.role || 'employee',
+          dashboardUrl: `${origin}/dashboard`,
+        }).catch((emailError) => {
+          // Log error but don't block login
+          logger.error('Failed to send welcome email', {
+            error: emailError instanceof Error ? emailError.message : 'Unknown error',
+            userId: data.user.id,
+            email,
+          })
+        })
       }
 
       // Track the new session (use session ID, not access token for security)
