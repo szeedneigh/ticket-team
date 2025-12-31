@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { X, Upload, File, AlertCircle } from 'lucide-react'
+import { X, Upload, File, AlertCircle, Image, FileText, FileSpreadsheet, Presentation, Archive, Paperclip } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
@@ -195,14 +195,19 @@ export function FileUpload({
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         className={cn(
-          'relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer',
+          'relative flex flex-col items-center justify-center rounded-xl border border-dashed p-8 transition-all cursor-pointer group',
           isDragging && !disabled
-            ? 'border-primary bg-primary/5'
-            : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+            ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
+            : 'border-muted-foreground/20 hover:border-primary/50 hover:bg-muted/30',
           disabled && 'opacity-50 cursor-not-allowed'
         )}
       >
-        <Upload className="h-10 w-10 text-muted-foreground mb-4" />
+        <div className={cn(
+            "p-4 rounded-full bg-muted/50 mb-4 transition-transform group-hover:scale-110 group-hover:bg-background",
+            isDragging && "scale-110 bg-background"
+        )}>
+            <Upload className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+        </div>
         <p className="text-sm font-medium text-foreground mb-1">
           {isDragging ? 'Drop files here' : 'Click to upload or drag and drop'}
         </p>
@@ -246,6 +251,7 @@ export function FileUpload({
                 size="sm"
                 onClick={clearAll}
                 disabled={disabled}
+                className="h-8 text-xs hover:text-destructive"
               >
                 Clear All
               </Button>
@@ -279,22 +285,12 @@ interface FilePreviewProps {
 }
 
 function FilePreview({ file, onRemove, disabled }: FilePreviewProps) {
-  const getFileIcon = (fileType: string) => {
-    if (fileType.startsWith('image/')) return '🖼️'
-    if (fileType.includes('pdf')) return '📄'
-    if (fileType.includes('word') || fileType.includes('document')) return '📝'
-    if (fileType.includes('sheet') || fileType.includes('excel')) return '📊'
-    if (fileType.includes('presentation') || fileType.includes('powerpoint'))
-      return '📽️'
-    if (fileType.startsWith('text/')) return '📃'
-    if (fileType.includes('zip') || fileType.includes('rar')) return '🗜️'
-    return '📎'
-  }
-
   return (
-    <div className="flex items-center justify-between rounded-md border p-3 bg-muted/50">
+    <div className="flex items-center justify-between rounded-lg border border-border/50 p-3 bg-muted/30 backdrop-blur-sm transition-colors hover:bg-muted/50">
       <div className="flex items-center space-x-3 flex-1 min-w-0">
-        <span className="text-2xl flex-shrink-0">{getFileIcon(file.type)}</span>
+        <div className="flex-shrink-0 p-2 rounded-md bg-background shadow-sm">
+           {getFileIcon(file.type)}
+        </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate">{file.name}</p>
           <p className="text-xs text-muted-foreground">
@@ -309,11 +305,23 @@ function FilePreview({ file, onRemove, disabled }: FilePreviewProps) {
         size="icon"
         onClick={onRemove}
         disabled={disabled}
-        className="flex-shrink-0 h-8 w-8"
+        className="flex-shrink-0 h-8 w-8 hover:text-destructive hover:bg-destructive/10"
       >
         <X className="h-4 w-4" />
         <span className="sr-only">Remove file</span>
       </Button>
     </div>
   )
+}
+
+function getFileIcon(fileType: string) {
+  if (fileType.startsWith('image/')) return <Image className="h-5 w-5 text-blue-500" aria-hidden="true" />
+  if (fileType.includes('pdf')) return <FileText className="h-5 w-5 text-red-500" />
+  if (fileType.includes('word') || fileType.includes('document')) return <FileText className="h-5 w-5 text-blue-600" />
+  if (fileType.includes('sheet') || fileType.includes('excel')) return <FileSpreadsheet className="h-5 w-5 text-green-600" />
+  if (fileType.includes('presentation') || fileType.includes('powerpoint'))
+    return <Presentation className="h-5 w-5 text-orange-500" />
+  if (fileType.startsWith('text/')) return <FileText className="h-5 w-5 text-gray-500" />
+  if (fileType.includes('zip') || fileType.includes('rar')) return <Archive className="h-5 w-5 text-yellow-600" />
+  return <Paperclip className="h-5 w-5 text-muted-foreground" />
 }

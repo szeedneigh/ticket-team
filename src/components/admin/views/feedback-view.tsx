@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { RefreshCw, Download, Star, TrendingUp, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -39,46 +39,8 @@ export function FeedbackView() {
   const [isLoading, setIsLoading] = useState(true)
   const [ratingFilter, setRatingFilter] = useState<string>('all')
 
-  // Fetch feedback
-  const fetchFeedback = async () => {
-    setIsLoading(true)
-    try {
-      const supabase = createClient()
-
-      let query = supabase
-        .from('ticket_feedback')
-        .select(`
-          *,
-          ticket:tickets(id, title, category, status, created_at),
-          user:users(id, full_name, email)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(100)
-
-      if (ratingFilter && ratingFilter !== 'all') {
-        query = query.eq('rating', parseInt(ratingFilter))
-      }
-
-      const { data, error } = await query
-
-      if (error) throw error
-      setFeedback(data || [])
-
-      // Calculate summary
-      await calculateSummary()
-    } catch (error) {
-      console.error('Error fetching feedback:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load feedback',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const calculateSummary = async () => {
+  // Calculate summary
+  const calculateSummary = useCallback(async () => {
     try {
       const supabase = createClient()
 
@@ -145,11 +107,50 @@ export function FeedbackView() {
     } catch (error) {
       console.error('Error calculating summary:', error)
     }
-  }
+  }, [])
+
+  // Fetch feedback
+  const fetchFeedback = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const supabase = createClient()
+
+      let query = supabase
+        .from('ticket_feedback')
+        .select(`
+          *,
+          ticket:tickets(id, title, category, status, created_at),
+          user:users(id, full_name, email)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100)
+
+      if (ratingFilter && ratingFilter !== 'all') {
+        query = query.eq('rating', parseInt(ratingFilter))
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+      setFeedback(data || [])
+
+      // Calculate summary
+      await calculateSummary()
+    } catch (error) {
+      console.error('Error fetching feedback:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load feedback',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [ratingFilter, calculateSummary, toast])
 
   useEffect(() => {
     fetchFeedback()
-  }, [ratingFilter])
+  }, [fetchFeedback, ratingFilter])
 
   const handleExportCSV = () => {
     if (feedback.length === 0) {

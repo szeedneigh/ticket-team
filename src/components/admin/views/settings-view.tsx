@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Settings2, Mail, Building2, Tag, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SystemConfigSettings } from '@/components/settings/system-config-settings'

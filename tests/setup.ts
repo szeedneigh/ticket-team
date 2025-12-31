@@ -4,9 +4,35 @@
  * Global test configuration and setup
  */
 
-import { expect, afterEach } from 'vitest'
+import { expect, afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
+
+// Mock server-only environment variables to prevent security errors in tests
+// This must be done before any imports that use @/lib/env/server
+vi.mock('@/lib/env/server', () => ({
+  serverEnv: {
+    supabaseService: {
+      roleKey: 'test-service-role-key',
+    },
+    gemini: {
+      apiKey: 'test-gemini-api-key',
+    },
+  },
+}))
+
+// Mock client environment variables
+vi.mock('@/lib/env/client', () => ({
+  clientEnv: {
+    supabase: {
+      url: 'https://test.supabase.co',
+      anonKey: 'test-anon-key',
+    },
+    app: {
+      siteUrl: 'http://localhost:3000',
+    },
+  },
+}))
 
 // Cleanup after each test
 afterEach(() => {

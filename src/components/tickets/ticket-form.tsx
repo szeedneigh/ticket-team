@@ -143,7 +143,8 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
   }
 
   return (
-    <Card>
+    <Card className="bg-background/60 backdrop-blur-xl border-border/50 shadow-sm relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
       <CardHeader>
         <CardTitle>Create New Ticket</CardTitle>
         <CardDescription>
@@ -164,6 +165,7 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
               {...register('title')}
               disabled={isPending}
               aria-invalid={errors.title ? 'true' : 'false'}
+              className="bg-background/50 focus:bg-background transition-colors"
             />
             {errors.title && (
               <p className="text-sm text-destructive">{errors.title.message}</p>
@@ -182,6 +184,7 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
               {...register('description')}
               disabled={isPending}
               aria-invalid={errors.description ? 'true' : 'false'}
+              className="bg-background/50 focus:bg-background transition-colors resize-none"
             />
             {errors.description && (
               <p className="text-sm text-destructive">{errors.description.message}</p>
@@ -201,7 +204,7 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
               onValueChange={(value) => setValue('category', value, { shouldValidate: true })}
               disabled={isPending}
             >
-              <SelectTrigger id="category" aria-invalid={errors.category ? 'true' : 'false'}>
+              <SelectTrigger id="category" aria-invalid={errors.category ? 'true' : 'false'} className="bg-background/50 focus:bg-background transition-colors">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
@@ -228,7 +231,7 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
                 }
                 disabled={isPending}
               >
-                <SelectTrigger id="subcategory">
+                <SelectTrigger id="subcategory" className="bg-background/50 focus:bg-background transition-colors">
                   <SelectValue placeholder="Select a subcategory" />
                 </SelectTrigger>
                 <SelectContent>
@@ -256,7 +259,7 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
               }
               disabled={isPending}
             >
-              <SelectTrigger id="priority" aria-invalid={errors.priority ? 'true' : 'false'}>
+              <SelectTrigger id="priority" aria-invalid={errors.priority ? 'true' : 'false'} className="bg-background/50 focus:bg-background transition-colors">
                 <SelectValue placeholder="Select priority" />
               </SelectTrigger>
               <SelectContent>
@@ -297,7 +300,7 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
               <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending} className="bg-gradient-to-r from-[#1f3463] to-[#2cafdd] text-white hover:opacity-90 transition-opacity">
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
