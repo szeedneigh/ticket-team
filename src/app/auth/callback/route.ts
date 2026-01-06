@@ -80,14 +80,15 @@ export async function GET(request: Request) {
       fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth/callback/route.ts:68',message:'Before update last login',data:{userId:data.user.id,email:data.user.email},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
       // #endregion
 
-      // Check if this is a new user (first login)
+      // Check if this is a new user (first login) and if onboarding is needed
       const { data: userData } = await supabase
         .from('users')
-        .select('last_login, full_name, role')
+        .select('last_login, full_name, role, department')
         .eq('id', data.user.id)
         .single()
 
       const isNewUser = !userData?.last_login
+      const needsOnboarding = !userData?.department
 
       // Update last login
       const { error: updateError } = await supabase
@@ -140,6 +141,11 @@ export async function GET(request: Request) {
         undefined,
         supabase
       )
+
+      // Redirect based on onboarding status
+      if (needsOnboarding) {
+        return NextResponse.redirect(`${origin}/onboarding/department`)
+      }
 
       // Success - redirect to dashboard or requested page
       const redirectUrl = next.startsWith('/') ? next : '/dashboard'
