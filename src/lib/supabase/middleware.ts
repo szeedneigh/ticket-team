@@ -101,6 +101,27 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Onboarding check: If user is authenticated but doesn't have a department,
+  // redirect to onboarding (unless already on onboarding page or auth pages)
+  if (
+    user &&
+    !request.nextUrl.pathname.startsWith('/onboarding') &&
+    !request.nextUrl.pathname.startsWith('/auth')
+  ) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('department')
+      .eq('id', user.id)
+      .single()
+
+    // If user doesn't have a department and trying to access protected routes
+    if (!userData?.department && isProtectedRoute) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/onboarding/department'
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Role-based protection for admin routes
   if (user && request.nextUrl.pathname.startsWith('/admin')) {
     const { data: userData } = await supabase
