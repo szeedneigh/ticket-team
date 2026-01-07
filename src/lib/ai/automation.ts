@@ -1,14 +1,3 @@
-/**
- * AI Automation Utilities
- * 
- * Automated AI-driven actions:
- * - Auto-triage tickets (suggest priority/category)
- * - Auto-summarize tickets
- * - Suggest replies
- * 
- * SERVER-ONLY
- */
-
 'use server'
 
 import { generateChatResponse } from '@/lib/ai/client'
@@ -16,10 +5,6 @@ import { getTicketContext } from '@/lib/ai/retrieval'
 import { logAutomation, updateAutomationStatus } from '@/lib/ai/events'
 import type { TicketTriageSuggestion, TicketSummary } from '@/lib/types/ai-events'
 import type { TicketComment } from '@/lib/types/tickets'
-
-// ============================================================================
-// Auto-Triage
-// ============================================================================
 
 /**
  * Suggest ticket priority and category based on content
@@ -34,7 +19,6 @@ export async function autoTriageTicket(
   ticketDescription: string,
   triggerEventId?: string
 ): Promise<TicketTriageSuggestion | null> {
-  // Log automation start
   const runId = await logAutomation({
     automationType: 'auto_triage',
     triggerEventId,
@@ -83,7 +67,6 @@ Please analyze this ticket and provide triage suggestions in JSON format.`
       maxOutputTokens: 512,
     })
 
-    // Parse JSON response
     const jsonMatch = response.text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
       throw new Error('Failed to parse JSON from response')
@@ -91,7 +74,6 @@ Please analyze this ticket and provide triage suggestions in JSON format.`
 
     const suggestion = JSON.parse(jsonMatch[0]) as TicketTriageSuggestion
 
-    // Update automation status
     await updateAutomationStatus(runId, 'completed', {
       suggestion,
     })
@@ -100,7 +82,6 @@ Please analyze this ticket and provide triage suggestions in JSON format.`
   } catch (error) {
     console.error('[autoTriageTicket] Error:', error)
     
-    // Update automation status with error
     await updateAutomationStatus(
       runId,
       'failed',
@@ -111,10 +92,6 @@ Please analyze this ticket and provide triage suggestions in JSON format.`
     return null
   }
 }
-
-// ============================================================================
-// Auto-Summarization
-// ============================================================================
 
 /**
  * Generate a summary of a ticket and its comments
@@ -127,7 +104,6 @@ export async function autoSummarizeTicket(
   ticketId: string,
   triggerEventId?: string
 ): Promise<TicketSummary | null> {
-  // Log automation start
   const runId = await logAutomation({
     automationType: 'auto_summarize',
     triggerEventId,
@@ -143,7 +119,6 @@ export async function autoSummarizeTicket(
   }
 
   try {
-    // Get full ticket context
     const context = await getTicketContext(ticketId)
 
     if (!context.ticket) {
@@ -186,7 +161,6 @@ Please provide a structured summary in JSON format.`
       maxOutputTokens: 1024,
     })
 
-    // Parse JSON response
     const jsonMatch = response.text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
       throw new Error('Failed to parse JSON from response')
@@ -194,7 +168,6 @@ Please provide a structured summary in JSON format.`
 
     const summary = JSON.parse(jsonMatch[0]) as TicketSummary
 
-    // Update automation status
     await updateAutomationStatus(runId, 'completed', {
       summary,
     })
@@ -203,7 +176,6 @@ Please provide a structured summary in JSON format.`
   } catch (error) {
     console.error('[autoSummarizeTicket] Error:', error)
     
-    // Update automation status with error
     await updateAutomationStatus(
       runId,
       'failed',
@@ -214,10 +186,6 @@ Please provide a structured summary in JSON format.`
     return null
   }
 }
-
-// ============================================================================
-// Suggested Replies
-// ============================================================================
 
 /**
  * Generate suggested replies for a ticket
@@ -231,7 +199,6 @@ export async function suggestReplies(
   maxSuggestions: number = 3
 ): Promise<string[]> {
   try {
-    // Get ticket context
     const context = await getTicketContext(ticketId)
 
     if (!context.ticket) {
@@ -264,7 +231,6 @@ Please suggest ${maxSuggestions} helpful replies.`
       maxOutputTokens: 512,
     })
 
-    // Parse JSON array
     const jsonMatch = response.text.match(/\[[\s\S]*\]/)
     if (!jsonMatch) {
       return []
@@ -276,7 +242,3 @@ Please suggest ${maxSuggestions} helpful replies.`
     return []
   }
 }
-
-
-
-
