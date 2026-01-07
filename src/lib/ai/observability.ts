@@ -14,10 +14,6 @@
 
 import { createServiceClient } from '@/lib/supabase/service'
 
-// ============================================================================
-// Model Usage Stats
-// ============================================================================
-
 export interface ModelUsageStats {
   model: string
   total_requests: number
@@ -27,12 +23,6 @@ export interface ModelUsageStats {
   error_rate: number
 }
 
-/**
- * Get AI model usage statistics
- * 
- * @param days - Number of days to look back
- * @returns Model usage stats
- */
 export async function getModelUsageStats(days: number = 30): Promise<ModelUsageStats[]> {
   try {
     const supabase = createServiceClient()
@@ -57,10 +47,6 @@ export async function getModelUsageStats(days: number = 30): Promise<ModelUsageS
   }
 }
 
-// ============================================================================
-// Automation Metrics
-// ============================================================================
-
 export interface AutomationMetrics {
   automation_type: string
   total_runs: number
@@ -71,12 +57,6 @@ export interface AutomationMetrics {
   success_rate: number
 }
 
-/**
- * Get automation performance metrics
- * 
- * @param days - Number of days to look back
- * @returns Automation metrics
- */
 export async function getAutomationMetrics(days: number = 30): Promise<AutomationMetrics[]> {
   try {
     const supabase = createServiceClient()
@@ -102,16 +82,6 @@ export async function getAutomationMetrics(days: number = 30): Promise<Automatio
   }
 }
 
-// ============================================================================
-// Recent Prompt Logs
-// ============================================================================
-
-/**
- * Get recent prompt logs for monitoring
- * 
- * @param limit - Number of logs to return
- * @returns Recent prompt logs
- */
 export async function getRecentPromptLogs(limit: number = 50) {
   try {
     const supabase = createServiceClient()
@@ -134,22 +104,12 @@ export async function getRecentPromptLogs(limit: number = 50) {
   }
 }
 
-// ============================================================================
-// Event Statistics
-// ============================================================================
-
 export interface EventStats {
   event_type: string
   count: number
   percentage: number
 }
 
-/**
- * Get event distribution statistics
- * 
- * @param days - Number of days to look back
- * @returns Event statistics
- */
 export async function getEventStats(days: number = 30): Promise<EventStats[]> {
   try {
     const supabase = createServiceClient()
@@ -167,7 +127,6 @@ export async function getEventStats(days: number = 30): Promise<EventStats[]> {
       return []
     }
 
-    // Count by event type
     const counts: Record<string, number> = {}
     let total = 0
 
@@ -176,7 +135,6 @@ export async function getEventStats(days: number = 30): Promise<EventStats[]> {
       total++
     }
 
-    // Convert to array with percentages
     return Object.entries(counts).map(([event_type, count]) => ({
       event_type,
       count,
@@ -188,16 +146,6 @@ export async function getEventStats(days: number = 30): Promise<EventStats[]> {
   }
 }
 
-// ============================================================================
-// Dashboard Data
-// ============================================================================
-
-/**
- * Get all observability data for dashboard
- * 
- * @param days - Number of days to look back
- * @returns Complete dashboard data
- */
 export async function getObservabilityDashboardData(days: number = 30) {
   try {
     const [modelStats, automationMetrics, eventStats, promptLogs] = await Promise.all([
@@ -223,6 +171,7 @@ export async function getObservabilityDashboardData(days: number = 30) {
     }
   }
 }
+
 
 
 
