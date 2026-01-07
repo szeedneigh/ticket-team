@@ -35,7 +35,7 @@ const STATUS_TABS: StatusTab[] = [
   },
   {
     value: 'ongoing',
-    label: 'Ongoing',
+    label: 'In Progress',
     icon: RotateCw,
     status: 'in_progress',
   },
