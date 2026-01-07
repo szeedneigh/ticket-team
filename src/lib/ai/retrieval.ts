@@ -21,25 +21,9 @@ import type {
 import type { Ticket, TicketComment } from '@/lib/types/tickets'
 import type { AiEvent } from '@/lib/types/ai-events'
 
-// ============================================================================
-// Configuration
-// ============================================================================
-
 const DEFAULT_MATCH_THRESHOLD = 0.7
 const DEFAULT_MATCH_COUNT = 10
 
-// ============================================================================
-// Knowledge Base Search
-// ============================================================================
-
-/**
- * Search knowledge base articles using semantic similarity
- * 
- * @param query - Search query
- * @param matchThreshold - Similarity threshold (0-1)
- * @param matchCount - Number of results to return
- * @returns RAG context with KB articles
- */
 export async function searchKnowledgeBase(
   query: string,
   matchThreshold: number = DEFAULT_MATCH_THRESHOLD,
@@ -67,7 +51,6 @@ export async function searchKnowledgeBase(
       throw error
     }
 
-    // 3. Transform results to RAG sources
     interface KBArticleResult {
       id: string
       title: string
@@ -110,19 +93,6 @@ export async function searchKnowledgeBase(
   }
 }
 
-// ============================================================================
-// AI Event Embeddings Search
-// ============================================================================
-
-/**
- * Search AI event embeddings using semantic similarity
- * 
- * @param query - Search query
- * @param matchThreshold - Similarity threshold (0-1)
- * @param matchCount - Number of results to return
- * @param filterTypes - Optional event types to filter
- * @returns AI event search results
- */
 export async function searchAIEventEmbeddings(
   query: string,
   matchThreshold: number = DEFAULT_MATCH_THRESHOLD,
@@ -130,12 +100,10 @@ export async function searchAIEventEmbeddings(
   filterTypes?: string[]
 ): Promise<AiEmbeddingSearchResult[]> {
   try {
-    // 1. Generate query embedding
     const embedding = await generateEmbedding(query, {
       taskType: 'RETRIEVAL_QUERY',
     })
 
-    // 2. Search using vector similarity
     const supabase = createServiceClient()
 
     const { data, error } = await supabase.rpc('match_ai_event_embeddings', {
@@ -157,17 +125,6 @@ export async function searchAIEventEmbeddings(
   }
 }
 
-// ============================================================================
-// Combined RAG Search
-// ============================================================================
-
-/**
- * Search across multiple sources (KB + events) and combine results
- * 
- * @param query - Search query
- * @param options - Search options
- * @returns Combined RAG context
- */
 export async function searchAllSources(
   query: string,
   options: {
@@ -191,13 +148,11 @@ export async function searchAllSources(
   try {
     const sources: RAGSource[] = []
 
-    // 1. Search knowledge base
     if (includeKB) {
       const kbResults = await searchKnowledgeBase(query, matchThreshold, matchCount)
       sources.push(...kbResults.sources)
     }
 
-    // 2. Search AI event embeddings
     if (includeEvents) {
       const eventResults = await searchAIEventEmbeddings(
         query,
@@ -206,7 +161,6 @@ export async function searchAllSources(
         eventTypes
       )
 
-      // Transform event results to RAG sources
       const eventSources: RAGSource[] = eventResults.map(event => ({
         id: event.id,
         type: 'event' as const,
@@ -224,10 +178,8 @@ export async function searchAllSources(
       sources.push(...eventSources)
     }
 
-    // 3. Sort by similarity (descending)
     sources.sort((a, b) => b.similarity - a.similarity)
 
-    // 4. Limit to match count
     const limitedSources = sources.slice(0, matchCount)
 
     return {
@@ -247,17 +199,6 @@ export async function searchAllSources(
   }
 }
 
-// ============================================================================
-// Context Building
-// ============================================================================
-
-/**
- * Build a context string from RAG sources for prompt augmentation
- * 
- * @param sources - RAG sources
- * @param maxLength - Maximum character length
- * @returns Context string
- */
 export function buildContextString(
   sources: RAGSource[],
   maxLength: number = 4000
@@ -284,16 +225,6 @@ export function buildContextString(
   return context
 }
 
-// ============================================================================
-// Ticket Context Retrieval
-// ============================================================================
-
-/**
- * Get full context for a ticket (ticket + comments + events)
- * 
- * @param ticketId - Ticket ID
- * @returns Ticket context
- */
 export async function getTicketContext(ticketId: string): Promise<{
   ticket: Ticket | null
   comments: TicketComment[]
@@ -302,21 +233,18 @@ export async function getTicketContext(ticketId: string): Promise<{
   try {
     const supabase = createServiceClient()
 
-    // 1. Get ticket
     const { data: ticket } = await supabase
       .from('tickets')
       .select('*')
       .eq('id', ticketId)
       .single()
 
-    // 2. Get comments
     const { data: comments } = await supabase
       .from('ticket_comments')
       .select('*')
       .eq('ticket_id', ticketId)
       .order('created_at', { ascending: true })
 
-    // 3. Get AI events related to ticket
     const { data: events } = await supabase
       .from('ai_events')
       .select('*')
@@ -337,7 +265,3 @@ export async function getTicketContext(ticketId: string): Promise<{
     }
   }
 }
-
-
-
-
