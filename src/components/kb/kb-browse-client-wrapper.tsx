@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { SearchSection } from './search-section'
 import { SemanticSearchResults } from './semantic-search-results'
 import { FilterBar } from './filter-bar'
@@ -27,6 +27,10 @@ interface SemanticResult {
   helpful_votes: number
   total_votes: number
   similarity: number
+  author_id?: string
+  author_full_name?: string
+  author_email?: string
+  author_avatar_url?: string
 }
 
 interface KBBrowseClientWrapperProps {
@@ -67,6 +71,7 @@ export function KBBrowseClientWrapper({
   const handleSemanticSearchEnd = useCallback(() => {
     // Keep active state based on whether there's a query
   }, [])
+
 
   return (
     <>
