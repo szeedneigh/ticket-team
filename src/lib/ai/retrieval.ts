@@ -62,7 +62,7 @@ export async function searchKnowledgeBase(
       view_count?: number
     }
     
-    const sources: RAGSource[] = (data || []).map((article: KBArticleResult) => ({
+    const sources: RAGSource[] = ((data as KBArticleResult[] | null) || []).map((article: KBArticleResult) => ({
       id: article.id,
       type: 'kb_article' as const,
       title: article.title,
