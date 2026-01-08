@@ -147,8 +147,19 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/onboarding/department`)
       }
 
-      // Success - redirect to dashboard or requested page
-      const redirectUrl = next.startsWith('/') ? next : '/dashboard'
+      // Redirect employees to chat, others to dashboard
+      const userRole = userData?.role || 'employee'
+      const isEmployee = userRole === 'employee'
+      
+      // Success - redirect based on role or requested page
+      let redirectUrl = next.startsWith('/') ? next : (isEmployee ? '/chat' : '/dashboard')
+      
+      // If next is explicitly set and not dashboard, use it
+      // Otherwise, use role-based default
+      if (next === '/dashboard' && isEmployee) {
+        redirectUrl = '/chat'
+      }
+      
       return NextResponse.redirect(`${origin}${redirectUrl}`)
     }
 
