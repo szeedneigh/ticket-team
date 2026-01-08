@@ -67,27 +67,52 @@ export function ChatPageClient({
         return // Already active
       }
 
-      setIsLoadingSession(true)
-      setActiveSessionId(sessionId)
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-start',message:'Session selection started',data:{fromSessionId:activeSessionId,toSessionId:sessionId,hasCachedMessages:!!sessionMessages[sessionId]},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'})}).catch(()=>{});
+      // #endregion
 
-      // Update URL
+      setIsLoadingSession(true)
+      
+      // Update URL first
       const params = new URLSearchParams(searchParams.toString())
       params.set('session', sessionId)
-      router.push(`/chat?${params.toString()}`)
+      router.replace(`/chat?${params.toString()}`)
 
       try {
-        // Fetch session messages if not cached
-        if (!sessionMessages[sessionId]) {
-          const result = await getChatSession(sessionId)
+        // Always fetch fresh messages to ensure we have the latest
+        const result = await getChatSession(sessionId)
 
-          if (!result.success) {
-            toast.error(result.error || 'Failed to load conversation')
-          } else if (result.data) {
-            setSessionMessages(prev => ({
-              ...prev,
-              [sessionId]: result.data!.messages,
-            }))
-          }
+        if (!result.success) {
+          toast.error(result.error || 'Failed to load conversation')
+          setIsLoadingSession(false)
+          return
+        }
+
+        if (result.data) {
+          const loadedMessages = result.data.messages
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-loaded',message:'Session messages loaded',data:{sessionId,messagesCount:loadedMessages.length,lastMessageRole:loadedMessages[loadedMessages.length-1]?.role,lastMessageIndex:loadedMessages.length-1},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2,H5'})}).catch(()=>{});
+          // #endregion
+          
+          // Update messages cache
+          setSessionMessages(prev => ({
+            ...prev,
+            [sessionId]: loadedMessages,
+          }))
+          
+          // Update active session ID after messages are loaded
+          setActiveSessionId(sessionId)
+          
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-complete',message:'Session switch complete',data:{sessionId,activeSessionId:sessionId,messagesCount:loadedMessages.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'})}).catch(()=>{});
+          // #endregion
+        } else {
+          // Session exists but has no messages - still switch to it
+          setSessionMessages(prev => ({
+            ...prev,
+            [sessionId]: [],
+          }))
+          setActiveSessionId(sessionId)
         }
       } catch (error) {
         console.error('Failed to load session:', error)
@@ -201,12 +226,21 @@ export function ChatPageClient({
         </Button>
 
         <div className="flex-1 w-full flex flex-col h-full">
+          {isLoadingSession ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center space-y-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2cafdd] mx-auto" />
+                <p className="text-sm text-muted-foreground">Loading conversation...</p>
+              </div>
+            </div>
+          ) : (
             <ChatClient
-            key={activeSessionId} // Re-mount on session change
-            sessionId={activeSessionId}
-            initialMessages={sessionMessages[activeSessionId] || []}
-            userName={userName}
+              key={activeSessionId} // Re-mount on session change
+              sessionId={activeSessionId}
+              initialMessages={sessionMessages[activeSessionId] || []}
+              userName={userName}
             />
+          )}
         </div>
       </div>
 
