@@ -80,11 +80,6 @@ export function GoogleSignInButton() {
         </Button>
       </div>
       
-      <div className="text-center space-y-1">
-        <p className="text-xs text-slate-400">
-          Faculty, Staff & Student Portal
-        </p>
-      </div>
     </div>
   )
 }
