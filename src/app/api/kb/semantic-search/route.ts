@@ -74,7 +74,25 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Map database fields to frontend expected format
-    const mappedResults = (data || []).map((article: any) => ({
+    interface KBArticleResult {
+      id: string
+      title: string
+      content: string
+      summary?: string
+      category?: string
+      subcategory?: string
+      tags?: string[]
+      view_count?: number
+      helpful_votes?: number
+      total_votes?: number
+      similarity: number
+      author_id?: string
+      author_full_name?: string
+      author_email?: string
+      author_avatar_url?: string
+    }
+    
+    const mappedResults = ((data as KBArticleResult[] | null) || []).map((article: KBArticleResult) => ({
       id: article.id,
       title: article.title,
       content: article.content,
