@@ -22,6 +22,7 @@ import { FileUpload } from './file-upload'
 import { createTicketSchema, type CreateTicketInput } from '@/lib/validations/tickets'
 import { createTicket } from '@/app/actions/tickets'
 import type { Category } from '@/lib/tickets/queries'
+import type { TicketPriority } from '@/lib/types/database'
 import { SUCCESS_MESSAGES } from '@/lib/constants'
 
 /**
@@ -253,7 +254,7 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
             <Select
               value={watch('priority')}
               onValueChange={(value) =>
-                setValue('priority', value as 'low' | 'medium' | 'high', {
+                setValue('priority', value as TicketPriority, {
                   shouldValidate: true,
                 })
               }
@@ -265,7 +266,9 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
               <SelectContent>
                 <SelectItem value="low">Low - Not urgent</SelectItem>
                 <SelectItem value="medium">Medium - Normal priority</SelectItem>
-                <SelectItem value="high">High - Urgent</SelectItem>
+                <SelectItem value="high">High - Important</SelectItem>
+                <SelectItem value="urgent">Urgent - Immediate attention required</SelectItem>
+                <SelectItem value="critical">Critical - System-wide impact</SelectItem>
               </SelectContent>
             </Select>
             {errors.priority && (
