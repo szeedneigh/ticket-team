@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import {
   Select,
   SelectContent,
@@ -25,6 +25,7 @@ interface TimeFilterProps {
 export function TimeFilter({ defaultValue = 'this_week' }: TimeFilterProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
 
   const handleChange = (value: TimePeriod) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -38,7 +39,8 @@ export function TimeFilter({ defaultValue = 'this_week' }: TimeFilterProps) {
     // Reset to page 1 when changing time filter
     params.delete('page')
 
-    router.push(`/tickets?${params.toString()}`)
+    // Use current pathname to maintain route context
+    router.push(`${pathname}?${params.toString()}`)
   }
 
   const currentPeriod = (searchParams.get('timePeriod') as TimePeriod) || defaultValue
