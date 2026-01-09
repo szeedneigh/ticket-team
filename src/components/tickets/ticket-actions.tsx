@@ -188,12 +188,26 @@ export function TicketActions({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="open">{TICKET_STATUS_LABELS.open}</SelectItem>
-                  <SelectItem value="in_progress">{TICKET_STATUS_LABELS.in_progress}</SelectItem>
-                  <SelectItem value="on_hold">{TICKET_STATUS_LABELS.on_hold}</SelectItem>
-                  <SelectItem value="resolved">{TICKET_STATUS_LABELS.resolved}</SelectItem>
-                  <SelectItem value="closed">{TICKET_STATUS_LABELS.closed}</SelectItem>
-                  <SelectItem value="canceled">{TICKET_STATUS_LABELS.canceled}</SelectItem>
+                  {/* Active Statuses */}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Active
+                  </div>
+                  <SelectItem value="open">{TICKET_STATUS_LABELS.open} - New ticket</SelectItem>
+                  <SelectItem value="in_progress">{TICKET_STATUS_LABELS.in_progress} - Staff working on it</SelectItem>
+                  <SelectItem value="on_hold">{TICKET_STATUS_LABELS.on_hold} - Waiting for something</SelectItem>
+                  <Separator className="my-1" />
+                  {/* Completed Statuses */}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Completed
+                  </div>
+                  <SelectItem value="resolved">{TICKET_STATUS_LABELS.resolved} - Fixed, awaiting confirmation</SelectItem>
+                  <SelectItem value="closed">{TICKET_STATUS_LABELS.closed} - Confirmed by user</SelectItem>
+                  <Separator className="my-1" />
+                  {/* Cancelled */}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Cancelled
+                  </div>
+                  <SelectItem value="canceled">{TICKET_STATUS_LABELS.canceled} - No longer needed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -250,6 +264,8 @@ export function TicketActions({
                   <SelectItem value="low">{TICKET_PRIORITY_LABELS.low}</SelectItem>
                   <SelectItem value="medium">{TICKET_PRIORITY_LABELS.medium}</SelectItem>
                   <SelectItem value="high">{TICKET_PRIORITY_LABELS.high}</SelectItem>
+                  <SelectItem value="urgent">{TICKET_PRIORITY_LABELS.urgent}</SelectItem>
+                  <SelectItem value="critical">{TICKET_PRIORITY_LABELS.critical}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
