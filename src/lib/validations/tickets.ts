@@ -63,8 +63,8 @@ export const createTicketSchema = z.object({
 
   subcategory: z.string().nullable().optional(),
 
-  priority: z.enum(['low', 'medium', 'high'], {
-    errorMap: () => ({ message: 'Priority must be low, medium, or high' }),
+  priority: z.enum(['low', 'medium', 'high', 'urgent', 'critical'], {
+    errorMap: () => ({ message: 'Priority must be low, medium, high, urgent, or critical' }),
   }),
 
   // Optional: AI escalation metadata (for future chatbot integration)
