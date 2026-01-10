@@ -80,7 +80,7 @@ export function StaffPerformanceContent({
         avgResolutionTimeHours: 0,
         avgResponseTime: '-',
         avgResponseTimeHours: 0,
-        satisfactionScore: s.satisfactionScore,
+        satisfactionScore: s.satisfactionScore ?? 0,
         activeTickets: s.activeTickets,
         overdueTickets: s.overdueTickets,
         dailyMetrics: [],
