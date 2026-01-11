@@ -21,7 +21,7 @@ import { ChatHistory } from '@/components/chat/chat-history'
 import { ChatClient } from '@/components/chat/chat-client'
 import {
   createChatSession,
-  deleteChatSession,
+  archiveChatSession,
   getChatSession,
 } from '@/app/actions/chat'
 import type { SessionSummary } from '@/lib/chat/queries'
@@ -73,18 +73,17 @@ export function ChatPageClient({
 
       setIsLoadingSession(true)
       
-      // Update URL first
-      const params = new URLSearchParams(searchParams.toString())
-      params.set('session', sessionId)
-      router.replace(`/chat?${params.toString()}`)
-
       try {
+        // Update URL first
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('session', sessionId)
+        router.replace(`/chat?${params.toString()}`)
+
         // Always fetch fresh messages to ensure we have the latest
         const result = await getChatSession(sessionId)
 
         if (!result.success) {
           toast.error(result.error || 'Failed to load conversation')
-          setIsLoadingSession(false)
           return
         }
 
@@ -126,6 +125,7 @@ export function ChatPageClient({
 
   // Handle new chat creation
   const handleNewChat = useCallback(async () => {
+    setIsLoadingSession(true)
     try {
       const result = await createChatSession()
 
@@ -148,6 +148,12 @@ export function ChatPageClient({
 
       setSessions(prev => [newSession, ...prev])
       setActiveSessionId(newSessionId)
+      
+      // Initialize empty messages for new session
+      setSessionMessages(prev => ({
+        ...prev,
+        [newSessionId]: [],
+      }))
 
       // Update URL
       const params = new URLSearchParams(searchParams.toString())
@@ -158,22 +164,29 @@ export function ChatPageClient({
     } catch (error) {
       console.error('Failed to create new chat:', error)
       toast.error('Failed to create new chat')
+    } finally {
+      setIsLoadingSession(false)
     }
   }, [router, searchParams])
 
-  // Handle session deletion
-  const handleDeleteSession = useCallback(
+  // Handle session archiving
+  const handleArchiveSession = useCallback(
     async (sessionId: string) => {
       try {
-        const result = await deleteChatSession(sessionId)
+        const result = await archiveChatSession(sessionId)
 
         if (!result.success) {
-          toast.error(result.error || 'Failed to delete conversation')
+          toast.error(result.error || 'Failed to archive conversation')
           return
         }
 
+        // Calculate remaining sessions BEFORE updating state
+        const remainingSessions = sessions.filter(
+          s => s.session_id !== sessionId
+        )
+
         // Remove from sessions list
-        setSessions(prev => prev.filter(s => s.session_id !== sessionId))
+        setSessions(remainingSessions)
 
         // Clear cached messages
         setSessionMessages(prev => {
@@ -182,24 +195,21 @@ export function ChatPageClient({
           return updated
         })
 
-        // If deleted session was active, switch to another
-        if (sessionId === activeSessionId) {
-          const remainingSessions = sessions.filter(
-            s => s.session_id !== sessionId
-          )
+        toast.success('Conversation archived')
 
+        // If archived session was active, switch to another
+        if (sessionId === activeSessionId) {
           if (remainingSessions.length > 0) {
-            handleSessionSelect(remainingSessions[0].session_id)
+            // Switch to the first remaining session
+            await handleSessionSelect(remainingSessions[0].session_id)
           } else {
             // Create new session if no sessions left
-            handleNewChat()
+            await handleNewChat()
           }
         }
-
-        toast.success('Conversation deleted')
       } catch (error) {
-        console.error('Failed to delete session:', error)
-        toast.error('Failed to delete conversation')
+        console.error('Failed to archive session:', error)
+        toast.error('Failed to archive conversation')
       }
     },
     [activeSessionId, sessions, handleSessionSelect, handleNewChat]
@@ -250,7 +260,7 @@ export function ChatPageClient({
         activeSessionId={activeSessionId}
         onSessionSelect={handleSessionSelect}
         onNewChat={handleNewChat}
-        onDeleteSession={handleDeleteSession}
+        onArchiveSession={handleArchiveSession}
         isLoading={isLoadingSession}
         isOpen={isHistoryOpen}
         onToggle={() => setIsHistoryOpen(!isHistoryOpen)}
