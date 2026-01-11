@@ -68,10 +68,47 @@ export function isValidCommentFileSize(size: number): boolean {
 }
 
 /**
- * Check if file MIME type is allowed
+ * File extension to MIME type mapping for comments (for fallback validation)
  */
-export function isValidCommentFileType(mimeType: string): boolean {
-  return (COMMENT_FILE_UPLOAD.ALLOWED_TYPES as readonly string[]).includes(mimeType)
+const COMMENT_FILE_EXTENSION_MAP: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  txt: 'text/plain',
+}
+
+/**
+ * Check if file MIME type is allowed (checks both MIME type and extension)
+ */
+export function isValidCommentFileType(file: File | string, filename?: string): boolean {
+  const mimeType = typeof file === 'string' ? file : file.type
+  const fileName = typeof file === 'string' ? (filename || '') : file.name
+  const extension = fileName.split('.').pop()?.toLowerCase()
+
+  // Check MIME type first
+  if ((COMMENT_FILE_UPLOAD.ALLOWED_TYPES as readonly string[]).includes(mimeType)) {
+    return true
+  }
+
+  // Fallback: Check extension if MIME type detection fails
+  if (extension && COMMENT_FILE_EXTENSION_MAP[extension]) {
+    const expectedMimeType = COMMENT_FILE_EXTENSION_MAP[extension]
+    
+    // If browser didn't provide MIME type or provided generic type, trust extension
+    if (!mimeType || mimeType === 'application/octet-stream' || mimeType === '') {
+      return true
+    }
+    
+    // Allow if extension matches expected MIME type
+    return expectedMimeType === mimeType
+  }
+
+  return false
 }
 
 /**
