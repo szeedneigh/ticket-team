@@ -12,7 +12,7 @@
 import { createClient } from '@/lib/supabase/server'
 import {
   createSession,
-  deleteSession,
+  archiveSession,
   updateInteractionFeedback,
   linkInteractionToTicket,
   getSessionsByUserId,
@@ -89,12 +89,12 @@ export async function createChatSession(): Promise<
 }
 
 /**
- * Delete a chat session
+ * Archive a chat session (soft delete)
  *
- * @param sessionId - The session ID to delete
+ * @param sessionId - The session ID to archive
  * @returns Success status or error
  */
-export async function deleteChatSession(
+export async function archiveChatSession(
   sessionId: string
 ): Promise<ActionResponse<void>> {
   try {
@@ -109,25 +109,126 @@ export async function deleteChatSession(
     if (authError || !user) {
       return {
         success: false,
-        error: 'You must be logged in to delete a chat session',
+        error: 'You must be logged in to archive a chat session',
       }
     }
 
-    // Delete session
-    await deleteSession(sessionId, user.id)
+    // Archive session
+    await archiveSession(sessionId, user.id)
 
     return {
       success: true,
       data: undefined,
     }
   } catch (error) {
-    logger.error('Error deleting chat session', {
+    logger.error('Error archiving chat session', {
       error: error instanceof Error ? error.message : 'Unknown error',
       sessionId
     })
     return {
       success: false,
-      error: 'Failed to delete chat session. Please try again.',
+      error: 'Failed to archive chat session. Please try again.',
+    }
+  }
+}
+
+/**
+ * Get archived chat sessions
+ *
+ * @param params - Query parameters (limit, offset)
+ * @returns Array of archived session summaries or error
+ */
+export async function getArchivedChatSessions(params?: {
+  limit?: number
+  offset?: number
+}): Promise<ActionResponse<SessionSummary[]>> {
+  try {
+    const supabase = await createClient()
+
+    // Verify user authentication
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return {
+        success: false,
+        error: 'You must be logged in to view archived chat sessions',
+      }
+    }
+
+    // Query for archived sessions only (sessions where all interactions are archived)
+    // We get sessions that have at least one archived interaction
+    const { data: archivedInteractions, error: queryError } = await supabase
+      .from('ai_interactions')
+      .select('session_id, query, created_at, escalated_to_ticket, metadata')
+      .eq('user_id', user.id)
+      .not('archived_at', 'is', null) // Only archived interactions
+      .order('created_at', { ascending: false })
+
+    if (queryError) {
+      logger.error('Error querying archived interactions', { error: queryError.message })
+      return {
+        success: false,
+        error: 'Failed to fetch archived chat sessions',
+      }
+    }
+
+    if (!archivedInteractions || archivedInteractions.length === 0) {
+      return {
+        success: true,
+        data: [],
+      }
+    }
+
+    // Group by session_id and create summaries (similar to getSessionsByUserId)
+    const sessionMap = new Map<string, SessionSummary>()
+
+    for (const interaction of archivedInteractions) {
+      const existingSession = sessionMap.get(interaction.session_id)
+
+      if (!existingSession) {
+        const title =
+          (interaction.metadata as Record<string, unknown>)?.session_title as
+            | string
+            | undefined
+
+        sessionMap.set(interaction.session_id, {
+          session_id: interaction.session_id,
+          title: title || null,
+          last_message: interaction.query,
+          last_message_at: interaction.created_at,
+          message_count: 1,
+          escalated: interaction.escalated_to_ticket,
+        })
+      } else {
+        existingSession.message_count++
+        if (new Date(interaction.created_at) > new Date(existingSession.last_message_at)) {
+          existingSession.last_message = interaction.query
+          existingSession.last_message_at = interaction.created_at
+        }
+        if (interaction.escalated_to_ticket) {
+          existingSession.escalated = true
+        }
+      }
+    }
+
+    const archivedSessions = Array.from(sessionMap.values())
+      .sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
+      .slice(params?.offset || 0, (params?.offset || 0) + (params?.limit || 50))
+
+    return {
+      success: true,
+      data: archivedSessions,
+    }
+  } catch (error) {
+    logger.error('Error fetching archived chat sessions', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    return {
+      success: false,
+      error: 'Failed to fetch archived chat sessions. Please try again.',
     }
   }
 }
