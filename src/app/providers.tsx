@@ -61,7 +61,7 @@ export function Providers({ children, initialPreferences }: ProvidersProps) {
         {children}
         <Toaster richColors position="top-right" />
 
-        {/* Floating Chat Widget */}
+        {/* Floating Chat Widget - Visible on all pages except /chat */}
         <ChatWidgetInitializer />
       </PreferencesProvider>
     </ThemeProvider>
