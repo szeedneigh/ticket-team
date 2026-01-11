@@ -174,6 +174,13 @@ export default async function TicketsPage({ searchParams }: PageProps) {
             totalCount={result.totalCount}
           />
         </Suspense>
+
+        {/* Who is Online - Bottom of page */}
+        <Suspense fallback={null}>
+          <div className="mt-8">
+            <OnlineUsers />
+          </div>
+        </Suspense>
       </div>
     </div>
   )
