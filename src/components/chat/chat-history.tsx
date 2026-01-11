@@ -27,6 +27,7 @@ import {
   Loader2,
   X,
   AlertTriangle,
+  History,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -53,7 +54,7 @@ export interface ChatHistoryProps {
   activeSessionId: string | null
   onSessionSelect: (sessionId: string) => void
   onNewChat: () => void
-  onDeleteSession: (sessionId: string) => Promise<void>
+  onArchiveSession: (sessionId: string) => Promise<void> // Renamed from onDeleteSession
   isLoading?: boolean
   isOpen: boolean
   onToggle: () => void
@@ -69,59 +70,84 @@ export function ChatHistory({
   activeSessionId,
   onSessionSelect,
   onNewChat,
-  onDeleteSession,
+  onArchiveSession, // Renamed from onDeleteSession
   isLoading = false,
   isOpen,
   onToggle,
   className,
 }: ChatHistoryProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
+  const [sessionToArchive, setSessionToArchive] = useState<string | null>(null)
+  const [isArchiving, setIsArchiving] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
+  const [archivedSessions, setArchivedSessions] = useState<SessionSummary[]>([])
+  const [isLoadingArchived, setIsLoadingArchived] = useState(false)
 
   // Filter sessions based on search query (debounced effect handled in parent)
   const filteredSessions = useMemo(() => {
+    const sessionsToFilter = showArchived ? archivedSessions : sessions
+    
     if (!searchQuery.trim()) {
-      return sessions
+      return sessionsToFilter
     }
 
     const query = searchQuery.toLowerCase()
-    return sessions.filter(
+    return sessionsToFilter.filter(
       session =>
         session.title?.toLowerCase().includes(query) ||
         session.last_message.toLowerCase().includes(query)
     )
-  }, [sessions, searchQuery])
+  }, [sessions, archivedSessions, showArchived, searchQuery])
 
-  // Handle delete confirmation
-  const handleDeleteClick = useCallback((sessionId: string, e: React.MouseEvent) => {
+  // Handle archive click
+  const handleArchiveClick = useCallback((sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation() // Prevent session selection
-    setSessionToDelete(sessionId)
-    setDeleteDialogOpen(true)
+    setSessionToArchive(sessionId)
+    setArchiveDialogOpen(true)
   }, [])
 
-  // Handle delete confirmation
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!sessionToDelete) return
+  // Handle archive confirmation
+  const handleArchiveConfirm = useCallback(async () => {
+    if (!sessionToArchive) return
 
-    setIsDeleting(true)
+    setIsArchiving(true)
     try {
-      await onDeleteSession(sessionToDelete)
-      setDeleteDialogOpen(false)
-      setSessionToDelete(null)
+      await onArchiveSession(sessionToArchive)
+      setArchiveDialogOpen(false)
+      setSessionToArchive(null)
     } catch (error) {
-      console.error('Failed to delete session:', error)
+      console.error('Failed to archive session:', error)
     } finally {
-      setIsDeleting(false)
+      setIsArchiving(false)
     }
-  }, [sessionToDelete, onDeleteSession])
+  }, [sessionToArchive, onArchiveSession])
+
+  // Load archived sessions
+  const loadArchivedSessions = useCallback(async () => {
+    setIsLoadingArchived(true)
+    try {
+      const { getArchivedChatSessions } = await import('@/app/actions/chat')
+      const result = await getArchivedChatSessions()
+      if (result.success) {
+        setArchivedSessions(result.data)
+        setShowArchived(true)
+      }
+    } catch (error) {
+      console.error('Failed to load archived sessions:', error)
+    } finally {
+      setIsLoadingArchived(false)
+    }
+  }, [])
 
   // Handle session click
   const handleSessionClick = useCallback(
     (sessionId: string) => {
       onSessionSelect(sessionId)
-      onToggle() // Close drawer after selection
+      // Close drawer after selection (on mobile only)
+      if (window.innerWidth < 768) {
+        onToggle()
+      }
     },
     [onSessionSelect, onToggle]
   )
@@ -129,7 +155,10 @@ export function ChatHistory({
   // Handle new chat
   const handleNewChat = useCallback(() => {
     onNewChat()
-    onToggle() // Close drawer after creating new chat
+    // Close drawer after creating new chat (on mobile only)
+    if (window.innerWidth < 768) {
+      onToggle()
+    }
   }, [onNewChat, onToggle])
 
   return (
@@ -205,6 +234,18 @@ export function ChatHistory({
                     className="pl-9 bg-background/50 border-border/50 focus-visible:ring-[#2cafdd]/50 transition-all"
                   />
                 </div>
+
+                {/* Show Archived Toggle */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={showArchived ? () => setShowArchived(false) : loadArchivedSessions}
+                  disabled={isLoadingArchived}
+                  className="w-full gap-2"
+                >
+                  <History className="h-4 w-4" />
+                  {isLoadingArchived ? 'Loading...' : showArchived ? 'Show Active' : 'Show Archived'}
+                </Button>
               </div>
 
               {/* Sessions List */}
@@ -218,9 +259,13 @@ export function ChatHistory({
                     <MessageSquare className="h-12 w-12 text-muted-foreground/50" />
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-muted-foreground">
-                        {searchQuery ? 'No conversations found' : 'No conversations yet'}
+                        {showArchived 
+                          ? 'No archived conversations' 
+                          : searchQuery 
+                            ? 'No conversations found' 
+                            : 'No conversations yet'}
                       </p>
-                      {!searchQuery && (
+                      {!searchQuery && !showArchived && (
                         <p className="text-xs text-muted-foreground">
                           Start a new chat to get help from Timi
                         </p>
@@ -299,13 +344,13 @@ export function ChatHistory({
                             </div>
                           </div>
 
-                          {/* Delete Button */}
+                          {/* Archive Button */}
                           <Button
                             variant="ghost"
                             size="icon"
                             className="absolute right-2 top-2 h-7 w-7 opacity-0 transition-all group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                            onClick={e => handleDeleteClick(session.session_id, e)}
-                            aria-label="Delete conversation"
+                            onClick={e => handleArchiveClick(session.session_id, e)}
+                            aria-label="Archive conversation"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -317,10 +362,11 @@ export function ChatHistory({
               </ScrollArea>
 
               {/* Footer */}
-              {filteredSessions.length > 0 && (
+              {(showArchived ? archivedSessions : filteredSessions).length > 0 && (
                 <div className="border-t border-border p-4 text-xs text-muted-foreground">
-                  Showing {filteredSessions.length} of {sessions.length} conversation
-                  {sessions.length !== 1 && 's'}
+                  {showArchived 
+                    ? `Showing ${archivedSessions.length} archived conversation${archivedSessions.length !== 1 ? 's' : ''}`
+                    : `Showing ${filteredSessions.length} of ${sessions.length} conversation${sessions.length !== 1 ? 's' : ''}`}
                 </div>
               )}
             </motion.aside>
@@ -328,30 +374,29 @@ export function ChatHistory({
         )}
       </AnimatePresence>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* Archive Confirmation Dialog */}
+      <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Conversation?</AlertDialogTitle>
+            <AlertDialogTitle>Archive Conversation?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this conversation and all its messages.
-              This action cannot be undone.
+              This will archive this conversation. It will be hidden from your active conversations but can be viewed in the archived section.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isArchiving}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleArchiveConfirm}
+              disabled={isArchiving}
+              className="bg-[#2cafdd] text-white hover:bg-[#2cafdd]/90"
             >
-              {isDeleting ? (
+              {isArchiving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  Archiving...
                 </>
               ) : (
-                'Delete'
+                'Archive'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
