@@ -60,7 +60,9 @@ export function ChatWidgetInitializer() {
   // Check if we're on a dashboard route
   const isDashboardRoute =
     pathname !== '/' && // Not landing page
-    !pathname.startsWith('/auth') // Not auth pages
+    !pathname.startsWith('/auth') && // Not auth pages
+    pathname !== '/chat' && // Not chat page (widget should be hidden there)
+    !pathname.startsWith('/chat/') // Not chat sub-pages
 
   // Don't render widget if:
   // 1. Not on dashboard route
