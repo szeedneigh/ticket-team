@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { KPICard, KPICardGrid, TrendChart } from '@/components/analytics'
+import { KPICard, KPICardGrid } from '@/components/analytics'
 import {
   GaugeIcon,
   ClockIcon,
