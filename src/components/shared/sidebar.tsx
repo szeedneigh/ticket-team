@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -126,6 +126,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
   const [pendingHref, setPendingHref] = useState<string | null>(null)
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const isMobile = useIsMobile()
+  const prevPathnameRef = useRef(pathname)
 
   useEffect(() => {
     if (isMobileOpen) {
@@ -139,13 +140,17 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
     }
   }, [isMobileOpen])
 
-  // Auto-close mobile sidebar on route change
+  // Auto-close mobile sidebar on route change (not on initial mount or state changes)
   useEffect(() => {
-    if (isMobile && isMobileOpen) {
-      setIsMobileOpen(false)
+    // Only close if pathname actually changed (not on isMobileOpen state change)
+    if (prevPathnameRef.current !== pathname) {
+      if (isMobile && isMobileOpen) {
+        setIsMobileOpen(false)
+      }
+      // Clear pending state when navigation completes
+      setPendingHref(null)
+      prevPathnameRef.current = pathname
     }
-    // Clear pending state when navigation completes
-    setPendingHref(null)
   }, [pathname, isMobile, isMobileOpen, setIsMobileOpen])
 
   const filteredNavItems = navItems.filter(item =>
@@ -169,8 +174,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
 
       {/* Sidebar */}
       <motion.aside
-        key={isMobile ? 'mobile' : 'desktop'}
-        initial={isMobile ? { x: isMobileOpen ? 0 : "-100%" } : false}
+        initial={false}
         animate={{
           width: isMobile ? 280 : (isCollapsed ? 80 : 280),
           x: isMobile ? (isMobileOpen ? 0 : "-100%") : 0,
@@ -205,7 +209,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
             href="/dashboard"
             className={cn(
               "flex items-center group",
-              isCollapsed && !isMobile ? "justify-center" : "gap-3"
+              !isMobile && isCollapsed ? "justify-center" : "gap-3"
             )}
           >
             <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-white/10 border border-white/20 shadow-inner overflow-hidden group-hover:bg-white/20 transition-all duration-300">
@@ -214,7 +218,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
             </div>
             
             <AnimatePresence mode="wait">
-              {(!isCollapsed || isMobile) && (
+              {(isMobile || !isCollapsed) && (
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -257,7 +261,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                 }}
                 className={cn(
                   "relative flex items-center w-full h-12 px-3.5 rounded-xl transition-colors duration-200 group",
-                  isCollapsed && !isMobile ? "justify-center px-0" : "",
+                  !isMobile && isCollapsed ? "justify-center px-0" : "",
                   isActive 
                     ? "text-white" 
                     : "text-white/70 hover:text-white hover:bg-white/5"
@@ -289,14 +293,14 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                 <div className={cn(
                   "relative z-10 flex items-center justify-center transition-transform duration-300",
                   isActive ? "scale-110 text-cyan-300" : "group-hover:scale-110",
-                  (!isCollapsed || isMobile) && "mr-3"
+                  (isMobile || !isCollapsed) && "mr-3"
                 )}>
                   <item.icon className="h-[22px] w-[22px]" />
                 </div>
 
                 {/* Label */}
                 <AnimatePresence>
-                  {(!isCollapsed || isMobile) && (
+                  {(isMobile || !isCollapsed) && (
                     <motion.div
                       initial={{ opacity: 0, width: 0 }}
                       animate={{ opacity: 1, width: 'auto' }}
@@ -335,7 +339,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                 onMouseLeave={() => setHoveredItem(null)}
                 className="relative"
               >
-                {isCollapsed && !isMobile ? (
+                {!isMobile && isCollapsed ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       {LinkContent}
@@ -360,12 +364,12 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
         <div className="p-4 mt-auto">
           <div className={cn(
             "relative rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md overflow-hidden transition-all duration-300 group",
-            isCollapsed && !isMobile ? "p-2" : "p-3.5",
+            !isMobile && isCollapsed ? "p-2" : "p-3.5",
             "hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-black/10"
           )}>
             <div className={cn(
               "flex items-center",
-              isCollapsed && !isMobile ? "justify-center" : "gap-3"
+              !isMobile && isCollapsed ? "justify-center" : "gap-3"
             )}>
               {/* Avatar */}
               <div className="relative flex-shrink-0">
@@ -376,7 +380,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
               </div>
 
               {/* User Info */}
-              {(!isCollapsed || isMobile) && (
+              {(isMobile || !isCollapsed) && (
                 <div className="flex-1 min-w-0">
                   <p className="text-[15px] font-semibold text-white truncate">
                     {user.full_name || 'User'}
@@ -388,7 +392,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
               )}
 
               {/* Settings/Logout Action */}
-              {(!isCollapsed || isMobile) && (
+              {(isMobile || !isCollapsed) && (
                 <button className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors">
                   <LogOut className="h-4 w-4" />
                 </button>
