@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { SearchSection } from './search-section'
 import { SemanticSearchResults } from './semantic-search-results'
 import { FilterBar } from './filter-bar'
