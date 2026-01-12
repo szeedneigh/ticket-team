@@ -12,7 +12,6 @@ import { NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { trackNewSession, logLoginAttempt } from '@/lib/auth/session-tracker'
 import { sendWelcomeEmail } from '@/lib/email/service'
-import { clientEnv } from '@/lib/env/client'
 
 // Force dynamic rendering for OAuth callback
 // This route cannot be statically exported as it processes authentication codes
