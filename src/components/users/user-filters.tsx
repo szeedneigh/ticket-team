@@ -178,8 +178,7 @@ export function UserFilters({
             department: department !== 'all' ? department : null,
             status: activeStatus !== 'all' ? activeStatus : null,
           })
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            .filter(([_, value]) => value)
+            .filter(([_key, value]) => value)
             .length}{' '}
           filter(s) applied
         </div>
