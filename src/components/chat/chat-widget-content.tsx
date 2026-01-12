@@ -230,7 +230,7 @@ export function ChatWidgetContent({
               } else if (parsed.type === 'context' && parsed.contextArticles) {
                 sources = parsed.contextArticles
               }
-            } catch (e) {
+            } catch {
               // Ignore parse errors
             }
           }
@@ -292,7 +292,7 @@ export function ChatWidgetContent({
                 className="h-full w-full object-contain"
               />
             </div>
-            <h3 className="mb-2 text-base font-semibold text-slate-800">Hi! I'm Timi</h3>
+            <h3 className="mb-2 text-base font-semibold text-slate-800">Hi! I&apos;m Timi</h3>
             <p className="text-sm text-slate-600">
               Ask me anything about IT support, tickets, or help center articles.
             </p>
