@@ -32,7 +32,7 @@ interface DepartmentSelectionFormProps {
 
 export function DepartmentSelectionForm({
   departments,
-  userName,
+  userName: _userName,
 }: DepartmentSelectionFormProps) {
   const router = useRouter()
   const [selectedDepartment, setSelectedDepartment] = useState<string>('')
