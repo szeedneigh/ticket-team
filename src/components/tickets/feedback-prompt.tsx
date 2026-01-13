@@ -103,6 +103,10 @@ export function FeedbackPrompt({
           <DialogDescription>
             Your ticket &quot;{ticketTitle}&quot; has been resolved. Please rate your
             satisfaction with the resolution.
+            <br />
+            <span className="text-xs text-muted-foreground mt-1 block">
+              Note: Your rating cannot be changed after submission to ensure data integrity for analytics.
+            </span>
           </DialogDescription>
         </DialogHeader>
 

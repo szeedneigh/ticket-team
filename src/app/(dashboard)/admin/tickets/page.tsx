@@ -1,10 +1,10 @@
 /**
- * Tickets List Page
+ * Admin Tickets Page
  *
- * Server Component that fetches and displays tickets based on user role.
- * - Employees see only their tickets
- * - Staff/Admin see all tickets or filtered by assignment
- * Includes status tabs, search, time filter, and page-based pagination.
+ * Dedicated page for admins to view ALL tickets without default time filter restrictions.
+ * - Shows all tickets by default (no time filter)
+ * - Admin and super_admin only
+ * - Same UI as regular tickets page but with 'all' time filter default
  */
 
 import { Suspense } from 'react'
@@ -14,18 +14,17 @@ import { TicketFilters } from '@/components/tickets/ticket-filters'
 import { TicketList } from '@/components/tickets/ticket-list'
 import { StatusTabs } from '@/components/tickets/status-tabs'
 import { TimeFilter } from '@/components/tickets/time-filter'
-import { OnlineUsers } from '@/components/shared/online-users'
 import { createClient } from '@/lib/supabase/server'
 import { getTicketsPaged } from '@/lib/tickets/queries'
 import type { TicketFilters as TTicketFilters, TimePeriod } from '@/lib/types/tickets'
 import type { TicketStatus } from '@/lib/types/database'
-import { isStaffOrAbove } from '@/lib/types/database'
+import { isAdmin } from '@/lib/types/database'
 import { PAGINATION } from '@/lib/constants'
 import { Sparkles } from 'lucide-react'
 
 export const metadata = {
-  title: 'My Tickets | Ticket Team',
-  description: 'View and manage your support tickets',
+  title: 'All Tickets | Admin | Ticket Team',
+  description: 'View and manage all support tickets',
 }
 
 interface PageProps {
@@ -37,7 +36,7 @@ interface PageProps {
   }>
 }
 
-export default async function TicketsPage({ searchParams }: PageProps) {
+export default async function AdminTicketsPage({ searchParams }: PageProps) {
   const params = await searchParams
   const supabase = await createClient()
 
@@ -67,15 +66,13 @@ export default async function TicketsPage({ searchParams }: PageProps) {
     redirect('/auth/sign-in')
   }
 
-  // Build filters based on role and query params
-  const filters: TTicketFilters = {}
-
-  // Role-based filtering
-  if (!isStaffOrAbove(user.role)) {
-    // Employees can only see their own tickets
-    filters.user_id = user.id
+  // Only admins can access this page
+  if (!isAdmin(user.role)) {
+    redirect('/tickets')
   }
-  // Staff and above can see all tickets (no user_id filter)
+
+  // Build filters - admins see ALL tickets (no user_id filter)
+  const filters: TTicketFilters = {}
 
   // Apply URL query param filters
   if (params.status) {
@@ -86,11 +83,11 @@ export default async function TicketsPage({ searchParams }: PageProps) {
     filters.search = params.search
   }
 
+  // Default to 'all' for admin view (no time restriction)
   if (params.timePeriod) {
     filters.timePeriod = params.timePeriod as TimePeriod
   } else {
-    // Default to 'this_week' if not specified
-    filters.timePeriod = 'this_week'
+    filters.timePeriod = 'all'
   }
 
   // Parse page number
@@ -122,10 +119,10 @@ export default async function TicketsPage({ searchParams }: PageProps) {
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
             <div className="space-y-4">
               <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
-                My Tickets
+                All Tickets
               </h1>
               <p className="text-sm md:text-base text-muted-foreground flex items-center gap-2 max-w-2xl">
-                Manage and track your support requests. We&apos;re here to help.
+                View and manage all support tickets across the system.
                 <Sparkles className="h-4 w-4 text-[#2cafdd]" />
               </p>
             </div>
@@ -141,7 +138,7 @@ export default async function TicketsPage({ searchParams }: PageProps) {
               
               <div className="flex items-center gap-3 w-full md:w-auto">
                  <Suspense fallback={<Skeleton className="h-10 w-[150px]" />}>
-                  <TimeFilter defaultValue="this_week" />
+                  <TimeFilter defaultValue="all" />
                 </Suspense>
               </div>
             </div>
@@ -174,13 +171,6 @@ export default async function TicketsPage({ searchParams }: PageProps) {
             totalPages={result.totalPages}
             totalCount={result.totalCount}
           />
-        </Suspense>
-
-        {/* Who is Online - Bottom of page */}
-        <Suspense fallback={null}>
-          <div className="mt-8">
-            <OnlineUsers />
-          </div>
         </Suspense>
       </div>
     </div>

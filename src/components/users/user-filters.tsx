@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { UserRole } from '@/lib/types/database'
+import { SEARCH } from '@/lib/constants'
 
 interface UserFiltersProps {
   onFilterChange: (filters: {
@@ -40,6 +41,16 @@ export function UserFilters({
   const [role, setRole] = useState<UserRole | 'all'>('all')
   const [department, setDepartment] = useState<string>('all')
   const [activeStatus, setActiveStatus] = useState<'all' | 'active' | 'inactive'>('all')
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleFilterChange()
+    }, SEARCH.DEBOUNCE_DELAY)
+
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, role, department, activeStatus])
 
   const handleFilterChange = () => {
     onFilterChange({
@@ -73,12 +84,7 @@ export function UserFilters({
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
-              // Debounced search will be handled by parent
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleFilterChange()
-              }
+              // Debounced search is handled by useEffect
             }}
             className="pl-10 h-10 bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20 w-full"
           />
@@ -172,8 +178,7 @@ export function UserFilters({
             department: department !== 'all' ? department : null,
             status: activeStatus !== 'all' ? activeStatus : null,
           })
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            .filter(([_, value]) => value)
+            .filter(([_key, value]) => value)
             .length}{' '}
           filter(s) applied
         </div>

@@ -66,7 +66,7 @@ export function TicketTable({ tickets }: TicketTableProps) {
       {/* Mobile Card View */}
       <div className="block md:hidden space-y-4">
         {tickets.map((ticket) => {
-          const ticketNumber = `Ticket# ${ticket.id.slice(0, 8).toUpperCase()}`
+          const ticketNumber = ticket.display_number || `Ticket# ${ticket.id.slice(0, 8).toUpperCase()}`
           const formattedDate = formatRelativeDate(ticket.created_at)
 
           return (
@@ -113,7 +113,7 @@ export function TicketTable({ tickets }: TicketTableProps) {
           </TableHeader>
           <TableBody>
             {tickets.map((ticket) => {
-              const ticketNumber = `Ticket# ${ticket.id.slice(0, 8).toUpperCase()}`
+              const ticketNumber = ticket.display_number || `Ticket# ${ticket.id.slice(0, 8).toUpperCase()}`
               const formattedDate = formatRelativeDate(ticket.created_at)
 
               return (

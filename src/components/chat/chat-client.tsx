@@ -17,6 +17,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
+import type { ComponentProps } from 'react'
 import { ChatMessage } from './chat-message'
 import { ChatInput } from './chat-input'
 import { ChatWelcome } from './chat-welcome'
@@ -61,6 +62,17 @@ interface StreamChunk {
   interactionId?: string
 }
 
+interface VirtuosoScrollState {
+  scrollTop: number
+  scrollHeight: number
+  viewportHeight: number
+  scrollDirection: 'up' | 'down'
+  range: {
+    startIndex: number
+    endIndex: number
+  }
+}
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -87,6 +99,59 @@ export function ChatClient({
   const virtuosoRef = useRef<VirtuosoHandle>(null)
   const streamingContentRef = useRef<string>('')
   const currentInteractionIdRef = useRef<string | null>(null)
+  const isUserScrollingRef = useRef(false)
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [followOutput, setFollowOutput] = useState<boolean | "smooth" | "auto">("smooth")
+
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat-client.tsx:mount',message:'ChatClient mounted',data:{sessionId,initialMessagesCount:initialMessages.length,lastMessageRole:initialMessages[initialMessages.length-1]?.role,lastMessageContent:initialMessages[initialMessages.length-1]?.content?.substring(0,50)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'})}).catch(()=>{});
+  }, [sessionId, initialMessages]);
+  // #endregion
+
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat-client.tsx:messages-change',message:'Messages state changed',data:{messagesCount:messages.length,lastMessageRole:messages[messages.length-1]?.role,lastMessageIndex:messages.length-1,hasVirtuosoRef:!!virtuosoRef.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2,H5'})}).catch(()=>{});
+  }, [messages]);
+  // #endregion
+
+  // Sync initialMessages when session changes (if component doesn't remount)
+  useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat-client.tsx:sync-initial',message:'Syncing initialMessages',data:{sessionId,initialMessagesCount:initialMessages.length,currentMessagesCount:messages.length,areEqual:JSON.stringify(initialMessages)===JSON.stringify(messages)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+    // #endregion
+    if (initialMessages.length > 0 && JSON.stringify(initialMessages) !== JSON.stringify(messages)) {
+      setMessages(initialMessages)
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat-client.tsx:sync-initial-set',message:'Set messages from initialMessages',data:{sessionId,newMessagesCount:initialMessages.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
+    }
+  }, [sessionId, initialMessages])
+
+  // Scroll to bottom when messages load (for session switching)
+  useEffect(() => {
+    if (messages.length > 0 && virtuosoRef.current && !isStreaming && !isUserScrollingRef.current) {
+      const lastMessage = messages[messages.length - 1];
+      const lastUserMessageIndex = messages.map((m, i) => ({role: m.role, index: i})).filter(m => m.role === 'user').pop()?.index ?? -1;
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat-client.tsx:scroll-effect',message:'Attempting scroll to bottom',data:{sessionId,messagesCount:messages.length,lastMessageRole:lastMessage?.role,lastMessageIndex:messages.length-1,lastUserMessageIndex,hasVirtuosoRef:!!virtuosoRef.current,isStreaming,isUserScrolling:isUserScrollingRef.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2,H4'})}).catch(()=>{});
+      // #endregion
+      // Use setTimeout to ensure Virtuoso has finished rendering
+      const timeoutId = setTimeout(() => {
+        if (virtuosoRef.current && !isUserScrollingRef.current) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat-client.tsx:scroll-execute',message:'Executing scrollTo with large offset',data:{sessionId,messagesCount:messages.length,lastMessageRole:lastMessage?.role,lastUserMessageIndex},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2,H4,H5'})}).catch(()=>{});
+          // #endregion
+          // Use scrollTo with a very large value to ensure we reach the absolute bottom
+          virtuosoRef.current.scrollTo({
+            top: 999999,
+            behavior: 'smooth'
+          })
+        }
+      }, 150)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [sessionId, messages.length, isStreaming])
 
   // Notify parent of message changes (for widget state management)
   useEffect(() => {
@@ -460,6 +525,16 @@ export function ChatClient({
     })
   }
 
+  // #region agent log
+  useEffect(() => {
+    if (displayItems.length > 0) {
+      const lastItem = displayItems[displayItems.length - 1];
+      const messageRoles = displayItems.map(m => m.role);
+      fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat-client.tsx:display-items',message:'Display items updated',data:{sessionId,displayItemsCount:displayItems.length,lastItemRole:lastItem.role,lastItemIndex:displayItems.length-1,messageRoles:messageRoles.slice(-5)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'})}).catch(()=>{});
+    }
+  }, [displayItems.length, sessionId]);
+  // #endregion
+
   return (
     <div className="flex h-full flex-col relative">
       {/* Messages Area */}
@@ -475,8 +550,35 @@ export function ChatClient({
               ref={virtuosoRef}
               style={{ height: '100%' }}
               data={displayItems}
-              followOutput="smooth"
+              followOutput={followOutput}
               alignToBottom
+              initialTopMostItemIndex={displayItems.length > 0 ? displayItems.length - 1 : undefined}
+              // #region agent log
+              onScroll={((state: VirtuosoScrollState) => {
+                const scrollState = state;
+                const lastMessage = displayItems[displayItems.length - 1];
+                const lastUserMessageIndex = displayItems.map((m, i) => ({role: m.role, index: i})).filter(m => m.role === 'user').pop()?.index ?? -1;
+                const isAtBottom = scrollState.scrollTop >= (scrollState.scrollHeight - scrollState.viewportHeight - 10);
+                const isScrollingDown = scrollState.scrollDirection === 'down';
+                
+                // Detect user-initiated scrolling (not programmatic)
+                if (isScrollingDown && !isAtBottom) {
+                  isUserScrollingRef.current = true;
+                  setFollowOutput(false);
+                  // Clear any existing timeout
+                  if (scrollTimeoutRef.current) {
+                    clearTimeout(scrollTimeoutRef.current);
+                  }
+                  // Reset flag after user stops scrolling
+                  scrollTimeoutRef.current = setTimeout(() => {
+                    isUserScrollingRef.current = false;
+                    setFollowOutput("smooth");
+                  }, 1000);
+                }
+                
+                fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat-client.tsx:scroll-event',message:'Virtuoso scroll event',data:{sessionId,scrollTop:scrollState.scrollTop,scrollHeight:scrollState.scrollHeight,viewportHeight:scrollState.viewportHeight,scrollDirection:scrollState.scrollDirection,range:scrollState.range,displayItemsCount:displayItems.length,lastIndex:displayItems.length-1,lastMessageRole:lastMessage?.role,lastUserMessageIndex,isAtBottom,isUserScrolling:isUserScrollingRef.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3,H4'})}).catch(()=>{});
+              }) as unknown as ComponentProps<typeof Virtuoso>['onScroll']}
+              // #endregion
               itemContent={(index, message) => (
                 <div key={index}>
                   <ChatMessage

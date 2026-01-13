@@ -10,11 +10,9 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { isAIConfigured } from '@/lib/ai/client'
 import { serverEnv } from '@/lib/env/server'
-import { clientEnv } from '@/lib/env/client'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -44,7 +42,6 @@ interface HealthStatus {
 }
 
 export async function GET() {
-  const startTime = Date.now()
   const checks: HealthStatus['checks'] = {
     database: { status: 'error' },
     ai: { status: 'not_configured' },

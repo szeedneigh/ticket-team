@@ -16,30 +16,13 @@ import { generateEmbedding } from '@/lib/ai/client'
 import { getUnprocessedEvents, markEventProcessed } from '@/lib/ai/events'
 import type { AiEvent } from '@/lib/types/ai-events'
 
-// ============================================================================
-// Configuration
-// ============================================================================
-
 const BATCH_SIZE = 50
 const KEYWORD_EXTRACTION_REGEX = /\b[A-Z][a-z]+\b|\b[a-z]{4,}\b/g
 
-// ============================================================================
-// Keyword Extraction
-// ============================================================================
-
-/**
- * Extract keywords from text using simple heuristics
- * 
- * @param text - Text to extract keywords from
- * @returns Array of keywords
- */
 function extractKeywords(text: string): string[] {
   const words = text.match(KEYWORD_EXTRACTION_REGEX) || []
-  
-  // Deduplicate and lowercase
   const uniqueKeywords = [...new Set(words.map(w => w.toLowerCase()))]
   
-  // Filter common stop words
   const stopWords = new Set([
     'the', 'this', 'that', 'with', 'from', 'have', 'been',
     'were', 'they', 'your', 'what', 'when', 'where', 'which',
@@ -48,36 +31,21 @@ function extractKeywords(text: string): string[] {
   
   return uniqueKeywords
     .filter(word => !stopWords.has(word) && word.length >= 4)
-    .slice(0, 20) // Limit to top 20 keywords
+    .slice(0, 20)
 }
 
-// ============================================================================
-// Event Processing
-// ============================================================================
-
-/**
- * Process a single event: generate embedding and extract keywords
- * 
- * @param event - Event to process
- * @returns Success status
- */
 async function processEvent(event: AiEvent): Promise<boolean> {
   try {
-    // 1. Generate embedding
     const embedding = await generateEmbedding(event.content, {
       taskType: 'RETRIEVAL_DOCUMENT',
     })
 
-    // 2. Extract keywords
     const keywords = extractKeywords(event.content)
 
-    // 3. Mark event as processed
     await markEventProcessed(event.id, embedding, keywords)
 
-    // 4. Store optimized embedding for RAG
     const supabase = createServiceClient()
     
-    // Create a summary of the content (first 500 chars)
     const contentSummary = event.content.length > 500
       ? event.content.substring(0, 497) + '...'
       : event.content
@@ -98,7 +66,6 @@ async function processEvent(event: AiEvent): Promise<boolean> {
   } catch (error) {
     console.error(`[processEvent] Error processing event ${event.id}:`, error)
     
-    // Mark event with error
     try {
       const supabase = createServiceClient()
       await supabase
@@ -115,16 +82,6 @@ async function processEvent(event: AiEvent): Promise<boolean> {
   }
 }
 
-// ============================================================================
-// Batch Processing
-// ============================================================================
-
-/**
- * Process a batch of unprocessed events
- * 
- * @param batchSize - Number of events to process
- * @returns Processing stats
- */
 export async function processUnprocessedEvents(
   batchSize: number = BATCH_SIZE
 ): Promise<{
@@ -133,7 +90,6 @@ export async function processUnprocessedEvents(
   total: number
 }> {
   try {
-    // 1. Fetch unprocessed events
     const events = await getUnprocessedEvents(batchSize)
 
     if (events.length === 0) {
@@ -144,7 +100,6 @@ export async function processUnprocessedEvents(
       }
     }
 
-    // 2. Process events sequentially (to avoid rate limits)
     let processed = 0
     let failed = 0
 
@@ -156,7 +111,6 @@ export async function processUnprocessedEvents(
         failed++
       }
       
-      // Small delay to avoid rate limits
       await new Promise(resolve => setTimeout(resolve, 100))
     }
 
@@ -171,15 +125,6 @@ export async function processUnprocessedEvents(
   }
 }
 
-// ============================================================================
-// Scheduled Processing
-// ============================================================================
-
-/**
- * Process all pending events in multiple batches
- * 
- * @returns Total processing stats
- */
 export async function processAllPendingEvents(): Promise<{
   totalProcessed: number
   totalFailed: number
@@ -190,25 +135,22 @@ export async function processAllPendingEvents(): Promise<{
   let totalBatches = 0
 
   try {
-    // Keep processing until no more unprocessed events
     while (true) {
       const result = await processUnprocessedEvents(BATCH_SIZE)
       
       if (result.total === 0) {
-        break // No more events to process
+        break
       }
 
       totalProcessed += result.processed
       totalFailed += result.failed
       totalBatches++
 
-      // Break if we've processed too many batches (safety limit)
       if (totalBatches >= 20) {
         console.warn('[processAllPendingEvents] Reached batch limit, stopping')
         break
       }
 
-      // Small delay between batches
       await new Promise(resolve => setTimeout(resolve, 500))
     }
 
@@ -223,15 +165,6 @@ export async function processAllPendingEvents(): Promise<{
   }
 }
 
-// ============================================================================
-// Stats and Monitoring
-// ============================================================================
-
-/**
- * Get processing stats
- * 
- * @returns Processing statistics
- */
 export async function getIngestionStats(): Promise<{
   totalEvents: number
   processedEvents: number
@@ -242,29 +175,24 @@ export async function getIngestionStats(): Promise<{
   try {
     const supabase = createServiceClient()
 
-    // Count total events
     const { count: totalEvents } = await supabase
       .from('ai_events')
       .select('*', { count: 'exact', head: true })
 
-    // Count processed events
     const { count: processedEvents } = await supabase
       .from('ai_events')
       .select('*', { count: 'exact', head: true })
       .not('processed_at', 'is', null)
 
-    // Count unprocessed events
     const { count: unprocessedEvents } = await supabase
       .from('ai_events')
       .select('*', { count: 'exact', head: true })
       .is('processed_at', null)
 
-    // Count event embeddings
     const { count: eventEmbeddings } = await supabase
       .from('ai_event_embeddings')
       .select('*', { count: 'exact', head: true })
 
-    // Calculate processing rate
     const processingRate = (totalEvents || 0) > 0
       ? ((processedEvents || 0) / (totalEvents || 1)) * 100
       : 0
@@ -281,10 +209,4 @@ export async function getIngestionStats(): Promise<{
     throw error
   }
 }
-
-
-
-
-
-
 

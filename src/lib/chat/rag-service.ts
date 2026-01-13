@@ -118,13 +118,15 @@ export async function retrieveContext(
     }
 
     // Transform database results to RAGContext
-    const articles: RAGContext[] = data.map((item: {
+    interface KBArticleResult {
       id: string
       title: string
       content: string
       category: string
       similarity: number
-    }) => ({
+    }
+    
+    const articles: RAGContext[] = ((data as KBArticleResult[] | null) || []).map((item: KBArticleResult) => ({
       article_id: item.id,
       title: item.title,
       content: item.content,

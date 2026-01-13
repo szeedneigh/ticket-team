@@ -13,6 +13,7 @@ import type { User } from './users'
 
 export interface Ticket {
   id: string
+  display_number: string // Human-readable ticket number (e.g., TT-2026-001)
   title: string
   description: string
   status: TicketStatus

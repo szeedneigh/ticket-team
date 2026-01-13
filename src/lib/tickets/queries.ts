@@ -561,6 +561,8 @@ export async function getTicketCountByPriority(
       low: 0,
       medium: 0,
       high: 0,
+      urgent: 0,
+      critical: 0,
     }
   }
 
@@ -569,6 +571,8 @@ export async function getTicketCountByPriority(
     low: 0,
     medium: 0,
     high: 0,
+    urgent: 0,
+    critical: 0,
   }
 
   data?.forEach((ticket) => {

@@ -13,10 +13,6 @@ import { GoogleGenAI } from '@google/genai'
 import { serverEnv } from '@/lib/env/server'
 import type { EmbeddingRequest } from '@/lib/types/ai'
 
-// ============================================================================
-// Configuration
-// ============================================================================
-
 const AI_MODELS = {
   EMBEDDING: 'text-embedding-004',
   CHAT: 'gemini-2.5-flash',  // Verified working with free tier
@@ -36,17 +32,8 @@ const EMBEDDING_CONFIG = {
   TASK_TYPE_DOCUMENT: 'RETRIEVAL_DOCUMENT' as const,
 } as const
 
-// ============================================================================
-// Client Initialization
-// ============================================================================
-
 let aiClient: GoogleGenAI | null = null
 
-/**
- * Get or create the GoogleGenAI client instance
- *
- * @throws {Error} If GEMINI_API_KEY is not configured
- */
 function getAIClient(): GoogleGenAI {
   if (aiClient) {
     return aiClient
@@ -65,10 +52,6 @@ function getAIClient(): GoogleGenAI {
   return aiClient
 }
 
-// ============================================================================
-// Error Handling & Retry Logic
-// ============================================================================
-
 interface RetryOptions {
   maxRetries?: number
   initialDelay?: number
@@ -76,9 +59,6 @@ interface RetryOptions {
   onRetry?: (attempt: number, error: Error) => void
 }
 
-/**
- * Execute a function with exponential backoff retry logic
- */
 async function withRetry<T>(
   fn: () => Promise<T>,
   options: RetryOptions = {}
@@ -98,20 +78,16 @@ async function withRetry<T>(
     } catch (error) {
       lastError = error as Error
 
-      // Don't retry on last attempt
       if (attempt === maxRetries) {
         break
       }
 
-      // Calculate exponential backoff delay
       const delay = Math.min(initialDelay * Math.pow(2, attempt), maxDelay)
 
-      // Call retry callback if provided
       if (onRetry) {
         onRetry(attempt + 1, lastError)
       }
 
-      // Wait before retrying
       await new Promise(resolve => setTimeout(resolve, delay))
     }
   }
@@ -119,9 +95,6 @@ async function withRetry<T>(
   throw lastError || new Error('Unknown error during retry')
 }
 
-/**
- * Check if error is a quota exhausted / rate limit error (429)
- */
 export function isQuotaExhaustedError(error: unknown): boolean {
   if (error instanceof Error) {
     const message = error.message.toLowerCase()
@@ -135,18 +108,12 @@ export function isQuotaExhaustedError(error: unknown): boolean {
   return false
 }
 
-/**
- * Extract retry delay in seconds from Gemini API error response
- * Returns null if no retry delay found
- */
 export function extractRetryDelay(error: unknown): number | null {
   if (error instanceof Error) {
-    // Look for patterns like "retryDelay": "37s" or "Please retry in 37.408303613s"
     const retryDelayMatch = error.message.match(/retry(?:Delay)?[":]?\s*["']?(\d+(?:\.\d+)?)/i)
     if (retryDelayMatch) {
       return Math.ceil(parseFloat(retryDelayMatch[1]))
     }
-    // Also check for "Please wait X seconds"
     const waitMatch = error.message.match(/wait\s+(\d+)\s*second/i)
     if (waitMatch) {
       return parseInt(waitMatch[1], 10)
@@ -155,12 +122,8 @@ export function extractRetryDelay(error: unknown): number | null {
   return null
 }
 
-/**
- * Normalize AI API errors to user-friendly messages
- */
 function normalizeAIError(error: unknown, retrySeconds?: number | null): Error {
   if (error instanceof Error) {
-    // API quota exceeded
     if (isQuotaExhaustedError(error)) {
       const delay = retrySeconds ?? extractRetryDelay(error)
       if (delay && delay > 0) {
@@ -173,21 +136,18 @@ function normalizeAIError(error: unknown, retrySeconds?: number | null): Error {
       )
     }
 
-    // Safety filter triggered
     if (error.message.includes('safety') || error.message.includes('blocked')) {
       return new Error(
         "I can't provide an answer to that. Please create a ticket for assistance."
       )
     }
 
-    // Network errors
     if (error.message.includes('network') || error.message.includes('ENOTFOUND')) {
       return new Error(
         'Connection lost. Please check your internet and try again.'
       )
     }
 
-    // Model not found
     if (error.message.includes('model') && error.message.includes('not found')) {
       return new Error(
         'AI model is temporarily unavailable. Please try again later.'
@@ -200,24 +160,6 @@ function normalizeAIError(error: unknown, retrySeconds?: number | null): Error {
   return new Error('An unexpected error occurred with the AI assistant.')
 }
 
-// ============================================================================
-// Embedding Generation
-// ============================================================================
-
-/**
- * Generate embeddings for a text string
- *
- * @param text - The text to generate embeddings for
- * @param options - Optional configuration for the embedding request
- * @returns The embedding vector (768 dimensions)
- *
- * @example
- * ```typescript
- * const embedding = await generateEmbedding('How do I reset my password?', {
- *   taskType: 'RETRIEVAL_QUERY'
- * })
- * ```
- */
 export async function generateEmbedding(
   text: string,
   options: Omit<EmbeddingRequest, 'text'> = {}
@@ -300,23 +242,6 @@ export interface ChatGenerationResponse {
     totalTokenCount?: number
   }
 }
-
-/**
- * Generate a complete chat response (non-streaming)
- *
- * @param params - Chat generation parameters
- * @returns The generated response
- *
- * @example
- * ```typescript
- * const response = await generateChatResponse({
- *   prompt: 'How do I reset my password?',
- *   systemInstruction: 'You are an IT support assistant.',
- *   temperature: 0.7
- * })
- * console.log(response.text)
- * ```
- */
 export async function generateChatResponse(
   params: ChatGenerationParams
 ): Promise<ChatGenerationResponse> {
@@ -391,25 +316,6 @@ export interface ChatStreamChunk {
     totalTokenCount?: number
   }
 }
-
-/**
- * Generate a streaming chat response
- *
- * @param params - Chat generation parameters
- * @returns An async iterable of response chunks
- *
- * @example
- * ```typescript
- * const stream = await generateChatStreamResponse({
- *   prompt: 'Explain how VPN works',
- *   systemInstruction: 'You are an IT support assistant.'
- * })
- *
- * for await (const chunk of stream) {
- *   console.log(chunk.text)
- * }
- * ```
- */
 export async function generateChatStreamResponse(
   params: ChatGenerationParams
 ): Promise<AsyncIterable<ChatStreamChunk>> {

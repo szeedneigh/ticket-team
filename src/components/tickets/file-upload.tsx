@@ -51,9 +51,9 @@ export function FileUpload({
       return `File "${file.name}" exceeds maximum size of ${formatFileSize(FILE_UPLOAD.MAX_FILE_SIZE)}`
     }
 
-    // Check file type
-    if (!isValidFileType(file.type)) {
-      return `File "${file.name}" has an unsupported file type. Allowed types: images, PDFs, Office documents, text files, and archives.`
+    // Check file type (now checks both MIME type and extension)
+    if (!isValidFileType(file)) {
+      return `File "${file.name}" has an unsupported file type. Allowed: Images (JPG, PNG, GIF, WebP), Documents (PDF, Word, Excel, PowerPoint), Text files, Archives (ZIP, RAR)`
     }
 
     return null

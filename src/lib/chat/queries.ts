@@ -22,6 +22,7 @@ export interface GetSessionsParams {
   userId: string
   limit?: number
   offset?: number
+  includeArchived?: boolean // NEW parameter
 }
 
 export interface SessionSummary {
@@ -45,16 +46,23 @@ export interface SessionSummary {
 export async function getSessionsByUserId(
   params: GetSessionsParams
 ): Promise<SessionSummary[]> {
-  const { userId, limit = 50, offset = 0 } = params
+  const { userId, limit = 50, offset = 0, includeArchived = false } = params
 
   const supabase = await createClient()
 
   // Get unique sessions with aggregated data
-  const { data, error } = await supabase
+  let query = supabase
     .from('ai_interactions')
     .select('session_id, query, created_at, escalated_to_ticket, metadata')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
+
+  // Filter archived unless explicitly requested
+  if (!includeArchived) {
+    query = query.is('archived_at', null)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     console.error('Error fetching sessions:', error)
@@ -121,15 +129,23 @@ export async function getSessionsByUserId(
  * @returns Array of chat messages
  */
 export async function getSessionMessages(
-  sessionId: string
+  sessionId: string,
+  includeArchived: boolean = false
 ): Promise<ChatMessage[]> {
   const supabase = await createClient()
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('ai_interactions')
     .select('*')
     .eq('session_id', sessionId)
     .order('created_at', { ascending: true })
+
+  // Filter archived unless explicitly requested
+  if (!includeArchived) {
+    query = query.is('archived_at', null)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     console.error('Error fetching session messages:', error)
@@ -187,17 +203,25 @@ export async function getSessionMessages(
  */
 export async function getSessionWithMessages(
   sessionId: string,
-  userId: string
+  userId: string,
+  includeArchived: boolean = false
 ): Promise<ChatSessionWithMessages | null> {
   const supabase = await createClient()
 
   // Get all interactions for this session
-  const { data, error } = await supabase
+  let query = supabase
     .from('ai_interactions')
     .select('*')
     .eq('session_id', sessionId)
     .eq('user_id', userId)
     .order('created_at', { ascending: true })
+
+  // Filter archived unless explicitly requested
+  if (!includeArchived) {
+    query = query.is('archived_at', null)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     console.error('Error fetching session:', error)
@@ -208,7 +232,7 @@ export async function getSessionWithMessages(
     return null
   }
 
-  const messages = await getSessionMessages(sessionId)
+  const messages = await getSessionMessages(sessionId, includeArchived)
   const firstInteraction = data[0]
   const lastInteraction = data[data.length - 1]
 
@@ -296,15 +320,15 @@ export async function updateSessionTitle(
 }
 
 /**
- * Delete a chat session
+ * Archive a chat session (soft delete)
  *
- * Deletes all interactions for the given session.
- * This operation cannot be undone.
+ * Marks all interactions for the given session as archived.
+ * Archived sessions are hidden by default but can be restored.
  *
- * @param sessionId - The session ID to delete
+ * @param sessionId - The session ID to archive
  * @param userId - The user ID (for verification)
  */
-export async function deleteSession(
+export async function archiveSession(
   sessionId: string,
   userId: string
 ): Promise<void> {
@@ -312,13 +336,14 @@ export async function deleteSession(
 
   const { error } = await supabase
     .from('ai_interactions')
-    .delete()
+    .update({ archived_at: new Date().toISOString() })
     .eq('session_id', sessionId)
     .eq('user_id', userId)
+    .is('archived_at', null) // Only archive if not already archived
 
   if (error) {
-    console.error('Error deleting session:', error)
-    throw new Error(`Failed to delete session: ${error.message}`)
+    console.error('Error archiving session:', error)
+    throw new Error(`Failed to archive session: ${error.message}`)
   }
 }
 
