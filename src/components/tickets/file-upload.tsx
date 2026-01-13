@@ -315,7 +315,7 @@ function FilePreview({ file, onRemove, disabled }: FilePreviewProps) {
 }
 
 function getFileIcon(fileType: string) {
-  if (fileType.startsWith('image/')) return <Image className="h-5 w-5 text-blue-500" aria-hidden="true" alt="" />
+  if (fileType.startsWith('image/')) return <Image className="h-5 w-5 text-blue-500" aria-hidden="true" />
   if (fileType.includes('pdf')) return <FileText className="h-5 w-5 text-red-500" />
   if (fileType.includes('word') || fileType.includes('document')) return <FileText className="h-5 w-5 text-blue-600" />
   if (fileType.includes('sheet') || fileType.includes('excel')) return <FileSpreadsheet className="h-5 w-5 text-green-600" />
