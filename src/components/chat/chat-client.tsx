@@ -17,6 +17,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
+import type { ComponentProps } from 'react'
 import { ChatMessage } from './chat-message'
 import { ChatInput } from './chat-input'
 import { ChatWelcome } from './chat-welcome'
@@ -553,10 +554,10 @@ export function ChatClient({
               alignToBottom
               initialTopMostItemIndex={displayItems.length > 0 ? displayItems.length - 1 : undefined}
               // #region agent log
-              onScroll={(state: VirtuosoScrollState) => {
+              onScroll={((state: VirtuosoScrollState) => {
+                const scrollState = state;
                 const lastMessage = displayItems[displayItems.length - 1];
                 const lastUserMessageIndex = displayItems.map((m, i) => ({role: m.role, index: i})).filter(m => m.role === 'user').pop()?.index ?? -1;
-                const scrollState = state;
                 const isAtBottom = scrollState.scrollTop >= (scrollState.scrollHeight - scrollState.viewportHeight - 10);
                 const isScrollingDown = scrollState.scrollDirection === 'down';
                 
@@ -576,7 +577,7 @@ export function ChatClient({
                 }
                 
                 fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat-client.tsx:scroll-event',message:'Virtuoso scroll event',data:{sessionId,scrollTop:scrollState.scrollTop,scrollHeight:scrollState.scrollHeight,viewportHeight:scrollState.viewportHeight,scrollDirection:scrollState.scrollDirection,range:scrollState.range,displayItemsCount:displayItems.length,lastIndex:displayItems.length-1,lastMessageRole:lastMessage?.role,lastUserMessageIndex,isAtBottom,isUserScrolling:isUserScrollingRef.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3,H4'})}).catch(()=>{});
-              }}
+              }) as ComponentProps<typeof Virtuoso>['onScroll']}
               // #endregion
               itemContent={(index, message) => (
                 <div key={index}>
