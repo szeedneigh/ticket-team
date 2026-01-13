@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { PanelLeft, User, HelpCircle, LogOut } from 'lucide-react'
+import { PanelLeft, User as UserIcon, HelpCircle, LogOut } from 'lucide-react'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import type { User } from '@/lib/types/users'
 
@@ -137,7 +137,7 @@ export function Navbar({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/profile" className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
+                      <UserIcon className="h-4 w-4" />
                       Profile
                     </Link>
                   </DropdownMenuItem>
