@@ -175,7 +175,7 @@ export async function createComment(
           mimeType: file.type,
           size: file.size,
           extension: file.name.split('.').pop(),
-          ticketId,
+          ticket_id,
         })
 
         // Validate file size
