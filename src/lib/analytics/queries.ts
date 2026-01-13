@@ -83,6 +83,31 @@ async function verifyAdminRole(userId: string): Promise<boolean> {
 }
 
 /**
+ * Get user's role (admin or super_admin)
+ * Returns null if user is not admin/super_admin
+ */
+async function getUserRole(userId: string): Promise<'admin' | 'super_admin' | null> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single()
+
+  if (error || !data) {
+    logger.error('Error getting user role', { error: error?.message, userId })
+    return null
+  }
+
+  if (data.role === 'admin' || data.role === 'super_admin') {
+    return data.role
+  }
+
+  return null
+}
+
+/**
  * Get analytics summary with KPI metrics
  *
  * @param userId - User ID making the request
@@ -174,16 +199,35 @@ export async function getAnalyticsSummary(
     }
 
     // Calculate satisfaction score
-    const { data: feedback, error: feedbackError } = await supabase
-      .from('ticket_feedback')
-      .select('rating, tickets!inner(created_at)')
-      .gte('tickets.created_at', range.start.toISOString())
-      .lte('tickets.created_at', range.end.toISOString())
-
+    // For admins, use database function; for super_admins, use direct SELECT
+    const userRole = await getUserRole(userId)
     let satisfactionScore = 0
-    if (!feedbackError && feedback && feedback.length > 0) {
-      const avgRating = feedback.reduce((sum, f) => sum + f.rating, 0) / feedback.length
-      satisfactionScore = Math.round(avgRating * 10) / 10
+
+    if (userRole === 'admin') {
+      // Admins: Use aggregate function (no comments)
+      const { data: aggregateData, error: rpcError } = await supabase.rpc(
+        'get_satisfaction_aggregate',
+        {
+          start_date: range.start.toISOString(),
+          end_date: range.end.toISOString(),
+        }
+      )
+
+      if (!rpcError && aggregateData) {
+        satisfactionScore = aggregateData.overallScore || 0
+      }
+    } else {
+      // Super_admins: Use direct SELECT
+      const { data: feedback, error: feedbackError } = await supabase
+        .from('ticket_feedback')
+        .select('rating, tickets!inner(created_at)')
+        .gte('tickets.created_at', range.start.toISOString())
+        .lte('tickets.created_at', range.end.toISOString())
+
+      if (!feedbackError && feedback && feedback.length > 0) {
+        const avgRating = feedback.reduce((sum, f) => sum + f.rating, 0) / feedback.length
+        satisfactionScore = Math.round(avgRating * 10) / 10
+      }
     }
 
     // Calculate resolution rate
@@ -347,12 +391,22 @@ export async function getTicketTrends(
       .sort((a, b) => a.date.localeCompare(b.date))
 
     // Fetch satisfaction data from ticket_feedback
-    const { data: feedbackData } = await supabase
-      .from('ticket_feedback')
-      .select('rating, created_at')
-      .gte('created_at', range.start.toISOString())
-      .lte('created_at', range.end.toISOString())
-      .order('created_at', { ascending: true })
+    // For admins, RLS will block direct access, so we'll get empty data
+    // For super_admins, use direct SELECT
+    const userRole = await getUserRole(userId)
+    let feedbackData: Array<{ rating: number; created_at: string }> | null = null
+
+    if (userRole === 'super_admin') {
+      const { data } = await supabase
+        .from('ticket_feedback')
+        .select('rating, created_at')
+        .gte('created_at', range.start.toISOString())
+        .lte('created_at', range.end.toISOString())
+        .order('created_at', { ascending: true })
+      feedbackData = data
+    }
+    // For admins, feedbackData will be null (RLS blocks access)
+    // This is acceptable - admins can see aggregated satisfaction but not time-series
 
     // Group satisfaction ratings by time period
     const satisfactionMap: Map<string, { total: number; sum: number }> = new Map()
@@ -1265,14 +1319,59 @@ export async function getSatisfactionBreakdown(
   const supabase = await createClient()
 
   // Verify admin access
-  const isAdmin = await verifyAdminRole(userId)
-  if (!isAdmin) {
+  const userRole = await getUserRole(userId)
+  if (!userRole) {
     throw new Error('Unauthorized: Admin access required')
   }
 
   const range = dateRange || getDefaultDateRange()
 
   try {
+    // For regular admins, use database function (no comments)
+    // For super_admins, use direct SELECT (with comments)
+    if (userRole === 'admin') {
+      const { data: aggregateData, error: rpcError } = await supabase.rpc(
+        'get_satisfaction_aggregate',
+        {
+          start_date: range.start.toISOString(),
+          end_date: range.end.toISOString(),
+        }
+      )
+
+      if (rpcError) {
+        throw new Error(`Failed to fetch satisfaction data: ${rpcError.message}`)
+      }
+
+      // Transform database function result to match SatisfactionBreakdown type
+      const result = aggregateData as {
+        overallScore: number
+        totalResponses: number
+        distribution: { [key: string]: number }
+        byCategory: Array<{ category: string; score: number; responses: number }>
+      }
+
+      // Convert distribution object to array format
+      const distribution = [1, 2, 3, 4, 5].map((rating) => ({
+        rating,
+        count: result.distribution[rating.toString()] || 0,
+        percentage:
+          result.totalResponses > 0
+            ? Math.round(
+                ((result.distribution[rating.toString()] || 0) / result.totalResponses) * 100
+              )
+            : 0,
+      }))
+
+      return {
+        overallScore: result.overallScore,
+        totalResponses: result.totalResponses,
+        distribution,
+        byCategory: result.byCategory,
+        recentFeedback: [], // Admins don't see recent feedback (no comments)
+      }
+    }
+
+    // Super_admin: Use direct SELECT to get full feedback including comments
     const { data: feedback, error } = await supabase
       .from('ticket_feedback')
       .select('id, rating, comment, ticket_id, created_at, tickets!inner(created_at, category)')
@@ -1289,8 +1388,8 @@ export async function getSatisfactionBreakdown(
     const overallScore =
       totalResponses > 0
         ? Math.round(
-          (feedback!.reduce((sum, f) => sum + f.rating, 0) / totalResponses) * 10
-        ) / 10
+            (feedback!.reduce((sum, f) => sum + f.rating, 0) / totalResponses) * 10
+          ) / 10
         : 0
 
     // Calculate distribution
@@ -1328,7 +1427,7 @@ export async function getSatisfactionBreakdown(
       responses: total,
     }))
 
-    // Recent feedback (last 5)
+    // Recent feedback (last 5) - only super_admins see comments
     const recentFeedback = (feedback || []).slice(0, 5).map((f) => ({
       id: f.id,
       rating: f.rating,

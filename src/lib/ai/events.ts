@@ -18,25 +18,13 @@ import type {
   AiEvent,
 } from '@/lib/types/ai-events'
 
-// ============================================================================
-// AI Event Logging
-// ============================================================================
-
-/**
- * Log an AI event to the database
- * 
- * @param input - Event data to log
- * @param useServiceClient - If true, bypasses RLS (for system events)
- * @returns The created event ID or null on error
- */
 export async function logAIEvent(
   input: LogAiEventInput,
   useServiceClient = false
 ): Promise<string | null> {
   try {
     const supabase = useServiceClient ? createServiceClient() : await createClient()
-
-    // Get current user if not using service client
+    
     let userId = input.userId
     let userRole = input.userRole
 
@@ -45,7 +33,6 @@ export async function logAIEvent(
       if (user) {
         userId = user.id
         
-        // Fetch user role from users table
         const { data: userData } = await supabase
           .from('users')
           .select('role')
@@ -87,13 +74,6 @@ export async function logAIEvent(
   }
 }
 
-/**
- * Log an AI event with feedback
- * 
- * @param eventId - Event ID to update
- * @param score - Feedback score (-1, 0, 1)
- * @param text - Optional feedback text
- */
 export async function addEventFeedback(
   eventId: string,
   score: number,
@@ -122,23 +102,12 @@ export async function addEventFeedback(
   }
 }
 
-// ============================================================================
-// Prompt Logging
-// ============================================================================
-
-/**
- * Log a prompt/completion interaction with the AI model
- * 
- * @param input - Prompt log data
- * @returns The created log ID or null on error
- */
 export async function logPrompt(
   input: LogPromptInput
 ): Promise<string | null> {
   try {
     const supabase = await createClient()
-
-    // Get current user if not provided
+    
     let userId = input.userId
     if (!userId) {
       const { data: { user } } = await supabase.auth.getUser()
@@ -181,13 +150,6 @@ export async function logPrompt(
   }
 }
 
-/**
- * Add user feedback to a prompt log
- * 
- * @param promptLogId - Prompt log ID to update
- * @param score - Feedback score (-1, 0, 1)
- * @param text - Optional feedback text
- */
 export async function addPromptFeedback(
   promptLogId: string,
   score: number,
@@ -216,21 +178,11 @@ export async function addPromptFeedback(
   }
 }
 
-// ============================================================================
-// Automation Logging
-// ============================================================================
-
-/**
- * Log an automation run
- * 
- * @param input - Automation run data
- * @returns The created run ID or null on error
- */
 export async function logAutomation(
   input: LogAutomationInput
 ): Promise<string | null> {
   try {
-    const supabase = createServiceClient() // Always use service client for automation
+    const supabase = createServiceClient()
 
     const now = new Date().toISOString()
 
@@ -264,14 +216,6 @@ export async function logAutomation(
   }
 }
 
-/**
- * Update an automation run status
- * 
- * @param runId - Automation run ID
- * @param status - New status
- * @param outputData - Optional output data
- * @param errorMessage - Optional error message
- */
 export async function updateAutomationStatus(
   runId: string,
   status: 'running' | 'completed' | 'failed',
@@ -315,17 +259,6 @@ export async function updateAutomationStatus(
   }
 }
 
-// ============================================================================
-// Utility Functions
-// ============================================================================
-
-/**
- * Get recent AI events for a user
- * 
- * @param userId - User ID
- * @param limit - Number of events to fetch
- * @returns Array of AI events
- */
 export async function getUserRecentEvents(
   userId: string,
   limit = 50
@@ -352,12 +285,6 @@ export async function getUserRecentEvents(
   }
 }
 
-/**
- * Get unprocessed AI events (for ingestion pipeline)
- * 
- * @param limit - Number of events to fetch
- * @returns Array of unprocessed AI events
- */
 export async function getUnprocessedEvents(
   limit = 100
 ): Promise<AiEvent[]> {
@@ -383,13 +310,6 @@ export async function getUnprocessedEvents(
   }
 }
 
-/**
- * Mark an event as processed
- * 
- * @param eventId - Event ID to mark
- * @param embedding - Optional embedding vector
- * @param keywords - Optional extracted keywords
- */
 export async function markEventProcessed(
   eventId: string,
   embedding?: number[],

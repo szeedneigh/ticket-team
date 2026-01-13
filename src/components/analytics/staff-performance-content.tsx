@@ -16,7 +16,7 @@ import {
   ExportButton,
 } from '@/components/analytics'
 import type { DataTableColumn } from '@/components/analytics'
-import { UsersIcon, CheckCircleIcon, ClockIcon, TrophyIcon, StarIcon } from 'lucide-react'
+import { UsersIcon, CheckCircleIcon, ClockIcon, TrophyIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { exportStaffPerformance } from '@/lib/analytics/export'
 import type { ExportFormat } from '@/lib/types/analytics'
@@ -29,7 +29,7 @@ interface StaffMember {
   activeTickets: number
   overdueTickets: number
   avgResolutionTime: string
-  satisfactionScore: number
+  satisfactionScore?: number // Optional - not shown to staff
 }
 
 interface StaffPerformanceContentProps {
@@ -80,7 +80,7 @@ export function StaffPerformanceContent({
         avgResolutionTimeHours: 0,
         avgResponseTime: '-',
         avgResponseTimeHours: 0,
-        satisfactionScore: s.satisfactionScore,
+        satisfactionScore: s.satisfactionScore ?? 0,
         activeTickets: s.activeTickets,
         overdueTickets: s.overdueTickets,
         dailyMetrics: [],
@@ -158,23 +158,6 @@ export function StaffPerformanceContent({
       label: 'Avg Resolution',
       sortable: false,
       align: 'right',
-    },
-    {
-      key: 'satisfactionScore',
-      label: 'Satisfaction',
-      sortable: true,
-      align: 'right',
-      render: (value) => {
-        const score = value as number
-        return (
-          <div className="flex items-center justify-end gap-1">
-            <StarIcon className={`h-3.5 w-3.5 ${score >= 4 ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
-            <span className="font-medium">
-              {score > 0 ? `${score.toFixed(1)}` : '-'}
-            </span>
-          </div>
-        )
-      },
     },
   ]
 
@@ -278,11 +261,8 @@ export function StaffPerformanceContent({
                     <p className="text-2xl font-bold text-emerald-600">{staff.ticketsResolved}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Satisfaction</p>
-                    <div className="flex items-center gap-1">
-                      <StarIcon className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-2xl font-bold">{staff.satisfactionScore > 0 ? staff.satisfactionScore.toFixed(1) : '-'}</span>
-                    </div>
+                    <p className="text-muted-foreground">Assigned</p>
+                    <p className="text-2xl font-bold text-blue-600">{staff.ticketsAssigned}</p>
                   </div>
                 </div>
               </div>

@@ -62,10 +62,10 @@ export function ChatWelcome({
 }: ChatWelcomeProps) {
   return (
     <div className="h-full w-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-      <div className="flex min-h-full flex-col items-center justify-center gap-8 px-4 py-12">
-      {/* Header */}
-      <div className="flex flex-col items-center gap-6 text-center">
-        {/* Timi Avatar */}
+      <div className="flex min-h-full flex-col items-center justify-center gap-4 px-4 py-6">
+      {/* Header - More Compact */}
+      <div className="flex flex-col items-center gap-3 text-center">
+        {/* Timi Avatar - Smaller */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ 
@@ -81,7 +81,7 @@ export function ChatWelcome({
               }
             }
           }}
-          className="relative h-24 w-24"
+          className="relative h-16 w-16"
         >
           <Image
             src="/assets/timi-bot1.svg"
@@ -91,53 +91,49 @@ export function ChatWelcome({
             priority
           />
           {/* Pulse Animation */}
-          <span className="absolute -right-1 -top-1 flex h-5 w-5">
+          <span className="absolute -right-1 -top-1 flex h-4 w-4">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2cafdd] opacity-75" />
-            <span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2cafdd]">
-              <MessageSquare className="h-3 w-3 text-white" />
+            <span className="relative inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#2cafdd]">
+              <MessageSquare className="h-2.5 w-2.5 text-white" />
             </span>
           </span>
         </motion.div>
 
-        {/* Welcome Text */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-[#1f3463] to-[#2cafdd] bg-clip-text text-transparent">
+        {/* Welcome Text - Smaller */}
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-[#1f3463] to-[#2cafdd] bg-clip-text text-transparent">
             Hi{userName ? ` ${userName}` : ''}! 👋
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             I&apos;m <span className="font-semibold text-foreground">Timi</span>,
             your AI-powered IT support assistant
           </p>
         </div>
 
-        {/* Description */}
-        <p className="max-w-md text-sm text-muted-foreground">
-          I can help you with password resets, printer issues, network
-          connectivity, email problems, and more. Just ask me anything!
-        </p>
+        {/* Description - Removed to save space */}
       </div>
 
-      {/* Suggested Prompts */}
-      <div className="w-full max-w-2xl space-y-4">
+      {/* Suggested Prompts - More Prominent */}
+      <div className="w-full max-w-2xl space-y-3">
         <h2 className="text-center text-sm font-medium text-muted-foreground">
           Try asking about:
         </h2>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-2.5 sm:grid-cols-2">
           {SUGGESTED_PROMPTS.map((prompt, index) => {
             const Icon = prompt.icon
             return (
               <Button
                 key={index}
                 variant="outline"
-                className="h-auto w-full justify-start gap-3 p-4 text-left transition-all hover:border-[#2cafdd]/50 hover:bg-[#2cafdd]/5 hover:shadow-md hover:-translate-y-0.5"
+                className="h-auto w-full justify-start gap-2.5 p-3 text-left transition-all hover:border-[#2cafdd]/50 hover:bg-[#2cafdd]/5 hover:shadow-md hover:-translate-y-0.5"
                 onClick={() => onPromptClick(prompt.text)}
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#2cafdd]/20 to-[#1f3463]/10 text-[#2cafdd]">
-                  <Icon className="h-5 w-5" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#2cafdd]/20 to-[#1f3463]/10 text-[#2cafdd]">
+                  <Icon className="h-4 w-4" />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium">{prompt.text}</span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium">{prompt.text}</span>
                   <span className="text-xs text-muted-foreground">
                     {prompt.category}
                   </span>
@@ -148,42 +144,24 @@ export function ChatWelcome({
         </div>
       </div>
 
-      {/* Tips */}
-      <div className="w-full max-w-2xl space-y-3 rounded-lg border border-border bg-muted/50 p-4">
-        <h3 className="text-sm font-semibold">💡 Tips for better responses:</h3>
-        <ul className="space-y-2 text-sm text-muted-foreground">
+      {/* Tips - Compact */}
+      <div className="w-full max-w-2xl rounded-lg border border-border bg-muted/50 p-3">
+        <h3 className="text-xs font-semibold mb-2">💡 Tips for better responses:</h3>
+        <ul className="space-y-1 text-xs text-muted-foreground">
           <li className="flex gap-2">
             <span className="shrink-0">•</span>
-            <span>
-              Be specific about your issue (e.g., &quot;Can&apos;t log into Outlook on my
-              laptop&quot;)
-            </span>
+            <span>Be specific about your issue</span>
           </li>
           <li className="flex gap-2">
             <span className="shrink-0">•</span>
-            <span>
-              Include any error messages you&apos;re seeing
-            </span>
+            <span>Include error messages if available</span>
           </li>
           <li className="flex gap-2">
             <span className="shrink-0">•</span>
-            <span>
-              Let me know what troubleshooting steps you&apos;ve already tried
-            </span>
-          </li>
-          <li className="flex gap-2">
-            <span className="shrink-0">•</span>
-            <span>
-              If I can&apos;t solve your issue, I&apos;ll help you create a support ticket
-            </span>
+            <span>I can help create a support ticket if needed</span>
           </li>
         </ul>
       </div>
-
-      {/* Footer Note */}
-      <p className="text-xs text-muted-foreground">
-        All conversations are logged for quality assurance and training purposes
-      </p>
       </div>
     </div>
   )

@@ -37,6 +37,15 @@ const eslintConfig = [
           ],
         },
       ],
+      // Allow unused variables/imports prefixed with underscore
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
     },
   },
   // Test files may use 'any' for mocking patterns

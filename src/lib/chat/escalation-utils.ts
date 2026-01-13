@@ -12,6 +12,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { generateChatResponse } from '@/lib/ai/client'
+import { logger } from '@/lib/logger'
 import type { RAGContext, ChatMessage } from '@/lib/types/ai'
 
 // ============================================================================
@@ -359,9 +360,10 @@ export async function generateTicketTitle(
   conversation: ChatMessage[]
 ): Promise<string> {
   // Debug logging
-  console.log('[Escalation] generateTicketTitle called with:', {
+  logger.info('[generateTicketTitle] Starting title generation', {
     queryLength: query.length,
     conversationLength: conversation.length,
+    queryPreview: query.substring(0, 50),
   })
 
   try {
@@ -390,30 +392,55 @@ Examples:
 
 Title:`
 
+    logger.debug('[generateTicketTitle] Calling AI API', {
+      promptLength: titlePrompt.length,
+      conversationMessages: conversation.length,
+    })
+
     const response = await generateChatResponse({
       prompt: titlePrompt,
       temperature: 0.2,
       maxOutputTokens: 40,
     })
 
+    logger.info('[generateTicketTitle] AI response received', {
+      rawResponse: response.text,
+      responseLength: response.text.length,
+    })
+
     let title = response.text.trim()
     // Clean up: remove quotes, "Title:" prefix, etc.
     title = title.replace(/^["']|["']$/g, '').replace(/^Title:\s*/i, '').trim()
 
-    console.log('[Escalation] AI generated title:', title)
+    logger.info('[generateTicketTitle] Cleaned title', {
+      cleanedTitle: title,
+      titleLength: title.length,
+    })
 
     // Validate: must be different from raw query and reasonable length
     if (title.length > 5 && title.length < 100 && title.toLowerCase() !== query.toLowerCase()) {
+      logger.info('[generateTicketTitle] Title validation passed', { title })
       return title
     }
 
-    console.warn('[Escalation] AI title invalid, using fallback')
+    logger.warn('[generateTicketTitle] Title validation failed, using fallback', {
+      title,
+      titleLength: title.length,
+      matchesQuery: title.toLowerCase() === query.toLowerCase(),
+    })
   } catch (error) {
-    console.error('[Escalation] Title generation error:', error)
+    logger.error('[generateTicketTitle] API error during title generation', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      queryPreview: query.substring(0, 50),
+    })
   }
 
   // Smart fallback: Extract device/system and problem from query
-  return extractTitleFromQuery(query, conversation)
+  logger.info('[generateTicketTitle] Using fallback title extraction')
+  const fallbackTitle = extractTitleFromQuery(query, conversation)
+  logger.info('[generateTicketTitle] Fallback title generated', { fallbackTitle })
+  return fallbackTitle
 }
 
 /**

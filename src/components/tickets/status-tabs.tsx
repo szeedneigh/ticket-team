@@ -8,7 +8,7 @@
 
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Inbox, Clock, RotateCw, CheckCircle2, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { TicketStatus } from '@/lib/types/database'
@@ -35,7 +35,7 @@ const STATUS_TABS: StatusTab[] = [
   },
   {
     value: 'ongoing',
-    label: 'Ongoing',
+    label: 'In Progress',
     icon: RotateCw,
     status: 'in_progress',
   },
@@ -56,6 +56,7 @@ const STATUS_TABS: StatusTab[] = [
 export function StatusTabs() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -71,7 +72,8 @@ export function StatusTabs() {
     // Reset to page 1 when changing tabs
     params.delete('page')
 
-    router.push(`/tickets?${params.toString()}`)
+    // Use current pathname to maintain route context
+    router.push(`${pathname}?${params.toString()}`)
   }
 
   // Determine current tab based on status param

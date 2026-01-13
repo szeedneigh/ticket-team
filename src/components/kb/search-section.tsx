@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Search, X, Sparkles } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -26,6 +26,10 @@ interface SemanticResult {
   helpful_votes: number
   total_votes: number
   similarity: number
+  author_id?: string
+  author_full_name?: string
+  author_email?: string
+  author_avatar_url?: string
 }
 
 interface SearchSectionProps {
@@ -73,6 +77,9 @@ export function SearchSection({
   const [isSearching, setIsSearching] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
   const debouncedSearch = useDebounce(searchTerm, 500)
+  
+  // Store scroll position before navigation
+  const scrollPositionRef = useRef<number>(0)
 
   // Perform semantic search via API
   const performSemanticSearch = useCallback(async (query: string) => {
@@ -124,9 +131,32 @@ export function SearchSection({
       }
 
       const newUrl = params.toString() ? `${pathname}?${params}` : pathname
-      router.push(newUrl, { scroll: false })
+      // Store current scroll position before navigation
+      if (typeof window !== 'undefined') {
+        scrollPositionRef.current = window.scrollY
+        // Also store in sessionStorage as backup
+        sessionStorage.setItem('kb-scroll-position', String(window.scrollY))
+      }
+      // Use router.replace to avoid full page navigation, with scroll: false
+      router.replace(newUrl, { scroll: false })
     }
   }, [debouncedSearch, pathname, router, searchParams, isSemanticMode, performSemanticSearch, onSemanticSearch])
+
+  // Restore scroll position after page re-renders (due to URL change)
+  useLayoutEffect(() => {
+    const storedScroll = scrollPositionRef.current || (typeof window !== 'undefined' ? parseInt(sessionStorage.getItem('kb-scroll-position') || '0', 10) : 0)
+    if (storedScroll > 0 && typeof window !== 'undefined') {
+      // Use multiple attempts to ensure scroll restoration works
+      const restoreScroll = () => {
+        window.scrollTo(0, storedScroll)
+      }
+      // Immediate restore
+      restoreScroll()
+      // Backup restore after a short delay (in case DOM isn't ready)
+      setTimeout(restoreScroll, 0)
+      setTimeout(restoreScroll, 10)
+    }
+  }, [pathname, searchParams])
 
   // Keyboard shortcut (Cmd/Ctrl + K)
   useEffect(() => {

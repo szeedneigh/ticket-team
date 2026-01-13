@@ -63,8 +63,8 @@ export const createTicketSchema = z.object({
 
   subcategory: z.string().nullable().optional(),
 
-  priority: z.enum(['low', 'medium', 'high'], {
-    errorMap: () => ({ message: 'Priority must be low, medium, or high' }),
+  priority: z.enum(['low', 'medium', 'high', 'urgent', 'critical'], {
+    errorMap: () => ({ message: 'Priority must be low, medium, high, urgent, or critical' }),
   }),
 
   // Optional: AI escalation metadata (for future chatbot integration)
@@ -151,10 +151,59 @@ export type UpdateTicketInput = z.infer<typeof updateTicketSchema>
 // ============================================================================
 
 /**
- * Validate file type
+ * File extension to MIME type mapping (for fallback validation)
  */
-export function isValidFileType(fileType: string): boolean {
-  return (FILE_UPLOAD.ALLOWED_FILE_TYPES as readonly string[]).includes(fileType)
+const FILE_EXTENSION_MAP: Record<string, string> = {
+  // Images
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  // Documents
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // Text
+  txt: 'text/plain',
+  csv: 'text/csv',
+  // Archives
+  zip: 'application/zip',
+  rar: 'application/x-rar-compressed',
+  '7z': 'application/x-7z-compressed',
+}
+
+/**
+ * Validate file type (checks both MIME type and extension)
+ */
+export function isValidFileType(file: File | string, filename?: string): boolean {
+  const mimeType = typeof file === 'string' ? file : file.type
+  const fileName = typeof file === 'string' ? (filename || '') : file.name
+  const extension = fileName.split('.').pop()?.toLowerCase()
+
+  // Check MIME type first
+  if ((FILE_UPLOAD.ALLOWED_FILE_TYPES as readonly string[]).includes(mimeType)) {
+    return true
+  }
+
+  // Fallback: Check extension if MIME type detection fails or is generic
+  if (extension && FILE_EXTENSION_MAP[extension]) {
+    const expectedMimeType = FILE_EXTENSION_MAP[extension]
+    
+    // If browser didn't provide MIME type or provided generic type, trust extension
+    if (!mimeType || mimeType === 'application/octet-stream' || mimeType === '') {
+      return true
+    }
+    
+    // Allow if extension matches expected MIME type (browser may have wrong MIME)
+    return expectedMimeType === mimeType
+  }
+
+  return false
 }
 
 /**

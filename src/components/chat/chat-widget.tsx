@@ -12,7 +12,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
-import { ChatClient } from './chat-client'
+import { ChatWidgetContent } from './chat-widget-content'
 import { useChatWidget } from './chat-widget-context'
 import { createChatSession, getUserChatSessions } from '@/app/actions/chat'
 import { toast } from 'sonner'
@@ -140,17 +140,15 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
     maximizeWidget()
   }
 
-  // Chat content
+  // Chat content - Widget-specific compact component
   const chatContent = activeSessionId ? (
-    <div className="flex h-full flex-col bg-white">
-      <ChatClient
-        key={activeSessionId}
-        sessionId={activeSessionId}
-        initialMessages={currentMessages}
-        userName={userName}
-        onMessagesChange={setCurrentMessages}
-      />
-    </div>
+    <ChatWidgetContent
+      key={activeSessionId}
+      sessionId={activeSessionId}
+      initialMessages={currentMessages}
+      userName={userName}
+      onMessagesChange={setCurrentMessages}
+    />
   ) : (
     <div className="flex h-full flex-col items-center justify-center bg-white p-6">
       <motion.div 
@@ -176,41 +174,44 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
     </div>
   )
 
-  // Desktop Header
+  // Desktop Header - Widget-specific style
   const DesktopHeader = () => (
     <div 
-      className="relative z-10 flex shrink-0 items-center justify-between px-4 py-3 text-white shadow-md"
-      style={{ background: 'linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-accent) 100%)' }}
+      className="relative z-10 flex shrink-0 items-center justify-between px-4 py-3 text-white shadow-lg"
+      style={{ 
+        background: 'linear-gradient(135deg, #1f3463 0%, #2cafdd 100%)',
+        backdropFilter: 'blur(10px)'
+      }}
     >
       <div className="flex items-center gap-3">
-        <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/15 backdrop-blur-md ring-1 ring-white/20">
+        <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm ring-2 ring-white/30 shadow-md">
           <Image
             src="/assets/floating-timi.svg"
             alt="Timi Bot"
-            width={28}
-            height={28}
-            className="h-7 w-7 object-contain drop-shadow-md"
+            width={24}
+            height={24}
+            className="h-6 w-6 object-contain drop-shadow-lg"
           />
-          {/* Status dot */}
-          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-400 ring-2 ring-[#1f3463]" />
+          {/* Animated status dot */}
+          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-white shadow-sm animate-pulse" />
         </div>
         <div className="flex flex-col">
-          <h3 className="text-sm font-bold leading-none tracking-wide">Timi Assistant</h3>
-          <span className="text-xs text-blue-100/90">AI Support Agent</span>
+          <h3 className="text-sm font-bold leading-tight tracking-tight">Quick Chat</h3>
+          <span className="text-xs text-white/80 font-medium">Timi AI Assistant</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         <button
           onClick={minimizeWidget}
-          className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
+          className="flex h-8 w-8 items-center justify-center rounded-lg transition-all hover:bg-white/20 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95"
           aria-label="Minimize chat"
         >
           <Minus className="h-4 w-4" />
         </button>
         <button
           onClick={handleClose}
-          className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
+          className="flex h-8 w-8 items-center justify-center rounded-lg transition-all hover:bg-white/20 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95"
           aria-label="Close chat"
         >
           <X className="h-4 w-4" />
@@ -296,7 +297,7 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-24 right-6 z-50 flex h-[600px] w-[380px] max-h-[80vh] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+            className="fixed bottom-24 right-6 z-50 flex h-[600px] w-[380px] max-h-[80vh] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 backdrop-blur-xl"
           >
             <DesktopHeader />
             <div className="flex-1 overflow-hidden relative">
@@ -314,10 +315,10 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
       {isMobile && (
         <Drawer open={isOpen} onOpenChange={(open) => !open && handleClose()}>
           <DrawerContent className="h-[90vh] rounded-t-xl">
-            <DrawerHeader className="border-b px-4 py-3" style={{ background: 'linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-accent) 100%)' }}>
+            <DrawerHeader className="border-b px-4 py-3" style={{ background: 'linear-gradient(135deg, #1f3463 0%, #2cafdd 100%)' }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-sm">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shadow-md ring-2 ring-white/30">
                     <Image
                       src="/assets/floating-timi.svg"
                       alt="Timi Bot"
@@ -325,23 +326,24 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
                       height={24}
                       className="h-6 w-6 object-contain"
                     />
+                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-white" />
                   </div>
                   <div className="text-left">
-                    <DrawerTitle className="text-white">Chat with Timi</DrawerTitle>
-                    <DrawerDescription className="text-white/80">AI Support Assistant</DrawerDescription>
+                    <DrawerTitle className="text-white font-bold">Quick Chat</DrawerTitle>
+                    <DrawerDescription className="text-white/80 font-medium">Timi AI Assistant</DrawerDescription>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleClose}
-                  className="text-white hover:bg-white/20 hover:text-white"
+                  className="text-white hover:bg-white/20 hover:text-white rounded-lg"
                 >
                   <X className="h-5 w-5" />
                 </Button>
               </div>
             </DrawerHeader>
-            <div className="flex-1 overflow-hidden bg-white">
+            <div className="flex-1 overflow-hidden bg-gradient-to-b from-white via-slate-50/40 to-white">
               {chatContent}
             </div>
           </DrawerContent>

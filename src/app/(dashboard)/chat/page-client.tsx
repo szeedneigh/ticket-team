@@ -21,7 +21,7 @@ import { ChatHistory } from '@/components/chat/chat-history'
 import { ChatClient } from '@/components/chat/chat-client'
 import {
   createChatSession,
-  deleteChatSession,
+  archiveChatSession,
   getChatSession,
 } from '@/app/actions/chat'
 import type { SessionSummary } from '@/lib/chat/queries'
@@ -67,27 +67,51 @@ export function ChatPageClient({
         return // Already active
       }
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-start',message:'Session selection started',data:{fromSessionId:activeSessionId,toSessionId:sessionId,hasCachedMessages:!!sessionMessages[sessionId]},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'})}).catch(()=>{});
+      // #endregion
+
       setIsLoadingSession(true)
-      setActiveSessionId(sessionId)
-
-      // Update URL
-      const params = new URLSearchParams(searchParams.toString())
-      params.set('session', sessionId)
-      router.push(`/chat?${params.toString()}`)
-
+      
       try {
-        // Fetch session messages if not cached
-        if (!sessionMessages[sessionId]) {
-          const result = await getChatSession(sessionId)
+        // Update URL first
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('session', sessionId)
+        router.replace(`/chat?${params.toString()}`)
 
-          if (!result.success) {
-            toast.error(result.error || 'Failed to load conversation')
-          } else if (result.data) {
-            setSessionMessages(prev => ({
-              ...prev,
-              [sessionId]: result.data!.messages,
-            }))
-          }
+        // Always fetch fresh messages to ensure we have the latest
+        const result = await getChatSession(sessionId)
+
+        if (!result.success) {
+          toast.error(result.error || 'Failed to load conversation')
+          return
+        }
+
+        if (result.data) {
+          const loadedMessages = result.data.messages
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-loaded',message:'Session messages loaded',data:{sessionId,messagesCount:loadedMessages.length,lastMessageRole:loadedMessages[loadedMessages.length-1]?.role,lastMessageIndex:loadedMessages.length-1},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2,H5'})}).catch(()=>{});
+          // #endregion
+          
+          // Update messages cache
+          setSessionMessages(prev => ({
+            ...prev,
+            [sessionId]: loadedMessages,
+          }))
+          
+          // Update active session ID after messages are loaded
+          setActiveSessionId(sessionId)
+          
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-complete',message:'Session switch complete',data:{sessionId,activeSessionId:sessionId,messagesCount:loadedMessages.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'})}).catch(()=>{});
+          // #endregion
+        } else {
+          // Session exists but has no messages - still switch to it
+          setSessionMessages(prev => ({
+            ...prev,
+            [sessionId]: [],
+          }))
+          setActiveSessionId(sessionId)
         }
       } catch (error) {
         console.error('Failed to load session:', error)
@@ -101,6 +125,7 @@ export function ChatPageClient({
 
   // Handle new chat creation
   const handleNewChat = useCallback(async () => {
+    setIsLoadingSession(true)
     try {
       const result = await createChatSession()
 
@@ -123,6 +148,12 @@ export function ChatPageClient({
 
       setSessions(prev => [newSession, ...prev])
       setActiveSessionId(newSessionId)
+      
+      // Initialize empty messages for new session
+      setSessionMessages(prev => ({
+        ...prev,
+        [newSessionId]: [],
+      }))
 
       // Update URL
       const params = new URLSearchParams(searchParams.toString())
@@ -133,22 +164,29 @@ export function ChatPageClient({
     } catch (error) {
       console.error('Failed to create new chat:', error)
       toast.error('Failed to create new chat')
+    } finally {
+      setIsLoadingSession(false)
     }
   }, [router, searchParams])
 
-  // Handle session deletion
-  const handleDeleteSession = useCallback(
+  // Handle session archiving
+  const handleArchiveSession = useCallback(
     async (sessionId: string) => {
       try {
-        const result = await deleteChatSession(sessionId)
+        const result = await archiveChatSession(sessionId)
 
         if (!result.success) {
-          toast.error(result.error || 'Failed to delete conversation')
+          toast.error(result.error || 'Failed to archive conversation')
           return
         }
 
+        // Calculate remaining sessions BEFORE updating state
+        const remainingSessions = sessions.filter(
+          s => s.session_id !== sessionId
+        )
+
         // Remove from sessions list
-        setSessions(prev => prev.filter(s => s.session_id !== sessionId))
+        setSessions(remainingSessions)
 
         // Clear cached messages
         setSessionMessages(prev => {
@@ -157,24 +195,21 @@ export function ChatPageClient({
           return updated
         })
 
-        // If deleted session was active, switch to another
-        if (sessionId === activeSessionId) {
-          const remainingSessions = sessions.filter(
-            s => s.session_id !== sessionId
-          )
+        toast.success('Conversation archived')
 
+        // If archived session was active, switch to another
+        if (sessionId === activeSessionId) {
           if (remainingSessions.length > 0) {
-            handleSessionSelect(remainingSessions[0].session_id)
+            // Switch to the first remaining session
+            await handleSessionSelect(remainingSessions[0].session_id)
           } else {
             // Create new session if no sessions left
-            handleNewChat()
+            await handleNewChat()
           }
         }
-
-        toast.success('Conversation deleted')
       } catch (error) {
-        console.error('Failed to delete session:', error)
-        toast.error('Failed to delete conversation')
+        console.error('Failed to archive session:', error)
+        toast.error('Failed to archive conversation')
       }
     },
     [activeSessionId, sessions, handleSessionSelect, handleNewChat]
@@ -201,12 +236,21 @@ export function ChatPageClient({
         </Button>
 
         <div className="flex-1 w-full flex flex-col h-full">
+          {isLoadingSession ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center space-y-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2cafdd] mx-auto" />
+                <p className="text-sm text-muted-foreground">Loading conversation...</p>
+              </div>
+            </div>
+          ) : (
             <ChatClient
-            key={activeSessionId} // Re-mount on session change
-            sessionId={activeSessionId}
-            initialMessages={sessionMessages[activeSessionId] || []}
-            userName={userName}
+              key={activeSessionId} // Re-mount on session change
+              sessionId={activeSessionId}
+              initialMessages={sessionMessages[activeSessionId] || []}
+              userName={userName}
             />
+          )}
         </div>
       </div>
 
@@ -216,7 +260,7 @@ export function ChatPageClient({
         activeSessionId={activeSessionId}
         onSessionSelect={handleSessionSelect}
         onNewChat={handleNewChat}
-        onDeleteSession={handleDeleteSession}
+        onArchiveSession={handleArchiveSession}
         isLoading={isLoadingSession}
         isOpen={isHistoryOpen}
         onToggle={() => setIsHistoryOpen(!isHistoryOpen)}

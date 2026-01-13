@@ -38,7 +38,7 @@ test.describe('Authentication', () => {
     await authExpect(page).toHaveURL(/\/dashboard/)
   })
 
-  test('should handle invalid domain error', async ({ page }) => {
+  test('should handle invalid domain error', async ({ page: _page }) => {
     // Note: This requires mocking Supabase auth callback
     // 1. Mock OAuth callback with non-LVCC email
     // 2. Verify error message is shown

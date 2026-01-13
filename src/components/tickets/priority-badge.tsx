@@ -25,7 +25,11 @@ function getPriorityColor(priority: TicketPriority): string {
     case 'medium':
       return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800'
     case 'high':
+      return 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-800'
+    case 'urgent':
       return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800'
+    case 'critical':
+      return 'bg-red-200 text-red-900 border-red-300 dark:bg-red-950/50 dark:text-red-300 dark:border-red-700'
     default:
       return 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-950/30 dark:text-gray-400 dark:border-gray-800'
   }
@@ -42,6 +46,10 @@ function getPriorityIcon(priority: TicketPriority): string {
       return '→'
     case 'high':
       return '↑'
+    case 'urgent':
+      return '⚠'
+    case 'critical':
+      return '🚨'
     default:
       return '→'
   }
@@ -58,7 +66,11 @@ function getPriorityAriaLabel(priority: TicketPriority): string {
     case 'medium':
       return `${label} priority - normal urgency`
     case 'high':
-      return `${label} priority - urgent`
+      return `${label} priority - important`
+    case 'urgent':
+      return `${label} priority - immediate attention required`
+    case 'critical':
+      return `${label} priority - system-wide impact, requires immediate resolution`
     default:
       return `${label} priority`
   }
@@ -80,7 +92,7 @@ export function PriorityBadge({
       className={cn(
         colorClass, 
         'transition-all duration-200 hover:scale-105 hover:shadow-sm',
-        priority === 'high' && 'animate-pulse',
+        (priority === 'urgent' || priority === 'critical') && 'animate-pulse',
         className
       )}
       aria-label={ariaLabel}

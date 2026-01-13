@@ -8,10 +8,12 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Sparkles, Eye, ThumbsUp, ExternalLink } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CategoryBadge } from './category-badge'
 import { cn } from '@/lib/utils'
 
@@ -27,6 +29,10 @@ interface SemanticSearchResult {
   helpful_votes: number
   total_votes: number
   similarity: number
+  author_id?: string
+  author_full_name?: string
+  author_email?: string
+  author_avatar_url?: string
 }
 
 interface SemanticSearchResultsProps {
@@ -111,6 +117,17 @@ export function SemanticSearchResults({ query, results, isLoading }: SemanticSea
     return Math.round((helpfulVotes / totalVotes) * 100)
   }
 
+  // Helper to get initials from full name
+  const getInitials = (name?: string): string => {
+    if (!name) return 'U'
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
   return (
     <div className="space-y-6">
       {/* Results Header */}
@@ -174,26 +191,52 @@ export function SemanticSearchResults({ query, results, isLoading }: SemanticSea
                   </div>
                 )}
 
-                {/* Stats & Action */}
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      <span>{article.view_count}</span>
+                {/* Author & Stats */}
+                <div className="pt-2 border-t space-y-3">
+                  {/* Author */}
+                  {article.author_full_name && (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        {article.author_avatar_url && (
+                          <Image
+                            src={article.author_avatar_url}
+                            alt={article.author_full_name}
+                            width={24}
+                            height={24}
+                            className="rounded-full object-cover"
+                          />
+                        )}
+                        <AvatarFallback className="text-[10px] font-bold bg-gradient-to-br from-[#1f3463] to-[#2cafdd] text-white">
+                          {getInitials(article.author_full_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {article.author_full_name}
+                      </span>
                     </div>
-                    {helpfulnessRate !== null && (
+                  )}
+                  
+                  {/* Stats & Action */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
-                        <ThumbsUp className="h-3 w-3" />
-                        <span>{helpfulnessRate}%</span>
+                        <Eye className="h-3 w-3" />
+                        <span>{article.view_count}</span>
                       </div>
-                    )}
+                      {helpfulnessRate !== null && (
+                        <div className="flex items-center gap-1">
+                          <ThumbsUp className="h-3 w-3" />
+                          <span>{helpfulnessRate}%</span>
+                        </div>
+                      )}
+                    </div>
+                    <Button asChild variant="ghost" size="sm" className="h-7">
+                      <Link href={`/kb/${article.id}`}>
+                        View
+                        <ExternalLink className="h-3 w-3 ml-1" />
+                      </Link>
+                    </Button>
                   </div>
-                  <Button asChild variant="ghost" size="sm" className="h-7">
-                    <Link href={`/kb/${article.id}`}>
-                      View
-                      <ExternalLink className="h-3 w-3 ml-1" />
-                    </Link>
-                  </Button>
                 </div>
               </CardContent>
             </Card>

@@ -73,11 +73,49 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
-    // 5. Return results with metadata
+    // 5. Map database fields to frontend expected format
+    interface KBArticleResult {
+      id: string
+      title: string
+      content: string
+      summary?: string
+      category?: string
+      subcategory?: string
+      tags?: string[]
+      view_count?: number
+      helpful_votes?: number
+      total_votes?: number
+      similarity: number
+      author_id?: string
+      author_full_name?: string
+      author_email?: string
+      author_avatar_url?: string
+    }
+    
+    const mappedResults = ((data as KBArticleResult[] | null) || []).map((article: KBArticleResult) => ({
+      id: article.id,
+      title: article.title,
+      content: article.content,
+      summary: article.summary,
+      category: article.category,
+      subcategory: article.subcategory,
+      tags: article.tags,
+      view_count: article.view_count,
+      helpful_votes: article.helpful_votes,
+      total_votes: article.total_votes,
+      similarity: article.similarity,
+      // Map author fields (new fields from migration)
+      author_id: article.author_id,
+      author_full_name: article.author_full_name,
+      author_email: article.author_email,
+      author_avatar_url: article.author_avatar_url
+    }))
+
+    // 6. Return results with metadata
     return NextResponse.json({
       query,
-      results: data || [],
-      count: data?.length || 0,
+      results: mappedResults,
+      count: mappedResults.length,
       threshold,
       limit
     })

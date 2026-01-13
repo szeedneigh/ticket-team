@@ -7,6 +7,7 @@ import { ThemeToggle } from './theme-toggle'
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/auth/user-avatar'
 import { SignOutButton } from '@/components/auth/sign-out-button'
+import { RoleBadge } from '@/components/users/role-badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { PanelLeft } from 'lucide-react'
+import { PanelLeft, User as UserIcon, HelpCircle, LogOut } from 'lucide-react'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import type { User } from '@/lib/types/users'
 
@@ -125,23 +126,31 @@ export function Navbar({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
-                    <div className="flex flex-col space-y-1 leading-none">
+                    <div className="flex flex-col space-y-1.5 leading-none">
                       <p className="font-medium">{user.full_name}</p>
                       <p className="w-[200px] truncate text-sm text-muted-foreground">
                         {user.email}
                       </p>
+                      <RoleBadge role={user.role} className="w-fit mt-1" />
                     </div>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/profile">Profile</Link>
+                    <Link href="/profile" className="flex items-center gap-2">
+                      <UserIcon className="h-4 w-4" />
+                      Profile
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/help">Help Center</Link>
+                    <Link href="/help" className="flex items-center gap-2">
+                      <HelpCircle className="h-4 w-4" />
+                      Help Center
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="p-0">
-                    <SignOutButton variant="ghost" className="w-full justify-start h-auto px-2 py-1.5">
+                    <SignOutButton variant="ghost" className="w-full justify-start h-auto px-2 py-1.5 flex items-center gap-2">
+                      <LogOut className="h-4 w-4" />
                       Sign Out
                     </SignOutButton>
                   </DropdownMenuItem>

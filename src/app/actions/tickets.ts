@@ -106,20 +106,45 @@ export async function createTicket(
     for (let i = 0; i < fileCount; i++) {
       const file = formData.get(`file_${i}`) as File
       if (file && file.size > 0) {
-        // Validate file size and type
+        // Log file details for debugging
+        logger.info('Processing file upload', {
+          filename: file.name,
+          mimeType: file.type,
+          size: file.size,
+          extension: file.name.split('.').pop(),
+        })
+
+        // Validate file size
         if (!isValidFileSize(file.size)) {
+          logger.error('File size validation failed', {
+            filename: file.name,
+            size: file.size,
+            maxSize: FILE_UPLOAD.MAX_FILE_SIZE,
+          })
           return {
             success: false,
-            error: `File "${file.name}" exceeds maximum size`,
+            error: `File "${file.name}" exceeds maximum size of ${FILE_UPLOAD.MAX_FILE_SIZE / 1024 / 1024}MB`,
           }
         }
 
-        if (!isValidFileType(file.type)) {
+        // Validate file type (checks both MIME type and extension)
+        if (!isValidFileType(file)) {
+          logger.error('File type validation failed', {
+            filename: file.name,
+            mimeType: file.type,
+            extension: file.name.split('.').pop(),
+            allowedTypes: FILE_UPLOAD.ALLOWED_FILE_TYPES,
+          })
           return {
             success: false,
-            error: `File "${file.name}" has an unsupported file type`,
+            error: `File "${file.name}" has an unsupported file type. Allowed: Images (JPG, PNG, GIF, WebP), Documents (PDF, Word, Excel, PowerPoint), Text files, Archives (ZIP, RAR)`,
           }
         }
+
+        logger.info('File validation passed', {
+          filename: file.name,
+          mimeType: file.type,
+        })
 
         files.push(file)
       }

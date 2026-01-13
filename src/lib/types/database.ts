@@ -22,7 +22,7 @@ export type TicketStatus =
   | 'closed'
   | 'canceled'
 
-export type TicketPriority = 'low' | 'medium' | 'high'
+export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent' | 'critical'
 
 export type ArticleStatus = 'draft' | 'published' | 'archived'
 
@@ -73,6 +73,8 @@ export const TICKET_PRIORITY_LABELS: Record<TicketPriority, string> = {
   low: 'Low',
   medium: 'Medium',
   high: 'High',
+  urgent: 'Urgent',
+  critical: 'Critical',
 }
 
 export const ARTICLE_STATUS_LABELS: Record<ArticleStatus, string> = {

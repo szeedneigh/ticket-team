@@ -169,25 +169,55 @@ export async function createComment(
         const file = formData.get(`file_${i}`) as File
         if (!file) continue
 
-        // Validate file
+        // Log file details for debugging
+        logger.info('Processing comment file upload', {
+          filename: file.name,
+          mimeType: file.type,
+          size: file.size,
+          extension: file.name.split('.').pop(),
+          ticket_id,
+        })
+
+        // Validate file size
         if (!isValidCommentFileSize(file.size)) {
+          logger.error('Comment file size validation failed', {
+            filename: file.name,
+            size: file.size,
+            maxSize: COMMENT_FILE_UPLOAD.MAX_SIZE,
+          })
           return {
             success: false,
             error: `File "${file.name}" exceeds ${COMMENT_FILE_UPLOAD.MAX_SIZE / 1024 / 1024}MB limit`,
           }
         }
 
-        if (!isValidCommentFileType(file.type)) {
+        // Validate file type (checks both MIME type and extension)
+        if (!isValidCommentFileType(file)) {
+          logger.error('Comment file type validation failed', {
+            filename: file.name,
+            mimeType: file.type,
+            extension: file.name.split('.').pop(),
+            allowedTypes: COMMENT_FILE_UPLOAD.ALLOWED_TYPES,
+          })
           return {
             success: false,
-            error: `File type "${file.type}" is not allowed`,
+            error: `File type "${file.type}" is not allowed. Allowed: Images (JPG, PNG, GIF, WebP), PDF, Word documents, Text files`,
           }
         }
+
+        logger.info('Comment file validation passed', {
+          filename: file.name,
+          mimeType: file.type,
+        })
 
         // Upload file (reuse ticket storage utility)
         const uploadResult = await uploadTicketAttachment(file, ticket_id, user.id)
 
         if (!uploadResult.success || !uploadResult.path) {
+          logger.error('Comment file upload failed', {
+            filename: file.name,
+            error: uploadResult.error,
+          })
           return {
             success: false,
             error: `Failed to upload "${file.name}"`,
