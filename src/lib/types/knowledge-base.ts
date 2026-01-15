@@ -36,6 +36,36 @@ export interface KnowledgeArticleWithAuthor extends KnowledgeArticle {
   author: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url'>
 }
 
+// ============================================================================
+// Lightweight List Types (Browse/Search Cards)
+// ============================================================================
+
+/**
+ * Lightweight KB article shape for list/browse UIs.
+ * Excludes heavy fields like `content` and `embedding` to keep responses fast.
+ */
+export type KnowledgeArticleListItem = Pick<
+  KnowledgeArticle,
+  | 'id'
+  | 'title'
+  | 'summary'
+  | 'category'
+  | 'subcategory'
+  | 'tags'
+  | 'author_id'
+  | 'status'
+  | 'view_count'
+  | 'helpful_votes'
+  | 'total_votes'
+  | 'created_at'
+  | 'updated_at'
+  | 'published_at'
+>
+
+export interface KnowledgeArticleListItemWithAuthor extends KnowledgeArticleListItem {
+  author: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url'>
+}
+
 // Article with vote information
 export interface KnowledgeArticleWithVote extends KnowledgeArticle {
   user_vote: ArticleVote | null
@@ -111,7 +141,7 @@ export interface ArticleSearchResult extends KnowledgeArticle {
 }
 
 export interface ArticleListResponse {
-  articles: KnowledgeArticleWithAuthor[]
+  articles: KnowledgeArticleListItemWithAuthor[]
   total: number
   page: number
   per_page: number
