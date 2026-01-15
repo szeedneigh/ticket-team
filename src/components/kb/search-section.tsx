@@ -36,6 +36,7 @@ interface SearchSectionProps {
   defaultValue?: string
   placeholder?: string
   className?: string
+  onKeywordPreviewChange?: (query: string) => void
   onSemanticSearch?: (query: string, results: SemanticResult[]) => void
   onSemanticSearchStart?: () => void
   onSemanticSearchEnd?: () => void
@@ -64,6 +65,7 @@ export function SearchSection({
   defaultValue = '',
   placeholder = 'Search knowledge base...',
   className,
+  onKeywordPreviewChange,
   onSemanticSearch,
   onSemanticSearchStart,
   onSemanticSearchEnd
@@ -76,14 +78,35 @@ export function SearchSection({
   const [isSemanticMode, setIsSemanticMode] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
-  const debouncedSearch = useDebounce(searchTerm, 500)
+  const debouncedSearch = useDebounce(searchTerm, 250)
   
   // Store scroll position before navigation
   const scrollPositionRef = useRef<number>(0)
+  const semanticAbortRef = useRef<AbortController | null>(null)
+  const semanticCacheRef = useRef<Map<string, SemanticResult[]>>(new Map())
+  
+  // Persist the current KB list URL so article pages can provide a "Back to list" link.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const currentUrl = searchParams.toString() ? `${pathname}?${searchParams}` : pathname
+    sessionStorage.setItem('kb-last-list-url', currentUrl)
+  }, [pathname, searchParams])
 
   // Perform semantic search via API
   const performSemanticSearch = useCallback(async (query: string) => {
     if (!query.trim() || !isSemanticMode) return
+
+    const normalizedQuery = query.trim()
+    const cached = semanticCacheRef.current.get(normalizedQuery)
+    if (cached) {
+      onSemanticSearch?.(normalizedQuery, cached)
+      return
+    }
+
+    // Cancel any in-flight request to keep typing responsive
+    semanticAbortRef.current?.abort()
+    const controller = new AbortController()
+    semanticAbortRef.current = controller
 
     setIsSearching(true)
     onSemanticSearchStart?.()
@@ -92,7 +115,8 @@ export function SearchSection({
       const response = await fetch('/api/kb/semantic-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, threshold: 0.7, limit: 20 })
+        body: JSON.stringify({ query: normalizedQuery, threshold: 0.7, limit: 20 }),
+        signal: controller.signal,
       })
 
       if (!response.ok) {
@@ -100,10 +124,16 @@ export function SearchSection({
       }
 
       const data = await response.json()
-      onSemanticSearch?.(query, data.results)
+      const results: SemanticResult[] = Array.isArray(data?.results) ? data.results : []
+      semanticCacheRef.current.set(normalizedQuery, results)
+      onSemanticSearch?.(normalizedQuery, results)
     } catch (error) {
+      // Ignore aborts (newer query is in-flight)
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return
+      }
       console.error('Semantic search error:', error)
-      onSemanticSearch?.(query, [])
+      onSemanticSearch?.(normalizedQuery, [])
     } finally {
       setIsSearching(false)
       onSemanticSearchEnd?.()
@@ -122,9 +152,12 @@ export function SearchSection({
     } else {
       // Keyword search mode - update URL params
       const params = new URLSearchParams(searchParams.toString())
+      const normalized = debouncedSearch.trim()
 
-      if (debouncedSearch) {
-        params.set('search', debouncedSearch)
+      // Keep instant UX: for very short inputs, do client-side preview filtering
+      // and only hit the server when the query is meaningful enough.
+      if (normalized && normalized.length >= 3) {
+        params.set('search', normalized)
         params.delete('page') // Reset to page 1 on new search
       } else {
         params.delete('search')
@@ -136,6 +169,8 @@ export function SearchSection({
         scrollPositionRef.current = window.scrollY
         // Also store in sessionStorage as backup
         sessionStorage.setItem('kb-scroll-position', String(window.scrollY))
+        // Also store current list URL so article pages can go "back to list"
+        sessionStorage.setItem('kb-last-list-url', newUrl)
       }
       // Use router.replace to avoid full page navigation, with scroll: false
       router.replace(newUrl, { scroll: false })
@@ -174,16 +209,18 @@ export function SearchSection({
 
   const handleSearch = useCallback((value: string) => {
     setSearchTerm(value)
-  }, [])
+    onKeywordPreviewChange?.(value.trim())
+  }, [onKeywordPreviewChange])
 
   const handleModeChange = useCallback((isAi: boolean) => {
     setIsSemanticMode(isAi)
     // Clear search results when switching modes if not already empty
     if (searchTerm) {
       setSearchTerm('')
+      onKeywordPreviewChange?.('')
       onSemanticSearch?.('', []) // Clear semantic results if switching from AI
     }
-  }, [searchTerm, onSemanticSearch])
+  }, [onKeywordPreviewChange, onSemanticSearch, searchTerm])
 
   return (
     <div className={cn('w-full max-w-3xl mx-auto space-y-6', className)}>
@@ -210,7 +247,6 @@ export function SearchSection({
             onChange={(e) => handleSearch(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            disabled={isSearching} // Keep disabled state
           />
 
           {/* Search Mode Toggle */}
