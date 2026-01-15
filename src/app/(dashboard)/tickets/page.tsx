@@ -30,7 +30,7 @@ export const metadata = {
 
 interface PageProps {
   searchParams: Promise<{
-    status?: string
+    status?: string | string[]
     search?: string
     timePeriod?: string
     page?: string
@@ -79,7 +79,12 @@ export default async function TicketsPage({ searchParams }: PageProps) {
 
   // Apply URL query param filters
   if (params.status) {
-    filters.status = params.status as TicketStatus
+    const statuses = Array.isArray(params.status)
+      ? params.status
+      : params.status.split(',').map((s) => s.trim()).filter(Boolean)
+
+    // Support repeated `status` params (e.g. `?status=open&status=in_progress`)
+    filters.status = (statuses.length > 1 ? statuses : statuses[0]) as TicketStatus | TicketStatus[]
   }
 
   if (params.search) {
