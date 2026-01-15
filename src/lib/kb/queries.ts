@@ -8,6 +8,7 @@
 import { createClient } from '@/lib/supabase/server'
 import type {
   KnowledgeArticleListItemWithAuthor,
+  KnowledgeArticleWithAuthor,
   ArticleSearchFilters,
   ArticleListResponse,
   ArticleVote
@@ -17,6 +18,21 @@ import { PAGINATION } from '@/lib/constants'
 // ============================================================================
 // Article List Queries
 // ============================================================================
+
+type AuthorPick = KnowledgeArticleListItemWithAuthor['author']
+
+const UNKNOWN_AUTHOR: AuthorPick = {
+  id: 'unknown',
+  full_name: 'Unknown',
+  email: '',
+  avatar_url: null
+}
+
+function normalizeAuthor(author: unknown): AuthorPick {
+  if (!author) return UNKNOWN_AUTHOR
+  if (Array.isArray(author)) return (author[0] as AuthorPick | undefined) ?? UNKNOWN_AUTHOR
+  return author as AuthorPick
+}
 
 /**
  * Get paginated KB articles with filters and sorting
@@ -125,8 +141,20 @@ export async function getArticles(
     throw new Error('Failed to fetch articles')
   }
 
+  type ArticleRow = Omit<KnowledgeArticleListItemWithAuthor, 'author'> & {
+    author?: unknown
+  }
+
+  const articles: KnowledgeArticleListItemWithAuthor[] = (data ?? []).map((row) => {
+    const r = row as ArticleRow
+    return {
+      ...r,
+      author: normalizeAuthor(r.author)
+    }
+  })
+
   return {
-    articles: (data as KnowledgeArticleListItemWithAuthor[]) || [],
+    articles,
     total: count || 0,
     page,
     per_page: perPage
