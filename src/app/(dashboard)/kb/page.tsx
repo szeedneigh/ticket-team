@@ -66,7 +66,6 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
     return {
       id: article.id,
       title: article.title,
-      content: article.content,
       summary: article.summary,
       category: article.category,
       subcategory: article.subcategory,
@@ -76,8 +75,6 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
       view_count: article.view_count,
       helpful_votes: article.helpful_votes,
       total_votes: article.total_votes,
-      embedding: article.embedding,
-      source_ticket_id: article.source_ticket_id,
       created_at: article.created_at,
       updated_at: article.updated_at,
       published_at: article.published_at,
