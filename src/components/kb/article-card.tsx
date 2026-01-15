@@ -13,10 +13,10 @@ import { CategoryBadge } from './category-badge'
 import { TagList } from './tag-badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import type { KnowledgeArticleWithAuthor } from '@/lib/types/knowledge-base'
+import type { KnowledgeArticleListItemWithAuthor } from '@/lib/types/knowledge-base'
 
 interface ArticleCardProps {
-  article: KnowledgeArticleWithAuthor
+  article: KnowledgeArticleListItemWithAuthor
   className?: string
 }
 
