@@ -7,7 +7,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type {
-  KnowledgeArticleWithAuthor,
+  KnowledgeArticleListItemWithAuthor,
   ArticleSearchFilters,
   ArticleListResponse,
   ArticleVote
@@ -41,7 +41,20 @@ export async function getArticles(
     .from('knowledge_articles')
     .select(
       `
-      *,
+      id,
+      title,
+      summary,
+      category,
+      subcategory,
+      tags,
+      author_id,
+      status,
+      view_count,
+      helpful_votes,
+      total_votes,
+      created_at,
+      updated_at,
+      published_at,
       author:users!author_id (
         id,
         full_name,
@@ -78,7 +91,12 @@ export async function getArticles(
   // Apply full-text search (title or content)
   if (filters.search && filters.search.trim()) {
     const searchTerm = filters.search.trim()
-    query = query.or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
+    // Use Postgres full-text search via generated `search_vector` + GIN index.
+    // This is dramatically faster than ILIKE scanning large `content`.
+    query = query.textSearch('search_vector', searchTerm, {
+      type: 'websearch',
+      config: 'english',
+    })
   }
 
   // Apply sorting
@@ -108,7 +126,7 @@ export async function getArticles(
   }
 
   return {
-    articles: (data as KnowledgeArticleWithAuthor[]) || [],
+    articles: (data as KnowledgeArticleListItemWithAuthor[]) || [],
     total: count || 0,
     page,
     per_page: perPage
