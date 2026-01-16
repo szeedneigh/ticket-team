@@ -7,6 +7,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type {
+  KnowledgeArticleListItemWithAuthor,
   KnowledgeArticleWithAuthor,
   ArticleSearchFilters,
   ArticleListResponse,
@@ -17,6 +18,21 @@ import { PAGINATION } from '@/lib/constants'
 // ============================================================================
 // Article List Queries
 // ============================================================================
+
+type AuthorPick = KnowledgeArticleListItemWithAuthor['author']
+
+const UNKNOWN_AUTHOR: AuthorPick = {
+  id: 'unknown',
+  full_name: 'Unknown',
+  email: '',
+  avatar_url: null
+}
+
+function normalizeAuthor(author: unknown): AuthorPick {
+  if (!author) return UNKNOWN_AUTHOR
+  if (Array.isArray(author)) return (author[0] as AuthorPick | undefined) ?? UNKNOWN_AUTHOR
+  return author as AuthorPick
+}
 
 /**
  * Get paginated KB articles with filters and sorting
@@ -41,7 +57,20 @@ export async function getArticles(
     .from('knowledge_articles')
     .select(
       `
-      *,
+      id,
+      title,
+      summary,
+      category,
+      subcategory,
+      tags,
+      author_id,
+      status,
+      view_count,
+      helpful_votes,
+      total_votes,
+      created_at,
+      updated_at,
+      published_at,
       author:users!author_id (
         id,
         full_name,
@@ -78,7 +107,12 @@ export async function getArticles(
   // Apply full-text search (title or content)
   if (filters.search && filters.search.trim()) {
     const searchTerm = filters.search.trim()
-    query = query.or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
+    // Use Postgres full-text search via generated `search_vector` + GIN index.
+    // This is dramatically faster than ILIKE scanning large `content`.
+    query = query.textSearch('search_vector', searchTerm, {
+      type: 'websearch',
+      config: 'english',
+    })
   }
 
   // Apply sorting
@@ -107,8 +141,20 @@ export async function getArticles(
     throw new Error('Failed to fetch articles')
   }
 
+  type ArticleRow = Omit<KnowledgeArticleListItemWithAuthor, 'author'> & {
+    author?: unknown
+  }
+
+  const articles: KnowledgeArticleListItemWithAuthor[] = (data ?? []).map((row) => {
+    const r = row as ArticleRow
+    return {
+      ...r,
+      author: normalizeAuthor(r.author)
+    }
+  })
+
   return {
-    articles: (data as KnowledgeArticleWithAuthor[]) || [],
+    articles,
     total: count || 0,
     page,
     per_page: perPage

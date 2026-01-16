@@ -37,7 +37,7 @@ export function OnlineUsers() {
   }
 
   return (
-    <Card className="border-t-0 rounded-t-none">
+    <Card className="rounded-2xl border border-white/10 bg-background/40 backdrop-blur-md shadow-xl shadow-[#1f3463]/5">
       <div className="p-4">
         <div className="flex items-center gap-2 mb-3">
           <Users className="h-4 w-4 text-muted-foreground" />

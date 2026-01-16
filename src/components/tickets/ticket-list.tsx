@@ -27,6 +27,7 @@ export function TicketList({
   tickets,
   currentPage,
   totalPages,
+  totalCount,
   className,
 }: TicketListProps) {
   const router = useRouter()
@@ -103,6 +104,14 @@ export function TicketList({
     <div className={cn('space-y-6', className)}>
       {/* Ticket Table */}
       <TicketTable tickets={tickets} />
+
+      {/* Page indicator (always visible when there are results) */}
+      {totalPages >= 1 && totalCount > 0 && (
+        <div className="flex items-center justify-center text-xs text-muted-foreground">
+          Page <span className="mx-1 font-semibold text-foreground">{currentPage}</span>
+          of <span className="mx-1 font-semibold text-foreground">{totalPages}</span>
+        </div>
+      )}
 
       {/* Pagination Controls */}
       {totalPages > 1 && (

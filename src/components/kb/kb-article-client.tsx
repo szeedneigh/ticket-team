@@ -1,10 +1,11 @@
 'use client'
 
 import { motion, useScroll, useSpring, Variants } from 'framer-motion'
-import { Share2, Edit, Calendar, Eye, Clock, Bookmark } from 'lucide-react'
+import { Share2, Edit, Calendar, Eye, Clock, Bookmark, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { toast } from 'sonner'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
@@ -40,12 +41,30 @@ export function KBArticleClient({
   sanitizedContent,
   publishedDate
 }: KBArticleClientProps) {
+  const [backHref, setBackHref] = useState('/kb')
   const { scrollYProgress } = useScroll()
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
     restDelta: 0.001
   })
+
+  useEffect(() => {
+    try {
+      const lastListUrl = sessionStorage.getItem('kb-last-list-url')
+      if (!lastListUrl) return
+      // Only accept routes that look like the KB list, not another article/edit page.
+      if (
+        lastListUrl.startsWith('/kb') &&
+        !lastListUrl.startsWith(`/kb/${article.id}`) &&
+        !lastListUrl.includes('/edit')
+      ) {
+        setBackHref(lastListUrl)
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [article.id])
 
   // Estimation of reading time (avg 200 words/min)
   const readingTime = Math.max(1, Math.ceil(sanitizedContent.replace(/<[^>]+>/g, '').split(/\s+/).length / 200))
@@ -122,6 +141,21 @@ export function KBArticleClient({
           <main className="min-w-0">
             {/* Article Header */}
             <motion.header variants={itemVariants} className="space-y-8 mb-12">
+              {/* Back to list */}
+              <div className="flex items-center">
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2 text-muted-foreground hover:text-foreground -ml-2"
+                >
+                  <Link href={backHref}>
+                    <ChevronLeft className="h-4 w-4" />
+                    Back to Knowledge Base
+                  </Link>
+                </Button>
+              </div>
+
               {/* Top Row: Category & Status */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
