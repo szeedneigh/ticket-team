@@ -30,11 +30,11 @@ export function TimeFilter({ defaultValue = 'this_week' }: TimeFilterProps) {
   const handleChange = (value: TimePeriod) => {
     const params = new URLSearchParams(searchParams.toString())
 
-    if (value === 'all') {
-      params.delete('timePeriod')
-    } else {
-      params.set('timePeriod', value)
-    }
+    // IMPORTANT:
+    // The tickets page defaults to `this_week` when `timePeriod` is absent.
+    // If we delete the param for "all", the UI will snap back to the default.
+    // So we keep an explicit `timePeriod=all` in the URL.
+    params.set('timePeriod', value)
 
     // Reset to page 1 when changing time filter
     params.delete('page')

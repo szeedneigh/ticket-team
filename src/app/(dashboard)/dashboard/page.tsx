@@ -97,7 +97,7 @@ export default async function DashboardPage() {
               You have {stats.overdueTickets} ticket{stats.overdueTickets > 1 ? 's' : ''} past
               {stats.overdueTickets > 1 ? ' their' : ' its'} SLA deadline.
               <Link
-                href="/tickets?status=open&status=in_progress"
+                href="/tickets?status=open&status=in_progress&timePeriod=all"
                 className="ml-2 underline font-medium hover:text-orange-900 dark:hover:text-orange-100"
               >
                 Review now →
