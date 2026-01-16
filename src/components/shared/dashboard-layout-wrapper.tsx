@@ -106,14 +106,14 @@ export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrappe
   }, [])
 
   return (
-    <div className="flex h-full overflow-hidden" suppressHydrationWarning>
+    <div className="flex h-full min-h-0 overflow-hidden" suppressHydrationWarning>
       <Sidebar
         user={user}
         isCollapsed={isCollapsed}
         isMobileOpen={isMobileOpen}
         setIsMobileOpen={setIsMobileOpen}
       />
-      <div className="flex flex-col flex-1 min-w-0" suppressHydrationWarning>
+      <div className="flex flex-col flex-1 min-w-0 min-h-0" suppressHydrationWarning>
         <Navbar
           user={user}
           isCollapsed={isCollapsed}
@@ -121,7 +121,7 @@ export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrappe
           isMobileOpen={isMobileOpen}
           setIsMobileOpen={setIsMobileOpen}
         />
-        <div className="relative flex-1 overflow-hidden" suppressHydrationWarning>
+        <div className="relative flex flex-col flex-1 min-h-0 overflow-hidden" suppressHydrationWarning>
           {/* Top scroll shadow */}
           <div
             className={cn(
@@ -134,7 +134,7 @@ export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrappe
           <main 
             ref={mainRef} 
             className={cn(
-              "flex-1 overflow-y-auto h-full",
+              "flex-1 min-h-0 overflow-y-auto",
               isChatPage || pathname?.startsWith('/kb') || pathname?.startsWith('/tickets') || pathname?.startsWith('/admin') || pathname?.startsWith('/performance') ? "p-0" : "p-6 lg:p-8"
             )}
           >
