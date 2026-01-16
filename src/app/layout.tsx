@@ -4,7 +4,6 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import { Toaster } from "sonner"
 import { createClient } from "@/lib/supabase/server"
 
 // Force dynamic rendering because we read auth cookies for user preferences
@@ -63,7 +62,6 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <Providers initialPreferences={initialPreferences}>{children}</Providers>
-        <Toaster richColors position="top-right" />
       </body>
     </html>
   );
