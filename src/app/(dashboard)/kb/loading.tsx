@@ -1,6 +1,6 @@
 export default function KBBrowseLoading() {
   return (
-    <div className="min-h-screen bg-background animate-pulse">
+    <div className="min-h-full bg-background animate-pulse">
       {/* Hero Section with Gradient Background - Matches page.tsx */}
       <div className="relative overflow-hidden bg-background border-b border-border/40">
         {/* Dot Grid Pattern */}
