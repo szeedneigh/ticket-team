@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function TicketsLoading() {
   return (
-    <div className="min-h-screen bg-background relative selection:bg-primary/20 selection:text-primary">
+    <div className="min-h-full bg-background relative selection:bg-primary/20 selection:text-primary">
        {/* Hero Section with Skeleton Background - Matches page.tsx */}
        <div className="relative overflow-hidden bg-background border-b border-border/40 pb-12">
         {/* Dot Grid Pattern */}
