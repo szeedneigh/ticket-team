@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 export default function TicketDetailLoading() {
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-full bg-background relative">
       {/* Hero Section Skeleton */}
       <div className="relative overflow-hidden bg-background border-b border-border/40 pb-8">
         {/* Dot Grid Pattern */}
