@@ -16,7 +16,12 @@ interface ProvidersProps {
 export function Providers({ children, initialPreferences }: ProvidersProps) {
   // Suppress hydration warnings from browser extensions
   useEffect(() => {
-    const originalError = console.error
+    // In some environments (and with certain tooling), console methods may not be real
+    // Functions (no .apply). Capture safe, bound callables so our wrapper never throws.
+    const originalError =
+      typeof console.error === 'function' ? console.error.bind(console) : null
+    const originalLog = typeof console.log === 'function' ? console.log.bind(console) : null
+
     console.error = (...args) => {
       // Filter out hydration warnings related to browser extensions
       const message = args[0]?.toString() || ''
@@ -33,11 +38,21 @@ export function Providers({ children, initialPreferences }: ProvidersProps) {
       }
 
       // Allow all other console errors through
-      originalError.apply(console, args)
+      try {
+        if (originalError) {
+          originalError(...args)
+        } else if (originalLog) {
+          originalLog(...args)
+        }
+      } catch {
+        // Never let logging crash the app
+      }
     }
 
     return () => {
-      console.error = originalError
+      if (originalError) {
+        console.error = originalError
+      }
     }
   }, [])
 

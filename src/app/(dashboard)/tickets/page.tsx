@@ -110,7 +110,7 @@ export default async function TicketsPage({ searchParams }: PageProps) {
   )
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-full bg-background relative">
       {/* Hero Section with Gradient Background */}
       <div className="relative overflow-hidden bg-background border-b border-border/40 pb-12">
         {/* Dot Grid Pattern */}
