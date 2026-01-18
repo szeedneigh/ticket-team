@@ -102,7 +102,7 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
   const hasFilters = filters.category || filters.search || (filters.tags && filters.tags.length > 0)
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-full bg-background">
       {/* Hero Section with Gradient Background */}
       <div className="relative overflow-hidden bg-background border-b border-border/40">
         {/* Dot Grid Pattern */}
