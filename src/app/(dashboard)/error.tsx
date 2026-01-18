@@ -24,7 +24,7 @@ export default function DashboardError({ error, reset }: ErrorBoundaryProps) {
   }, [error])
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+    <div className="min-h-full flex items-center justify-center p-4 bg-gray-50">
       <Card className="p-8 bg-white border shadow-lg rounded-[20px] max-w-md w-full text-center">
         <div className="space-y-6">
           {/* Error Icon */}
