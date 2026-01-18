@@ -108,7 +108,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Main Bento Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
         {/* Stats Column - Spans 12 cols on mobile, 8 on desktop */}
         <div className="md:col-span-8 space-y-6">
           {/* Key Metrics Row */}
@@ -164,10 +164,8 @@ export default async function DashboardPage() {
             className="bg-card/40 backdrop-blur-xl border-white/10 shadow-lg rounded-[24px]"
           />
 
-          {/* Quick Actions - Takes remaining height in this column */}
-          <div className="h-full">
-            <QuickActions user={user} />
-          </div>
+          {/* Quick Actions */}
+          <QuickActions user={user} />
         </div>
 
         {/* Sidebar Column - Spans 12 cols on mobile, 4 on desktop */}
