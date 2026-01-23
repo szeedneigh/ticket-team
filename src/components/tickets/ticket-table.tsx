@@ -32,6 +32,10 @@ interface TicketTableProps {
 export function TicketTable({ tickets }: TicketTableProps) {
   const router = useRouter()
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ticket-table.tsx:32',message:'TicketTable: Rendering',data:{ticketsLength:tickets.length,ticketIds:tickets.map(t => t.id),hasDuplicateIds:tickets.length !== new Set(tickets.map(t => t.id)).size,duplicateIds:tickets.length !== new Set(tickets.map(t => t.id)).size ? tickets.map(t => t.id).filter((id, idx, arr) => arr.indexOf(id) !== idx) : []},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
+
   // Enhanced empty state
   if (tickets.length === 0) {
     return (
