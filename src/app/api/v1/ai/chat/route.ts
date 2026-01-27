@@ -24,14 +24,15 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { streamRAGResponse } from '@/lib/chat/rag-service'
-import { recordInteraction } from '@/lib/chat/queries'
-import { isAIConfigured } from '@/lib/ai/client'
+import { recordInteraction, updateSessionTitle } from '@/lib/chat/queries'
+import { isAIConfigured, generateContent } from '@/lib/ai/client'
 import { trackStreamingError } from '@/lib/monitoring/error-tracking'
 import { logger } from '@/lib/logger'
 import {
   checkRateLimit,
   withCircuitBreaker,
 } from '@/lib/chat/rate-limiter'
+import { SESSION_TITLE_PROMPT } from '@/lib/chat/prompts'
 
 // ============================================================================
 // Types
@@ -53,6 +54,52 @@ interface ChatRequestBody {
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // 60 seconds max for streaming
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Generate and save session title based on first user message
+ */
+async function generateSessionTitle(
+  sessionId: string,
+  userId: string,
+  firstMessage: string
+): Promise<void> {
+  try {
+    // Generate title using AI
+    const titlePrompt = SESSION_TITLE_PROMPT.replace('{query}', firstMessage)
+    
+    const result = await generateContent({
+      prompt: titlePrompt,
+      temperature: 0.3, // Low temperature for consistent titles
+      maxTokens: 20,
+    })
+
+    if (result.success && result.text) {
+      // Clean up the title
+      const title = result.text
+        .trim()
+        .replace(/^["']|["']$/g, '') // Remove quotes
+        .substring(0, 60) // Max 60 chars
+
+      // Update session title in database
+      await updateSessionTitle(sessionId, userId, title)
+      
+      logger.info('Auto-generated session title', {
+        sessionId,
+        title,
+      })
+    }
+  } catch (error) {
+    // Silently fail - title generation is not critical
+    logger.error('Error generating session title', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      sessionId,
+    })
+  }
+}
 
 // ============================================================================
 // API Route Handler
@@ -85,10 +132,15 @@ export async function POST(request: NextRequest) {
     // 2. Check rate limits
     const rateLimit = checkRateLimit(user.id)
     if (!rateLimit.allowed) {
+      const waitMinutes = Math.ceil((rateLimit.retryAfter || 60) / 60)
+      const friendlyMessage = waitMinutes > 1 
+        ? `You've reached the message limit. Please wait ${waitMinutes} minutes before sending another message.`
+        : `You've reached the message limit. Please wait ${rateLimit.retryAfter} seconds before sending another message.`
+      
       return new Response(
         JSON.stringify({
           type: 'error',
-          error: `Rate limit exceeded. Please wait ${rateLimit.retryAfter} seconds before trying again.`,
+          error: friendlyMessage,
           retryAfter: rateLimit.retryAfter,
         }),
         {
@@ -271,6 +323,18 @@ export async function POST(request: NextRequest) {
               interactionId,
             })}\n\n`
             controller.enqueue(encoder.encode(interactionData))
+          }
+
+          // 7. Auto-generate session title if this is the first message
+          if (conversationHistory.length === 0 && message) {
+            // Run title generation in background (don't block stream close)
+            generateSessionTitle(sessionId, user.id, message).catch((error) => {
+              logger.error('Failed to generate session title', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                sessionId,
+                userId: user.id,
+              })
+            })
           }
 
           // Close the stream
