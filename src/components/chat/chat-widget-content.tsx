@@ -52,14 +52,18 @@ function WidgetMessage({ message, userName }: WidgetMessageProps) {
       )}
     >
       {!isUser && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2cafdd] to-[#1f3463] ring-2 ring-white shadow-sm overflow-hidden">
-          <Image
-            src="/assets/timi-bot1.svg"
-            alt="Timi Bot"
-            width={28}
-            height={28}
-            className="h-full w-full object-contain p-1"
-          />
+        <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2cafdd] to-[#1f3463] ring-2 ring-white shadow-sm overflow-visible">
+          {/* Subtle pulsing ring for widget messages */}
+          <span className="absolute inset-0 -z-10 animate-pulse rounded-full bg-[#2cafdd] opacity-30" style={{ animationDuration: '3s' }} />
+          <div className="relative flex h-full w-full items-center justify-center">
+            <Image
+              src="/assets/timi-bot1.svg"
+              alt="Timi Bot"
+              width={28}
+              height={28}
+              className="h-full w-full object-contain p-1"
+            />
+          </div>
         </div>
       )}
 
