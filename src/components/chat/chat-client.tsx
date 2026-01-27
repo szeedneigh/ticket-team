@@ -291,11 +291,15 @@ export function ChatClient({
                 // Server signaled an error; surface to the user and stop streaming gracefully
                 const serverMessage = chunk.error || 'An error occurred while processing your request'
                 
+                // Friendly error handling based on error type
+                const isRateLimit = serverMessage.toLowerCase().includes('limit') || 
+                                   serverMessage.toLowerCase().includes('wait')
+                
                 // Update UI state without throwing (avoids noisy console errors)
                 setError(serverMessage)
-                toast.error('Chat Error', {
+                toast.error(isRateLimit ? 'Message Limit Reached' : 'Chat Error', {
                   description: serverMessage,
-                  duration: 5000,
+                  duration: isRateLimit ? 8000 : 5000,
                 })
                 
                 // Cancel further streaming and clear transient state

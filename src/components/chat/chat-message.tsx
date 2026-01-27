@@ -107,13 +107,26 @@ export function ChatMessage({
         >
           {isAssistant ? (
             <div className="relative h-10 w-10">
-                <Image
+              {/* Subtle breathing pulse ring */}
+              <motion.div
+                className="absolute inset-0 rounded-full bg-[#2cafdd]/20"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.5, 0.2, 0.5],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+              <Image
                 src="/assets/timi-bot1.svg"
                 alt="Timi AI Assistant"
                 fill
                 className="object-contain drop-shadow-[0_0_8px_rgba(44,175,221,0.4)]"
                 priority
-                />
+              />
             </div>
           ) : (
             <User className="h-4 w-4 text-muted-foreground" />
