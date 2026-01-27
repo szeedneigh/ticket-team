@@ -145,6 +145,8 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
   const paginatedTickets = filteredTickets.slice(startIndex, endIndex)
 
   // Calculate queue statistics
+  const criticalPriorityCount = queueTickets.filter(t => t.priority === 'critical').length
+  const urgentPriorityCount = queueTickets.filter(t => t.priority === 'urgent').length
   const highPriorityCount = queueTickets.filter(t => t.priority === 'high').length
   const mediumPriorityCount = queueTickets.filter(t => t.priority === 'medium').length
 
@@ -164,6 +166,8 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
       tickets={paginatedTickets}
       stats={{
         total: queueTickets.length,
+        critical: criticalPriorityCount,
+        urgent: urgentPriorityCount,
         high: highPriorityCount,
         medium: mediumPriorityCount,
         oldestDays: oldestTicketDays
