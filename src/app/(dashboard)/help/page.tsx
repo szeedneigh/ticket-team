@@ -10,15 +10,12 @@ import {
   MessageSquare, 
   FileQuestion, 
   Lightbulb, 
-  Search,
   ArrowRight,
-  HelpCircle,
-  Book,
-  Play
+  HelpCircle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { HelpCenterClient } from '@/components/help/help-center-client'
 
 export const metadata = {
   title: 'Help Center | Ticket Team',
@@ -45,20 +42,6 @@ export default function HelpCenterPage() {
             Search our help center or browse by category
           </p>
         </div>
-      </div>
-
-      {/* Search Bar */}
-      <div className="max-w-2xl mx-auto">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search for help articles, guides, and tutorials..."
-            className="pl-10 h-12 text-base"
-          />
-        </div>
-        <p className="text-sm text-muted-foreground mt-2 text-center">
-          Try searching for &quot;create ticket&quot;, &quot;knowledge base&quot;, or &quot;notifications&quot;
-        </p>
       </div>
 
       {/* Quick Links */}
@@ -124,125 +107,8 @@ export default function HelpCenterPage() {
         </Card>
       </div>
 
-      {/* Popular Topics */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Popular Topics</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Link href="/help/getting-started#create-ticket">
-            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-primary" />
-                  How to Create a Ticket
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          </Link>
-
-          <Link href="/help/getting-started#ai-chat">
-            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-primary" />
-                  Using AI Chat Assistant
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          </Link>
-
-          <Link href="/help/getting-started#knowledge-base">
-            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <Book className="h-4 w-4 text-primary" />
-                  Searching the Knowledge Base
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          </Link>
-
-          <Link href="/help/getting-started#notifications">
-            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-primary" />
-                  Managing Notifications
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          </Link>
-
-          <Link href="/help/faq#ticket-status">
-            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-primary" />
-                  Understanding Ticket Status
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          </Link>
-
-          <Link href="/help/faq#response-time">
-            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-primary" />
-                  Expected Response Times
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          </Link>
-        </div>
-      </div>
-
-      {/* Video Tutorials (Placeholder) */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Video Tutorials</h2>
-          <Button variant="ghost" size="sm">
-            View All
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-0">
-              <div className="aspect-video bg-muted flex items-center justify-center rounded-t-lg">
-                <Play className="h-12 w-12 text-muted-foreground" />
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold mb-1">Quick Start Guide</h3>
-                <p className="text-sm text-muted-foreground">Learn the basics in 5 minutes</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-0">
-              <div className="aspect-video bg-muted flex items-center justify-center rounded-t-lg">
-                <Play className="h-12 w-12 text-muted-foreground" />
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold mb-1">Creating Your First Ticket</h3>
-                <p className="text-sm text-muted-foreground">Step-by-step tutorial</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-0">
-              <div className="aspect-video bg-muted flex items-center justify-center rounded-t-lg">
-                <Play className="h-12 w-12 text-muted-foreground" />
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold mb-1">Using AI Chat</h3>
-                <p className="text-sm text-muted-foreground">Get help instantly</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      {/* Searchable Popular Topics & Video Tutorials */}
+      <HelpCenterClient />
 
       {/* Still Need Help? */}
       <Card className="bg-primary/5 border-primary/20">
