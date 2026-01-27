@@ -176,7 +176,6 @@ export async function createUser(input: CreateUserInput): Promise<ActionResult<U
         role: validated.role || 'employee',
         department: validated.department || null,
         position: validated.position || null,
-        phone: validated.phone || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
