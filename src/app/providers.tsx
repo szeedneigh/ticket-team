@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { AppProgressBar as ProgressBar } from 'next-nprogress-bar'
 import { ChatWidgetInitializer } from '@/components/chat/chat-widget-initializer'
 import { PreferencesProvider } from '@/providers/preferences-provider'
+import { AuthSessionMonitor } from '@/components/auth/auth-error-boundary'
 import type { UserPreferences } from '@/lib/types/users'
 
 interface ProvidersProps {
@@ -65,19 +66,21 @@ export function Providers({ children, initialPreferences }: ProvidersProps) {
       storageKey="ticket-team-theme"
     >
       <PreferencesProvider initialPreferences={initialPreferences}>
-        {/* Top Progress Bar for Navigation */}
-        <ProgressBar
-          height="3px"
-          color="#0693D2"
-          options={{ showSpinner: false }}
-          shallowRouting
-        />
+        <AuthSessionMonitor>
+          {/* Top Progress Bar for Navigation */}
+          <ProgressBar
+            height="3px"
+            color="#0693D2"
+            options={{ showSpinner: false }}
+            shallowRouting
+          />
 
-        {children}
-        <Toaster richColors position="top-right" />
+          {children}
+          <Toaster richColors position="top-right" />
 
-        {/* Floating Chat Widget - Visible on all pages except /chat */}
-        <ChatWidgetInitializer />
+          {/* Floating Chat Widget - Visible on all pages except /chat */}
+          <ChatWidgetInitializer />
+        </AuthSessionMonitor>
       </PreferencesProvider>
     </ThemeProvider>
   )
