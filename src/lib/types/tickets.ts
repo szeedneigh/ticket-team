@@ -33,8 +33,8 @@ export interface Ticket {
 
 // Ticket with related user data
 export interface TicketWithUser extends Ticket {
-  user: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url'>
-  assigned_user: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url'> | null
+  user: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url' | 'department'>
+  assigned_user: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url' | 'department'> | null
 }
 
 // ============================================================================
