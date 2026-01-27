@@ -25,8 +25,8 @@ import {
   UserAvatar,
   RoleBadge,
   UserForm,
-  DeactivateUserDialog,
-  ReactivateUserDialog,
+  ArchiveUserDialog,
+  RestoreUserDialog,
   UserActivityHistory,
 } from '@/components/users'
 import { createClient } from '@/lib/supabase/client'
@@ -43,8 +43,8 @@ export default function UserDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [currentUserRole, setCurrentUserRole] = useState<'admin' | 'super_admin'>('admin')
-  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
-  const [showReactivateDialog, setShowReactivateDialog] = useState(false)
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false)
 
   const [activityData, setActivityData] = useState<{
     ticketActivities: Array<{
@@ -231,17 +231,17 @@ export default function UserDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowReactivateDialog(true)}
+                  onClick={() => setShowRestoreDialog(true)}
                 >
-                  Reactivate User
+                  Restore User
                 </Button>
               ) : (
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => setShowDeactivateDialog(true)}
+                  onClick={() => setShowArchiveDialog(true)}
                 >
-                  Deactivate User
+                  Archive User
                 </Button>
               )}
             </>
@@ -278,7 +278,7 @@ export default function UserDetailPage() {
                     <div className="mt-2 flex items-center gap-2">
                       <RoleBadge role={user.role} />
                       {user.deactivated_at ? (
-                        <Badge variant="destructive">Deactivated</Badge>
+                        <Badge variant="destructive">Archived</Badge>
                       ) : (
                         <Badge
                           variant="outline"
@@ -323,13 +323,6 @@ export default function UserDetailPage() {
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Phone</p>
-                    <p className="mt-1">
-                      {user.phone || <span className="text-muted-foreground">Not set</span>}
-                    </p>
-                  </div>
-
-                  <div>
                     <p className="text-sm font-medium text-muted-foreground">Joined</p>
                     <p className="mt-1">
                       {new Date(user.created_at).toLocaleDateString('en-US', {
@@ -342,7 +335,7 @@ export default function UserDetailPage() {
 
                   {user.deactivated_at && (
                     <div className="sm:col-span-2">
-                      <p className="text-sm font-medium text-muted-foreground">Deactivated</p>
+                      <p className="text-sm font-medium text-muted-foreground">Archived</p>
                       <p className="mt-1 text-destructive">
                         {new Date(user.deactivated_at).toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -437,17 +430,17 @@ export default function UserDetailPage() {
       </div>
 
       {/* Dialogs */}
-      <DeactivateUserDialog
+      <ArchiveUserDialog
         user={user}
-        open={showDeactivateDialog}
-        onOpenChange={setShowDeactivateDialog}
+        open={showArchiveDialog}
+        onOpenChange={setShowArchiveDialog}
         onSuccess={fetchUserData}
       />
 
-      <ReactivateUserDialog
+      <RestoreUserDialog
         user={user}
-        open={showReactivateDialog}
-        onOpenChange={setShowReactivateDialog}
+        open={showRestoreDialog}
+        onOpenChange={setShowRestoreDialog}
         onSuccess={fetchUserData}
       />
     </div>
