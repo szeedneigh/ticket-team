@@ -50,6 +50,7 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
   const [isMobile, setIsMobile] = useState(false)
   const [hasUnread, setHasUnread] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const [showAltImage, setShowAltImage] = useState(false)
 
   // Detect mobile viewport
   useEffect(() => {
@@ -61,6 +62,15 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
     window.addEventListener('resize', checkMobile)
 
     return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Alternate between two Timi images every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShowAltImage((prev) => !prev)
+    }, 5000)
+
+    return () => clearInterval(interval)
   }, [])
 
   // Load sessions when widget opens for the first time
@@ -192,8 +202,11 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
             height={24}
             className="h-6 w-6 object-contain drop-shadow-lg"
           />
-          {/* Animated status dot */}
-          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-white shadow-sm animate-pulse" />
+          {/* Animated status dot with pulsing ring */}
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" style={{ animationDuration: '2s' }} />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-white shadow-sm animate-pulse" />
+          </span>
         </div>
         <div className="flex flex-col">
           <h3 className="text-sm font-bold leading-tight tracking-tight">Quick Chat</h3>
@@ -247,31 +260,128 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
               )}
             </AnimatePresence>
 
-            <button
+            <motion.button
               onClick={handleOpen}
               className={cn(
-                "group relative flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-[var(--brand-accent)]/30",
+                "group relative flex h-20 w-20 items-center justify-center rounded-full shadow-2xl transition-all focus:outline-none focus:ring-4 focus:ring-[var(--brand-accent)]/40",
                 isMinimized 
                   ? "bg-white ring-2 ring-[var(--brand-primary)]" 
                   : "bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-accent)]"
               )}
+              whileHover={{
+                scale: [1, 1.1, 0.95, 1.05, 1],
+                rotate: [0, -5, 5, -3, 0],
+              }}
+              transition={{
+                duration: 0.6,
+                ease: "easeInOut"
+              }}
               aria-label="Open chat"
             >
-              {/* Pulse effect */}
+              {/* Subtle Moving Glowing Halo Effect */}
               {!isMinimized && (
-                <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-[var(--brand-accent)] opacity-20 duration-3000" />
+                <>
+                  {/* Rotating gradient glow - creates circular motion */}
+                  <motion.span
+                    className="absolute inset-0 rounded-full blur-xl"
+                    style={{
+                      background: 'conic-gradient(from 0deg, transparent 0%, var(--brand-accent) 25%, var(--brand-primary) 50%, var(--brand-accent) 75%, transparent 100%)',
+                      zIndex: -1,
+                    }}
+                    animate={{
+                      rotate: [0, 360],
+                      scale: [1.4, 1.6, 1.4],
+                      opacity: [0.4, 0.6, 0.4],
+                    }}
+                    transition={{
+                      rotate: {
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: "linear"
+                      },
+                      scale: {
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      },
+                      opacity: {
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }
+                    }}
+                  />
+                  {/* Counter-rotating secondary glow for depth */}
+                  <motion.span
+                    className="absolute inset-0 rounded-full blur-2xl"
+                    style={{
+                      background: 'conic-gradient(from 180deg, transparent 0%, var(--brand-primary) 30%, var(--brand-accent) 60%, transparent 100%)',
+                      zIndex: -2,
+                    }}
+                    animate={{
+                      rotate: [360, 0],
+                      scale: [1.6, 1.9, 1.6],
+                      opacity: [0.3, 0.5, 0.3],
+                    }}
+                    transition={{
+                      rotate: {
+                        duration: 6,
+                        repeat: Infinity,
+                        ease: "linear"
+                      },
+                      scale: {
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      },
+                      opacity: {
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }
+                    }}
+                  />
+                  {/* Ambient base glow */}
+                  <motion.span
+                    className="absolute inset-0 rounded-full bg-[var(--brand-accent)] blur-xl"
+                    animate={{
+                      scale: [1.3, 1.5, 1.3],
+                      opacity: [0.2, 0.4, 0.2],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    style={{ zIndex: -3 }}
+                  />
+                  {/* Subtle pulsing ring */}
+                  <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-[var(--brand-accent)] opacity-15" style={{ animationDuration: '2s' }} />
+                </>
               )}
 
-              <Image
-                src="/assets/floating-timi.svg"
-                alt="Timi Bot"
-                width={40}
-                height={40}
-                className={cn(
-                  "h-10 w-10 object-contain transition-transform duration-300 group-hover:scale-110",
-                  isMinimized && "scale-90"
-                )}
-              />
+              {/* Animated Timi Image - Alternates every 5 seconds - LARGER */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={showAltImage ? 'alt' : 'default'}
+                  initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, rotate: 10 }}
+                  transition={{ duration: 0.5, ease: "easeInOut" }}
+                  className="relative h-14 w-14"
+                >
+                  <Image
+                    src={showAltImage ? "/assets/timi-bot1.svg" : "/assets/floating-timi.svg"}
+                    alt="Timi Bot"
+                    width={56}
+                    height={56}
+                    className={cn(
+                      "h-14 w-14 object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-2xl",
+                      isMinimized && "scale-90"
+                    )}
+                  />
+                </motion.div>
+              </AnimatePresence>
 
               {/* Unread Badge */}
               {hasUnread && (
@@ -286,7 +396,7 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
                   <MessageCircle className="h-3 w-3" />
                 </span>
               )}
-            </button>
+            </motion.button>
           </motion.div>
         )}
 
@@ -326,7 +436,11 @@ export function ChatWidget({ userName, userId }: ChatWidgetProps) {
                       height={24}
                       className="h-6 w-6 object-contain"
                     />
-                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-white" />
+                    {/* Animated status dot with pulsing ring - Mobile */}
+                    <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" style={{ animationDuration: '2s' }} />
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-white" />
+                    </span>
                   </div>
                   <div className="text-left">
                     <DrawerTitle className="text-white font-bold">Quick Chat</DrawerTitle>
