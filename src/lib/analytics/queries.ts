@@ -591,6 +591,16 @@ export async function getPriorityDistribution(
 
     tickets?.forEach((ticket) => {
       const priority = ticket.priority as 'low' | 'medium' | 'high'
+      
+      // Skip if priority is not one of the expected values
+      if (!priorityMap.has(priority)) {
+        logger.warn('Unexpected priority value in ticket', {
+          priority: ticket.priority,
+          userId,
+        })
+        return
+      }
+      
       const existing = priorityMap.get(priority)!
       existing.count++
 
