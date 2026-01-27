@@ -75,7 +75,9 @@ export async function getArticles(
         id,
         full_name,
         email,
-        avatar_url
+        avatar_url,
+        position,
+        role
       )
     `,
       { count: 'exact' }
@@ -187,7 +189,9 @@ export async function getArticleById(
         id,
         full_name,
         email,
-        avatar_url
+        avatar_url,
+        position,
+        role
       )
     `
     )
