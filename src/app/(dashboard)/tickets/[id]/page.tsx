@@ -28,8 +28,19 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
+  
+  // Fetch ticket to get display_number for metadata
+  const supabase = await createClient()
+  const { data: ticket } = await supabase
+    .from('tickets')
+    .select('display_number')
+    .eq('id', id)
+    .single()
+  
+  const ticketNumber = ticket?.display_number || `#${id.slice(0, 8)}`
+  
   return {
-    title: `Ticket #${id.slice(0, 8)}`,
+    title: `Ticket ${ticketNumber}`,
     description: 'View ticket details',
   }
 }
@@ -158,7 +169,7 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
               {/* Ticket ID Badge */}
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                 <span className="inline-flex items-center rounded-full bg-muted/80 px-3 py-1 text-xs font-medium backdrop-blur-sm">
-                  Ticket #{ticket.id.slice(0, 8)}
+                  {ticket.display_number || `Ticket #${ticket.id.slice(0, 8)}`}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="h-3.5 w-3.5" />
