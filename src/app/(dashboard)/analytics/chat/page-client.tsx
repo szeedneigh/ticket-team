@@ -225,9 +225,10 @@ export function ChatPageClient({
           size="icon"
           className={cn(
             'fixed z-50',
-            'top-4 right-4',
-            'md:top-6 md:right-6',
-            'hover:bg-muted/50'
+            'top-4 right-8',
+            'md:top-6 md:right-10',
+            'hover:bg-muted/50',
+            'transition-all duration-200'
           )}
           onClick={() => setIsHistoryOpen(!isHistoryOpen)}
           aria-label={isHistoryOpen ? 'Close chat history' : 'Open chat history'}
