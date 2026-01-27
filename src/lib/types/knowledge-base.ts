@@ -33,7 +33,7 @@ export interface KnowledgeArticle {
 
 // Article with author information
 export interface KnowledgeArticleWithAuthor extends KnowledgeArticle {
-  author: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url'>
+  author: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url' | 'position' | 'role'>
 }
 
 // ============================================================================
@@ -63,7 +63,7 @@ export type KnowledgeArticleListItem = Pick<
 >
 
 export interface KnowledgeArticleListItemWithAuthor extends KnowledgeArticleListItem {
-  author: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url'>
+  author: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url' | 'position' | 'role'>
 }
 
 // Article with vote information
