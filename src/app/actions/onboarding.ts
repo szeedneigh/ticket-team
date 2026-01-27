@@ -1,70 +1,68 @@
 /**
  * Onboarding Server Actions
- * 
- * Server actions for user onboarding flow, specifically department selection.
- * 
- * @module app/actions/onboarding
+ *
+ * Server actions for user onboarding flow (department selection, etc.)
  */
 
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { requireAuth } from '@/lib/auth/session'
 import { revalidatePath } from 'next/cache'
-import { logger } from '@/lib/logger'
+
+export type ActionResponse<T = unknown> =
+  | { success: true; data: T }
+  | { success: false; error: string }
 
 /**
- * Update user's department during onboarding
- * 
- * Validates that the selected department exists and is active,
- * then updates the user's department field.
- * 
- * @param department - The department name to assign to the user
- * @returns Object with success status and optional error message
+ * Update user's department (one-time only)
+ *
+ * @param department - The department to set
+ * @returns Success status or error
  */
-export async function updateUserDepartment(department: string): Promise<{
-  success: boolean
-  error?: string
-}> {
+export async function updateUserDepartment(
+  department: string
+): Promise<ActionResponse<void>> {
   try {
-    const user = await requireAuth()
     const supabase = await createClient()
 
-    // Validate department exists and is active
-    const { data: deptData, error: deptError } = await supabase
-      .from('departments')
-      .select('id, name, is_active')
-      .eq('name', department)
-      .eq('is_active', true)
-      .single()
+    // Verify user authentication
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-    if (deptError || !deptData) {
-      logger.warn('Invalid department selected during onboarding', {
-        userId: user.id,
-        department,
-        error: deptError?.message,
-      })
+    if (authError || !authUser) {
       return {
         success: false,
-        error: 'Invalid department selected. Please choose a valid department.',
+        error: 'You must be logged in to update your department',
+      }
+    }
+
+    // Check if user already has a department
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('department')
+      .eq('id', authUser.id)
+      .single()
+
+    if (existingUser?.department) {
+      return {
+        success: false,
+        error: 'Department has already been set and cannot be changed. Contact IT Support for assistance.',
       }
     }
 
     // Update user's department
     const { error: updateError } = await supabase
       .from('users')
-      .update({
-        department: deptData.name,
+      .update({ 
+        department,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', user.id)
+      .eq('id', authUser.id)
 
     if (updateError) {
-      logger.error('Error updating user department during onboarding', {
-        userId: user.id,
-        department,
-        error: updateError.message,
-      })
+      console.error('Error updating department:', updateError)
       return {
         success: false,
         error: 'Failed to update department. Please try again.',
@@ -72,24 +70,18 @@ export async function updateUserDepartment(department: string): Promise<{
     }
 
     // Revalidate relevant paths
-    revalidatePath('/dashboard')
-    revalidatePath('/onboarding/department')
     revalidatePath('/profile')
+    revalidatePath('/dashboard')
 
-    logger.info('User department updated during onboarding', {
-      userId: user.id,
-      department: deptData.name,
-    })
-
-    return { success: true }
+    return {
+      success: true,
+      data: undefined,
+    }
   } catch (error) {
-    logger.error('Unexpected error updating user department', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-    })
+    console.error('Error in updateUserDepartment:', error)
     return {
       success: false,
       error: 'An unexpected error occurred. Please try again.',
     }
   }
 }
-
