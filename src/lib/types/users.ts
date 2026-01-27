@@ -17,7 +17,6 @@ export interface User {
   role: UserRole
   department: string | null
   position: string | null
-  phone: string | null
   avatar_url: string | null
   is_online: boolean
   last_seen: string | null
@@ -55,7 +54,6 @@ export interface SignUpData {
   full_name: string
   department?: string
   position?: string
-  phone?: string
 }
 
 // ============================================================================
@@ -68,7 +66,6 @@ export interface CreateUserData {
   role?: UserRole
   department?: string
   position?: string
-  phone?: string
   password: string
 }
 
@@ -76,7 +73,6 @@ export interface UpdateUserData {
   full_name?: string
   department?: string
   position?: string
-  phone?: string
   avatar_url?: string
 }
 
