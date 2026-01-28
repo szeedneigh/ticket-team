@@ -162,10 +162,17 @@ export async function getArchivedChatSessions(params?: {
     // We get sessions that have at least one archived interaction
     const { data: archivedInteractions, error: queryError } = await supabase
       .from('ai_interactions')
-      .select('session_id, query, created_at, escalated_to_ticket, metadata')
+      .select('session_id, query, created_at, escalated_to_ticket, metadata, archived_at')
       .eq('user_id', user.id)
-      .not('archived_at', 'is', null) // Only archived interactions
+      .not('archived_at', 'is', null) // Only archived interactions (IS NOT NULL)
       .order('created_at', { ascending: false })
+
+    logger.info('[getArchivedChatSessions] Query result:', {
+      userId: user.id,
+      count: archivedInteractions?.length ?? 0,
+      error: queryError?.message,
+      hasData: !!archivedInteractions,
+    })
 
     if (queryError) {
       logger.error('Error querying archived interactions', { error: queryError.message })
@@ -176,6 +183,7 @@ export async function getArchivedChatSessions(params?: {
     }
 
     if (!archivedInteractions || archivedInteractions.length === 0) {
+      logger.info('[getArchivedChatSessions] No archived interactions found')
       return {
         success: true,
         data: [],
@@ -217,6 +225,11 @@ export async function getArchivedChatSessions(params?: {
     const archivedSessions = Array.from(sessionMap.values())
       .sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
       .slice(params?.offset || 0, (params?.offset || 0) + (params?.limit || 50))
+
+    logger.info('[getArchivedChatSessions] Returning archived sessions:', {
+      count: archivedSessions.length,
+      sessionIds: archivedSessions.map(s => s.session_id),
+    })
 
     return {
       success: true,
