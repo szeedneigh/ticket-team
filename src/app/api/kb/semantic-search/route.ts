@@ -11,10 +11,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { createClient } from '@/lib/supabase/server'
-import { serverEnv } from '@/lib/env/server'
 import { requireAuth } from '@/lib/auth/session'
+import { generateEmbedding } from '@/lib/ai/client'
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,11 +53,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Generate embedding for the search query using Gemini
-    const genAI = new GoogleGenerativeAI(serverEnv.gemini.apiKey)
-    const model = genAI.getGenerativeModel({ model: 'text-embedding-004' })
-
-    const embeddingResult = await model.embedContent(query)
-    const queryEmbedding = embeddingResult.embedding.values
+    const queryEmbedding = await generateEmbedding(query, {
+      taskType: 'RETRIEVAL_QUERY'
+    })
 
     // 4. Perform semantic search via pgvector
     const supabase = await createClient()
