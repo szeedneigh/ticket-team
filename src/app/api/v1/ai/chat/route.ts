@@ -25,7 +25,7 @@ import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { streamRAGResponse } from '@/lib/chat/rag-service'
 import { recordInteraction, updateSessionTitle } from '@/lib/chat/queries'
-import { isAIConfigured, generateContent } from '@/lib/ai/client'
+import { isAIConfigured, generateChatResponse } from '@/lib/ai/client'
 import { trackStreamingError } from '@/lib/monitoring/error-tracking'
 import { logger } from '@/lib/logger'
 import {
@@ -71,13 +71,13 @@ async function generateSessionTitle(
     // Generate title using AI
     const titlePrompt = SESSION_TITLE_PROMPT.replace('{query}', firstMessage)
     
-    const result = await generateContent({
+    const result = await generateChatResponse({
       prompt: titlePrompt,
       temperature: 0.3, // Low temperature for consistent titles
-      maxTokens: 20,
+      maxOutputTokens: 20,
     })
 
-    if (result.success && result.text) {
+    if (result.text) {
       // Clean up the title
       const title = result.text
         .trim()
