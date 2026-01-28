@@ -14,7 +14,10 @@ import { serverEnv } from '@/lib/env/server'
 import type { EmbeddingRequest } from '@/lib/types/ai'
 
 const AI_MODELS = {
-  EMBEDDING: 'text-embedding-004',
+  // Note: @google/genai SDK uses 'gemini-embedding-001' for embeddings
+  // Supports up to 3072-dim with Matryoshka scaling (we use 768 to match DB schema)
+  // Supports RETRIEVAL_QUERY/RETRIEVAL_DOCUMENT task types
+  EMBEDDING: 'gemini-embedding-001',
   CHAT: 'gemini-2.5-flash',  // Verified working with free tier
   CHAT_PRO: 'gemini-2.5-pro',
   CHAT_FALLBACK: 'gemini-2.0-flash',  // Fallback (may have quota limits)
