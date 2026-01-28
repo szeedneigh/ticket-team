@@ -117,7 +117,7 @@ export default function SignInPage() {
         <Button asChild variant="ghost" className="hidden lg:flex absolute right-8 top-8 z-20 text-slate-500 hover:text-slate-900">
           <Link href="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
+            Back
           </Link>
         </Button>
 
