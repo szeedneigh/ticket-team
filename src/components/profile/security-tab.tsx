@@ -26,7 +26,6 @@ import {
   XCircle,
   Trash2,
 } from 'lucide-react'
-import { PasswordChangeModal } from '@/components/profile/password-change-modal'
 import { formatDistanceToNow } from 'date-fns'
 import type { User } from '@/lib/types/users'
 import { toast } from 'sonner'
@@ -66,7 +65,6 @@ interface LoginHistoryData {
 }
 
 function SecurityTabComponent({ user }: SecurityTabProps) {
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [activeSessions, setActiveSessions] = useState<SessionData[]>([])
   const [loginHistory, setLoginHistory] = useState<LoginHistoryData[]>([])
   const [isLoadingSessions, setIsLoadingSessions] = useState(true)
@@ -184,12 +182,9 @@ function SecurityTabComponent({ user }: SecurityTabProps) {
     }
   }
 
-  // Calculate last password change (mock - should come from database)
-  const lastPasswordChange = user.updated_at
-
   return (
     <div className="space-y-6">
-      {/* Password Management Card */}
+      {/* SSO Authentication Notice */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -201,24 +196,19 @@ function SecurityTabComponent({ user }: SecurityTabProps) {
               <Lock className="h-5 w-5 text-[var(--brand-primary)]" />
             </div>
             <h2 className="text-xl font-bold text-[var(--brand-primary)]">
-              Password & Authentication
+              Authentication
             </h2>
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--brand-tint)]/10">
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--brand-tint)]/10">
+              <Shield className="h-5 w-5 text-[var(--brand-primary)]" />
               <div>
-                <p className="font-medium">Password</p>
+                <p className="font-medium">Single Sign-On (SSO)</p>
                 <p className="text-sm text-muted-foreground">
-                  Last changed {formatDistanceToNow(new Date(lastPasswordChange), { addSuffix: true })}
+                  Your account is secured through La Verdad Christian College&apos;s Google Workspace SSO. Password management is handled by your institutional account.
                 </p>
               </div>
-              <Button
-                onClick={() => setIsPasswordModalOpen(true)}
-                className="bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white"
-              >
-                Change Password
-              </Button>
             </div>
           </div>
         </Card>
@@ -425,11 +415,39 @@ function SecurityTabComponent({ user }: SecurityTabProps) {
         </Card>
       </motion.div>
 
-      {/* Password Change Modal */}
-      <PasswordChangeModal
-        open={isPasswordModalOpen}
-        onOpenChange={setIsPasswordModalOpen}
-      />
+      {/* Sign Out Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, delay: 0.3, ease: [0.2, 0.7, 0.2, 1] }}
+      >
+        <Card className="p-6 bg-card shadow-[var(--elev-3)] rounded-[20px] border border-red-500/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-red-500/15">
+                <Trash2 className="h-5 w-5 text-red-500" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Sign Out</h2>
+                <p className="text-sm text-muted-foreground">
+                  End your current session and return to the login page
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                // Trigger sign out via auth action
+                import('@/app/actions/auth').then(({ signOut }) => signOut())
+              }}
+              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        </Card>
+      </motion.div>
     </div>
   )
 }
