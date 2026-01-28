@@ -19,6 +19,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   MessageSquare,
   Plus,
@@ -129,12 +130,23 @@ export function ChatHistory({
     try {
       const { getArchivedChatSessions } = await import('@/app/actions/chat')
       const result = await getArchivedChatSessions()
+      
+      console.log('[ChatHistory] Archived sessions result:', {
+        success: result.success,
+        count: result.success ? result.data.length : 0,
+        error: !result.success ? result.error : undefined
+      })
+      
       if (result.success) {
         setArchivedSessions(result.data)
         setShowArchived(true)
+      } else {
+        console.error('Failed to load archived sessions:', result.error)
+        toast.error(result.error || 'Failed to load archived conversations')
       }
     } catch (error) {
       console.error('Failed to load archived sessions:', error)
+      toast.error('Failed to load archived conversations')
     } finally {
       setIsLoadingArchived(false)
     }
