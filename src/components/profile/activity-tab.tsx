@@ -45,7 +45,7 @@ interface TicketStats {
 
 interface RecentTicket {
   id: string
-  ticket_number: string
+  display_number: string
   title: string
   status: string
   created_at: string
@@ -92,18 +92,30 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
         closedTickets: closedResult.count || 0,
       })
 
-      // Fetch recent tickets
-      const { data: ticketsData } = await supabase
+      // Fetch recent tickets (created by user OR assigned to user for staff)
+      // For staff/admin, show both tickets they created AND tickets assigned to them
+      const isStaff = ['staff', 'admin', 'super_admin'].includes(user.role)
+      
+      let ticketsQuery = supabase
         .from('tickets')
-        .select('id, ticket_number, title, status, created_at')
-        .eq('user_id', user.id)
+        .select('id, display_number, title, status, created_at')
+      
+      if (isStaff) {
+        // Show tickets created by user OR assigned to user
+        ticketsQuery = ticketsQuery.or(`user_id.eq.${user.id},assigned_to.eq.${user.id}`)
+      } else {
+        // Employees only see tickets they created
+        ticketsQuery = ticketsQuery.eq('user_id', user.id)
+      }
+      
+      const { data: ticketsData } = await ticketsQuery
         .order('created_at', { ascending: false })
         .limit(5)
 
       setRecentTickets(
         (ticketsData || []).map((ticket) => ({
           id: ticket.id,
-          ticket_number: ticket.ticket_number,
+          display_number: ticket.display_number,
           title: ticket.title,
           status: ticket.status,
           created_at: ticket.created_at,
@@ -111,19 +123,32 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
       )
 
       // Fetch activity timeline from ticket_activities
-      const { data: activityData } = await supabase
+      // Show activities for tickets the user created OR is assigned to (for staff)
+      let activityQuery = supabase
         .from('ticket_activities')
         .select(`
           id,
           ticket_id,
           action,
           created_at,
+          user_id,
           tickets (
             id,
-            title
+            title,
+            user_id,
+            assigned_to
           )
         `)
-        .eq('user_id', user.id)
+      
+      if (isStaff) {
+        // For staff, show activities where they're involved (either as creator or assignee)
+        activityQuery = activityQuery.eq('user_id', user.id)
+      } else {
+        // For employees, only their own activities
+        activityQuery = activityQuery.eq('user_id', user.id)
+      }
+      
+      const { data: activityData } = await activityQuery
         .order('created_at', { ascending: false })
         .limit(10)
 
@@ -186,9 +211,9 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open':
-        return 'bg-blue-500/10 text-blue-700 border-blue-200'
-      case 'in_progress':
         return 'bg-yellow-500/10 text-yellow-700 border-yellow-200'
+      case 'in_progress':
+        return 'bg-blue-500/10 text-blue-700 border-blue-200'
       case 'resolved':
         return 'bg-green-500/10 text-green-700 border-green-200'
       case 'closed':
@@ -372,7 +397,7 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <Badge variant="outline" className="text-xs">
-                                  {ticket.ticket_number}
+                                  {ticket.display_number || `#${ticket.id.slice(0, 8)}`}
                                 </Badge>
                                 <Badge className={`text-xs ${getStatusColor(ticket.status)}`}>
                                   {ticket.status}
