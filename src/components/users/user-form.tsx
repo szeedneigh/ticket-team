@@ -69,7 +69,6 @@ export function UserForm({
             full_name: user.full_name,
             department: user.department || '',
             position: user.position || '',
-            phone: user.phone || '',
           }
         : {
             full_name: '',
@@ -78,7 +77,6 @@ export function UserForm({
             role: 'employee' as UserRole,
             department: '',
             position: '',
-            phone: '',
           },
   })
 
@@ -208,29 +206,6 @@ export function UserForm({
               )}
             />
           )}
-
-          {/* Phone */}
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone</FormLabel>
-                <FormControl>
-                  <Input
-                    type="tel"
-                    placeholder="+639123456789"
-                    {...field}
-                    className="bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20"
-                  />
-                </FormControl>
-                <FormDescription>
-                  Philippine phone number format: +639XXXXXXXXX or 09XXXXXXXXX
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
 
         <div className="space-y-4">
