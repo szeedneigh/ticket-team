@@ -35,7 +35,6 @@ interface UserTableProps {
   onPageChange: (page: number) => void
   onSort?: (column: string, direction: 'asc' | 'desc') => void
   onEdit?: (user: User) => void
-  onChangeRole?: (user: User) => void
   onBulkAction?: (userIds: string[], action: string) => void
   onRefresh?: () => void
 }
@@ -52,7 +51,6 @@ export const UserTable = memo(function UserTable({
   onPageChange,
   onSort,
   onEdit,
-  onChangeRole,
   onBulkAction,
   onRefresh,
 }: UserTableProps) {
@@ -277,7 +275,7 @@ export const UserTable = memo(function UserTable({
                   <TableCell>
                     {user.deactivated_at ? (
                       <Badge variant="destructive">
-                        Deactivated
+                        Archived
                       </Badge>
                     ) : (
                       <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 border-emerald-200">
@@ -297,7 +295,6 @@ export const UserTable = memo(function UserTable({
                       user={user}
                       currentUserRole={currentUserRole}
                       onEdit={onEdit}
-                      onChangeRole={onChangeRole}
                       onActionComplete={onRefresh}
                     />
                   </TableCell>
