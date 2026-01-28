@@ -73,50 +73,59 @@ export function ChatPageClient({
 
       setIsLoadingSession(true)
       
+      // Safety timeout to prevent infinite loading
+      const loadingTimeout = setTimeout(() => {
+        console.error('Session selection timed out')
+        setIsLoadingSession(false)
+        toast.error('Loading session timed out. Please try again.')
+      }, 10000) // 10 second timeout
+      
       try {
-        // Update URL first
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('session', sessionId)
-        router.replace(`/chat?${params.toString()}`)
-
         // Always fetch fresh messages to ensure we have the latest
         const result = await getChatSession(sessionId)
 
         if (!result.success) {
           toast.error(result.error || 'Failed to load conversation')
+          clearTimeout(loadingTimeout)
+          setIsLoadingSession(false)
           return
         }
 
-        if (result.data) {
-          const loadedMessages = result.data.messages
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-loaded',message:'Session messages loaded',data:{sessionId,messagesCount:loadedMessages.length,lastMessageRole:loadedMessages[loadedMessages.length-1]?.role,lastMessageIndex:loadedMessages.length-1},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2,H5'})}).catch(()=>{});
-          // #endregion
-          
-          // Update messages cache
-          setSessionMessages(prev => ({
-            ...prev,
-            [sessionId]: loadedMessages,
-          }))
-          
-          // Update active session ID after messages are loaded
-          setActiveSessionId(sessionId)
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-complete',message:'Session switch complete',data:{sessionId,activeSessionId:sessionId,messagesCount:loadedMessages.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'})}).catch(()=>{});
-          // #endregion
-        } else {
-          // Session exists but has no messages - still switch to it
-          setSessionMessages(prev => ({
-            ...prev,
-            [sessionId]: [],
-          }))
-          setActiveSessionId(sessionId)
+        if (!result.data) {
+          // Session not found or archived - cannot switch to it
+          toast.error('Conversation not found or has been archived')
+          clearTimeout(loadingTimeout)
+          setIsLoadingSession(false)
+          return
         }
+
+        // Update URL after successful fetch
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('session', sessionId)
+        router.replace(`/chat?${params.toString()}`)
+
+        const loadedMessages = result.data.messages
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-loaded',message:'Session messages loaded',data:{sessionId,messagesCount:loadedMessages.length,lastMessageRole:loadedMessages[loadedMessages.length-1]?.role,lastMessageIndex:loadedMessages.length-1},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2,H5'})}).catch(()=>{});
+        // #endregion
+        
+        // Update messages cache
+        setSessionMessages(prev => ({
+          ...prev,
+          [sessionId]: loadedMessages,
+        }))
+        
+        // Update active session ID after messages are loaded
+        setActiveSessionId(sessionId)
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-complete',message:'Session switch complete',data:{sessionId,activeSessionId:sessionId,messagesCount:loadedMessages.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'})}).catch(()=>{});
+        // #endregion
       } catch (error) {
         console.error('Failed to load session:', error)
         toast.error('Failed to load conversation')
       } finally {
+        clearTimeout(loadingTimeout)
         setIsLoadingSession(false)
       }
     },
@@ -126,6 +135,14 @@ export function ChatPageClient({
   // Handle new chat creation
   const handleNewChat = useCallback(async () => {
     setIsLoadingSession(true)
+    
+    // Safety timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      console.error('New chat creation timed out')
+      setIsLoadingSession(false)
+      toast.error('Creating new chat timed out. Please try again.')
+    }, 10000) // 10 second timeout
+    
     try {
       const result = await createChatSession()
 
@@ -165,6 +182,7 @@ export function ChatPageClient({
       console.error('Failed to create new chat:', error)
       toast.error('Failed to create new chat')
     } finally {
+      clearTimeout(loadingTimeout)
       setIsLoadingSession(false)
     }
   }, [router, searchParams])
@@ -199,17 +217,28 @@ export function ChatPageClient({
 
         // If archived session was active, switch to another
         if (sessionId === activeSessionId) {
-          if (remainingSessions.length > 0) {
-            // Switch to the first remaining session
-            await handleSessionSelect(remainingSessions[0].session_id)
-          } else {
-            // Create new session if no sessions left
-            await handleNewChat()
-          }
+          // Use setTimeout to ensure state updates complete before navigation
+          setTimeout(async () => {
+            try {
+              if (remainingSessions.length > 0) {
+                // Switch to the first remaining session
+                await handleSessionSelect(remainingSessions[0].session_id)
+              } else {
+                // Create new session if no sessions left
+                await handleNewChat()
+              }
+            } catch (error) {
+              console.error('Failed to switch session after archive:', error)
+              toast.error('Failed to switch conversation')
+              // Force reset loading state
+              setIsLoadingSession(false)
+            }
+          }, 100)
         }
       } catch (error) {
         console.error('Failed to archive session:', error)
         toast.error('Failed to archive conversation')
+        setIsLoadingSession(false)
       }
     },
     [activeSessionId, sessions, handleSessionSelect, handleNewChat]
