@@ -207,7 +207,7 @@ export function DiagnosticsClient({ results }: Props) {
                       >
                         {check.status.toUpperCase()}
                       </Badge>
-                      {check.details && (
+                      {Boolean(check.details) && (
                         isExpanded ? (
                           <ChevronUp className="h-4 w-4 text-muted-foreground" />
                         ) : (
@@ -218,7 +218,7 @@ export function DiagnosticsClient({ results }: Props) {
                   </div>
                 </CardHeader>
                 
-                {isExpanded && check.details && (
+                {isExpanded && Boolean(check.details) && (
                   <CardContent className="pt-0">
                     <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-xs">
                       {JSON.stringify(check.details, null, 2)}
