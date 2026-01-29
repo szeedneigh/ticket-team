@@ -65,7 +65,8 @@ export async function getAuditLogs(
         ),
         ticket:tickets(
           id,
-          title
+          title,
+          display_number
         )
       `,
         { count: 'exact' }
@@ -186,6 +187,7 @@ export async function getAuditLogs(
           ? {
             id: ticketData.id,
             title: ticketData.title,
+            display_number: ticketData.display_number,
           }
           : null,
       }
@@ -417,7 +419,7 @@ export async function exportAuditLogsCSV(
         Time: date.toLocaleTimeString(),
         User: log.user?.full_name || 'Unknown User',
         Email: log.user?.email || '',
-        'Ticket Number': log.ticket?.ticket_number || log.ticket?.id || '',
+        'Ticket Number': log.ticket?.display_number || log.ticket?.id || '',
         'Ticket Title': log.ticket?.title || '',
         Action: getActivityTypeLabel(log.activity_type),
         Field: log.field_name || '',
