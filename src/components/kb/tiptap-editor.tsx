@@ -90,12 +90,12 @@ export function TiptapEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-slate dark:prose-invert max-w-none min-h-[400px] focus:outline-none px-4 py-3',
-          'prose-headings:font-bold prose-headings:tracking-tight',
+          'prose prose-slate dark:prose-invert max-w-none min-h-[400px] focus:outline-none px-4 py-4 bg-background/30',
+          'prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground',
           'prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl',
-          'prose-p:leading-7 prose-li:leading-7',
-          'prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded',
-          'prose-pre:bg-muted prose-pre:border prose-pre:border-border'
+          'prose-p:leading-7 prose-li:leading-7 prose-p:text-foreground/90',
+          'prose-code:bg-[#2cafdd]/10 prose-code:text-[#0693D2] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono',
+          'prose-pre:bg-[#1f3463]/10 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-lg'
         ),
         'data-placeholder': placeholder
       }
@@ -131,16 +131,25 @@ export function TiptapEditor({
   }
 
   return (
-    <div className={cn('border rounded-lg overflow-hidden bg-card', className)}>
+    <div className={cn(
+      'rounded-xl border border-white/10 overflow-hidden bg-background/40 backdrop-blur-md shadow-sm transition-all duration-200 focus-within:border-[#2cafdd]/30 focus-within:shadow-[#2cafdd]/5',
+      className
+    )}>
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'write' | 'preview')}>
         {/* Tab Headers */}
-        <div className="border-b bg-muted/50 px-3 py-2 flex items-center justify-between">
-          <TabsList className="h-8">
-            <TabsTrigger value="write" className="text-xs h-7 gap-1.5">
+        <div className="border-b border-white/10 bg-background/30 px-4 py-2.5 flex items-center justify-between">
+          <TabsList className="h-9 bg-background/50 border border-white/10 p-0.5 rounded-lg">
+            <TabsTrigger
+              value="write"
+              className="text-xs h-8 gap-2 px-4 rounded-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#1f3463]/20 data-[state=active]:to-[#2cafdd]/20 data-[state=active]:text-[#0693D2] data-[state=active]:border data-[state=active]:border-[#2cafdd]/30"
+            >
               <Edit3 className="h-3.5 w-3.5" />
               Write
             </TabsTrigger>
-            <TabsTrigger value="preview" className="text-xs h-7 gap-1.5">
+            <TabsTrigger
+              value="preview"
+              className="text-xs h-8 gap-2 px-4 rounded-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#1f3463]/20 data-[state=active]:to-[#2cafdd]/20 data-[state=active]:text-[#0693D2] data-[state=active]:border data-[state=active]:border-[#2cafdd]/30"
+            >
               <Eye className="h-3.5 w-3.5" />
               Preview
             </TabsTrigger>
@@ -150,7 +159,7 @@ export function TiptapEditor({
         {/* Write Tab */}
         <TabsContent value="write" className="m-0">
           {editable && (
-            <div className="border-b bg-muted/30 p-2">
+            <div className="border-b border-white/10 bg-background/20 p-2.5">
               <div className="flex flex-wrap gap-1">
                 {/* Text Formatting */}
                 <Button
@@ -173,8 +182,8 @@ export function TiptapEditor({
                   size="sm"
                   onClick={() => editor.chain().focus().toggleItalic().run()}
                   className={cn(
-                    'h-8 w-8 p-0',
-                    editor.isActive('italic') && 'bg-muted'
+                    'h-8 w-8 p-0 rounded-lg hover:bg-[#2cafdd]/10 hover:text-[#0693D2] transition-colors',
+                    editor.isActive('italic') && 'bg-[#2cafdd]/20 text-[#0693D2]'
                   )}
                   title="Italic (Ctrl+I)"
                 >
@@ -299,7 +308,7 @@ export function TiptapEditor({
                   <ImageIcon className="h-4 w-4" />
                 </Button>
 
-                <Separator orientation="vertical" className="h-8" />
+                <Separator orientation="vertical" className="h-8 bg-white/10" />
 
                 {/* Code Block */}
                 <Button
@@ -308,8 +317,8 @@ export function TiptapEditor({
                   size="sm"
                   onClick={() => editor.chain().focus().toggleCodeBlock().run()}
                   className={cn(
-                    'h-8 w-8 p-0',
-                    editor.isActive('codeBlock') && 'bg-muted'
+                    'h-8 w-8 p-0 rounded-lg hover:bg-[#2cafdd]/10 hover:text-[#0693D2] transition-colors',
+                    editor.isActive('codeBlock') && 'bg-[#2cafdd]/20 text-[#0693D2]'
                   )}
                   title="Code Block"
                 >
@@ -326,12 +335,12 @@ export function TiptapEditor({
         <TabsContent value="preview" className="m-0">
           <div
             className={cn(
-              'prose prose-slate dark:prose-invert max-w-none min-h-[400px] px-4 py-3',
-              'prose-headings:font-bold prose-headings:tracking-tight',
+              'prose prose-slate dark:prose-invert max-w-none min-h-[400px] px-4 py-4 bg-background/30',
+              'prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground',
               'prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl',
-              'prose-p:leading-7 prose-li:leading-7',
-              'prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded',
-              'prose-pre:bg-muted prose-pre:border prose-pre:border-border'
+              'prose-p:leading-7 prose-li:leading-7 prose-p:text-foreground/90',
+              'prose-code:bg-[#2cafdd]/10 prose-code:text-[#0693D2] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono',
+              'prose-pre:bg-[#1f3463]/10 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-lg'
             )}
             dangerouslySetInnerHTML={{ __html: editor.getHTML() }}
           />
