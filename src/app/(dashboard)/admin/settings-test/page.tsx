@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -27,13 +27,13 @@ export default function SettingsTestPage() {
   const [testValue, setTestValue] = useState('Hello World')
   const [logs, setLogs] = useState<string[]>([])
 
-  const addLog = (message: string) => {
+  const addLog = useCallback((message: string) => {
     const timestamp = new Date().toLocaleTimeString()
     setLogs(prev => [`[${timestamp}] ${message}`, ...prev])
     console.log(message)
-  }
+  }, [])
 
-  const loadAllSettings = async () => {
+  const loadAllSettings = useCallback(async () => {
     setLoading(true)
     addLog('Loading all settings...')
     try {
@@ -54,7 +54,7 @@ export default function SettingsTestPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [addLog, toast])
 
   const testSaveLoad = async () => {
     setLoading(true)
@@ -131,7 +131,7 @@ export default function SettingsTestPage() {
 
   useEffect(() => {
     loadAllSettings()
-  }, [])
+  }, [loadAllSettings])
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-5xl">
