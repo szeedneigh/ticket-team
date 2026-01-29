@@ -68,7 +68,7 @@ export function OnlineUsersDrawer() {
             className="h-14 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-[#1f3463] to-[#2cafdd] hover:from-[#1f3463]/90 hover:to-[#2cafdd]/90 text-white group"
           >
             <Users className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-            <span className="font-semibold">Who's Online</span>
+            <span className="font-semibold">Who&apos;s Online</span>
             <Badge 
               variant="secondary" 
               className="ml-2 bg-white/20 text-white hover:bg-white/30 border-0"
@@ -91,7 +91,7 @@ export function OnlineUsersDrawer() {
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2 text-2xl">
               <Users className="h-6 w-6 text-[#2cafdd]" />
-              Who's Online
+              Who&apos;s Online
             </SheetTitle>
             <SheetDescription>
               {onlineUsers.length} {onlineUsers.length === 1 ? 'person is' : 'people are'} currently online
