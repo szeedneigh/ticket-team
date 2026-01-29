@@ -122,7 +122,7 @@ export function ChatPageClient({
         setIsLoadingSession(false)
       }
     },
-    [activeSessionId, router, searchParams, sessionMessages]
+    [activeSessionId, router, searchParams]
   )
 
   // Handle new chat creation
