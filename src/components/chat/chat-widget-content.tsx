@@ -145,11 +145,14 @@ export function ChatWidgetContent({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Sync initialMessages when session changes
+  // Sync initialMessages when session changes.
+  // Intentionally omit 'messages' - we only want to sync when session/props change,
+  // not when local messages update (would overwrite new messages with stale initialMessages).
   useEffect(() => {
     if (initialMessages.length > 0 && JSON.stringify(initialMessages) !== JSON.stringify(messages)) {
       setMessages(initialMessages)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- messages omitted by design
   }, [sessionId, initialMessages])
 
   // Auto-scroll to bottom
