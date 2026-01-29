@@ -8,7 +8,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreVertical, Edit, UserX, UserCheck, Shield } from 'lucide-react'
+import { MoreVertical, Edit, Archive, UserCheck, Shield } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,15 +18,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { DeactivateUserDialog } from './deactivate-user-dialog'
-import { ReactivateUserDialog } from './reactivate-user-dialog'
+import { ArchiveUserDialog } from './archive-user-dialog'
+import { RestoreUserDialog } from './restore-user-dialog'
+import { ChangeRoleDialog } from './change-role-dialog'
 import type { User } from '@/lib/types/users'
 
 interface UserActionsMenuProps {
   user: User
   currentUserRole: 'admin' | 'super_admin'
   onEdit?: (user: User) => void
-  onChangeRole?: (user: User) => void
   onActionComplete?: () => void
 }
 
@@ -34,11 +34,11 @@ export function UserActionsMenu({
   user,
   currentUserRole,
   onEdit,
-  onChangeRole,
   onActionComplete,
 }: UserActionsMenuProps) {
-  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
-  const [showReactivateDialog, setShowReactivateDialog] = useState(false)
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false)
+  const [showChangeRoleDialog, setShowChangeRoleDialog] = useState(false)
 
   const isDeactivated = Boolean(user.deactivated_at)
   const isSuperAdmin = user.role === 'super_admin'
@@ -99,8 +99,8 @@ export function UserActionsMenu({
             Edit User
           </DropdownMenuItem>
 
-          {currentUserRole === 'super_admin' && onChangeRole && (
-            <DropdownMenuItem onClick={() => onChangeRole(user)}>
+          {currentUserRole === 'super_admin' && (
+            <DropdownMenuItem onClick={() => setShowChangeRoleDialog(true)}>
               <Shield className="mr-2 h-4 w-4" />
               Change Role
             </DropdownMenuItem>
@@ -109,34 +109,41 @@ export function UserActionsMenu({
           <DropdownMenuSeparator />
 
           {isDeactivated ? (
-            <DropdownMenuItem onClick={() => setShowReactivateDialog(true)}>
+            <DropdownMenuItem onClick={() => setShowRestoreDialog(true)}>
               <UserCheck className="mr-2 h-4 w-4" />
-              Reactivate User
+              Restore User
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem
-              onClick={() => setShowDeactivateDialog(true)}
+              onClick={() => setShowArchiveDialog(true)}
               className="text-destructive focus:text-destructive"
             >
-              <UserX className="mr-2 h-4 w-4" />
-              Deactivate User
+              <Archive className="mr-2 h-4 w-4" />
+              Archive User
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
 
       {/* Dialogs */}
-      <DeactivateUserDialog
+      <ArchiveUserDialog
         user={user}
-        open={showDeactivateDialog}
-        onOpenChange={setShowDeactivateDialog}
+        open={showArchiveDialog}
+        onOpenChange={setShowArchiveDialog}
         onSuccess={onActionComplete}
       />
 
-      <ReactivateUserDialog
+      <RestoreUserDialog
         user={user}
-        open={showReactivateDialog}
-        onOpenChange={setShowReactivateDialog}
+        open={showRestoreDialog}
+        onOpenChange={setShowRestoreDialog}
+        onSuccess={onActionComplete}
+      />
+
+      <ChangeRoleDialog
+        user={user}
+        open={showChangeRoleDialog}
+        onOpenChange={setShowChangeRoleDialog}
         onSuccess={onActionComplete}
       />
     </>

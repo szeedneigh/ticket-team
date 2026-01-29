@@ -55,10 +55,19 @@ export function usePresence({
       // Verify auth session exists before attempting update
       const { data: { session } } = await supabase.auth.getSession()
 
-      if (!session) {
+      if (!session || !session.user) {
         if (debug) {
           logger.debug('No active session, skipping status update')
         }
+        return
+      }
+
+      // Ensure userId matches the session user
+      if (session.user.id !== userId) {
+        logger.warn('UserId mismatch in status update', {
+          sessionUserId: session.user.id,
+          providedUserId: userId
+        })
         return
       }
 
@@ -72,16 +81,21 @@ export function usePresence({
 
       if (error) {
         // Only log as warning if it's not an auth issue
-        if (error.code === 'PGRST301' || error.message.includes('JWT')) {
+        const errorMessage = error.message || 'Unknown error'
+        const errorCode = error.code || 'UNKNOWN'
+        
+        if (error.code === 'PGRST301' || errorMessage.includes('JWT')) {
           if (debug) {
             logger.debug('Auth session not ready yet, will retry on next heartbeat')
           }
         } else {
           logger.error('Failed to update online status', {
-            error: error.message,
-            code: error.code,
+            error: errorMessage,
+            code: errorCode,
             userId,
-            isOnline
+            isOnline,
+            details: error.details || undefined,
+            hint: error.hint || undefined
           })
         }
       } else if (debug) {
@@ -89,8 +103,10 @@ export function usePresence({
       }
     } catch (error) {
       logger.error('Error updating presence', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        userId
+        error: error instanceof Error ? error.message : String(error),
+        errorType: error?.constructor?.name || typeof error,
+        userId,
+        stack: error instanceof Error ? error.stack : undefined
       })
     }
   }
@@ -105,10 +121,19 @@ export function usePresence({
       // Verify auth session exists before attempting update
       const { data: { session } } = await supabase.auth.getSession()
 
-      if (!session) {
+      if (!session || !session.user) {
         if (debug) {
           logger.debug('No active session, skipping heartbeat')
         }
+        return
+      }
+
+      // Ensure userId matches the session user
+      if (session.user.id !== userId) {
+        logger.warn('UserId mismatch in heartbeat', {
+          sessionUserId: session.user.id,
+          providedUserId: userId
+        })
         return
       }
 
@@ -122,15 +147,20 @@ export function usePresence({
 
       if (error) {
         // Only log as warning if it's not an auth issue
-        if (error.code === 'PGRST301' || error.message.includes('JWT')) {
+        const errorMessage = error.message || 'Unknown error'
+        const errorCode = error.code || 'UNKNOWN'
+        
+        if (error.code === 'PGRST301' || errorMessage.includes('JWT')) {
           if (debug) {
             logger.debug('Auth session not ready for heartbeat, will retry')
           }
         } else {
           logger.error('Heartbeat failed', {
-            error: error.message,
-            code: error.code,
-            userId
+            error: errorMessage,
+            code: errorCode,
+            userId,
+            details: error.details || undefined,
+            hint: error.hint || undefined
           })
         }
       } else if (debug) {
@@ -138,8 +168,10 @@ export function usePresence({
       }
     } catch (error) {
       logger.error('Heartbeat error', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        userId
+        error: error instanceof Error ? error.message : String(error),
+        errorType: error?.constructor?.name || typeof error,
+        userId,
+        stack: error instanceof Error ? error.stack : undefined
       })
     }
   }
@@ -209,6 +241,15 @@ export function usePresence({
   }
 
   useEffect(() => {
+    // Validate userId before starting presence tracking
+    if (!userId || typeof userId !== 'string') {
+      logger.error('Invalid userId provided to usePresence', {
+        userId,
+        userIdType: typeof userId
+      })
+      return
+    }
+
     // Set user as online when component mounts
     updateOnlineStatus(true)
     startHeartbeat()

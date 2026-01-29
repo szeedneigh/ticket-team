@@ -88,11 +88,17 @@ export async function requireAuth(): Promise<User> {
         email: 'test@laverdad.edu.ph',
         full_name: 'Test User',
         role: 'admin',
+        department: null,
+        position: null,
+        phone: null,
         avatar_url: null,
+        is_online: false,
+        last_seen: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_login: null,
         deactivated_at: null,
         deactivated_by: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
       } as User
     }
   }

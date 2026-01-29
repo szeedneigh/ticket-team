@@ -212,7 +212,7 @@ export const AuditLogTable = memo(function AuditLogTable({
                         title={log.ticket.title}
                       >
                         <span className="truncate">
-                          {log.ticket.ticket_number || log.ticket.title.substring(0, 15) + '...'}
+                          {log.ticket.display_number || log.ticket.title.substring(0, 15) + '...'}
                         </span>
                         <ExternalLink className="h-3 w-3 shrink-0" />
                       </Link>

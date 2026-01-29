@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { X, Upload, File, AlertCircle, Image, FileText, FileSpreadsheet, Presentation, Archive, Paperclip } from 'lucide-react'
+import { X, Upload, File, AlertCircle, Image as ImageIcon, FileText, FileSpreadsheet, Presentation, Archive, Paperclip } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
@@ -315,7 +315,7 @@ function FilePreview({ file, onRemove, disabled }: FilePreviewProps) {
 }
 
 function getFileIcon(fileType: string) {
-  if (fileType.startsWith('image/')) return <Image className="h-5 w-5 text-blue-500" aria-hidden="true" />
+  if (fileType.startsWith('image/')) return <ImageIcon className="h-5 w-5 text-blue-500" aria-hidden="true" />
   if (fileType.includes('pdf')) return <FileText className="h-5 w-5 text-red-500" />
   if (fileType.includes('word') || fileType.includes('document')) return <FileText className="h-5 w-5 text-blue-600" />
   if (fileType.includes('sheet') || fileType.includes('excel')) return <FileSpreadsheet className="h-5 w-5 text-green-600" />

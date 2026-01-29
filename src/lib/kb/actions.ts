@@ -13,7 +13,7 @@ import { kbArticleSchema, articleVoteSchema } from '@/lib/validations/kb-article
 import { requireAuth } from '@/lib/auth/session'
 import { isStaffOrAbove } from '@/lib/types/database'
 import type { KBArticleInput } from '@/lib/validations/kb-articles'
-import { serverEnv } from '@/lib/env/server'
+import { generateDocumentEmbedding } from '@/lib/ai/client'
 
 // ============================================================================
 // Article CRUD Actions
@@ -35,7 +35,7 @@ export async function createArticle(data: KBArticleInput) {
     const validated = kbArticleSchema.parse(data)
 
     // 3. Generate embedding for semantic search
-    const embedding = await generateEmbedding(
+    const embedding = await generateDocumentEmbedding(
       `${validated.title}\n\n${validated.content}`
     )
 
@@ -109,7 +109,7 @@ export async function updateArticle(id: string, data: Partial<KBArticleInput>) {
     if (validated.title || validated.content) {
       const titleToEmbed = validated.title || article.title
       const contentToEmbed = validated.content || article.content
-      embedding = await generateEmbedding(`${titleToEmbed}\n\n${contentToEmbed}`)
+      embedding = await generateDocumentEmbedding(`${titleToEmbed}\n\n${contentToEmbed}`)
     }
 
     // 4. Update article
@@ -266,17 +266,5 @@ export async function voteArticle(articleId: string, isHelpful: boolean, feedbac
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-/**
- * Generate embedding for article content
- * Uses Gemini text-embedding-004 (768 dimensions)
- */
-async function generateEmbedding(text: string): Promise<number[]> {
-  const { GoogleGenerativeAI } = await import('@google/generative-ai')
-
-  const genAI = new GoogleGenerativeAI(serverEnv.gemini.apiKey)
-  const model = genAI.getGenerativeModel({ model: 'text-embedding-004' })
-
-  const result = await model.embedContent(text)
-  return result.embedding.values
-}
+// Note: Embedding generation is now handled by the centralized AI client
+// See @/lib/ai/client.ts for implementation details

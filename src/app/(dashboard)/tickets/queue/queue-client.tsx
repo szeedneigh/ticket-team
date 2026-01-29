@@ -7,13 +7,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { TicketFilters } from '@/components/tickets/ticket-filters'
 import { TicketList } from '@/components/tickets/ticket-list'
-import { StatsCard } from '@/components/dashboard/stats-card'
 import type { TicketWithUser } from '@/lib/types/tickets'
 
 interface QueuePageClientProps {
   tickets: TicketWithUser[]
   stats: {
     total: number
+    critical: number
+    urgent: number
     high: number
     medium: number
     oldestDays: number
@@ -72,10 +73,10 @@ export function QueuePageClient({
             <motion.div variants={itemVariants} className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-8">
               <div className="space-y-4">
                 <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
-                  Staff Queue
+                  Ticket Queue
                 </h1>
                 <p className="text-lg text-muted-foreground flex items-center gap-2 max-w-2xl">
-                  Manage unassigned tickets and team workload
+                  Unassigned tickets waiting for staff assignment
                   <Sparkles className="h-4 w-4 text-[#2cafdd]" />
                 </p>
               </div>
@@ -87,39 +88,73 @@ export function QueuePageClient({
               </Button>
             </motion.div>
 
-            {/* Stats Grid */}
-            <motion.div variants={itemVariants} className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <StatsCard
-                title="Unassigned Tickets"
-                value={stats.total}
-                icon="Users"
-                description="Waiting for assignment"
-                trend={stats.total > 10 ? 'up' : 'down'}
-                variant="default"
-              />
-              <StatsCard
-                title="High Priority"
-                value={stats.high}
-                icon="AlertCircle"
-                description="Urgent attention needed"
-                trend={stats.high > 5 ? 'up' : 'down'}
-                variant={stats.high > 5 ? 'destructive' : 'default'}
-              />
-              <StatsCard
-                title="Medium Priority"
-                value={stats.medium}
-                icon="TrendingUp"
-                description="Normal priority"
-                trend="neutral"
-              />
-              <StatsCard
-                title="Oldest Ticket"
-                value={stats.oldestDays}
-                icon="Clock"
-                description={stats.oldestDays === 1 ? 'day old' : 'days old'}
-                trend={stats.oldestDays > 7 ? 'up' : 'down'}
-                variant={stats.oldestDays > 7 ? 'warning' : 'default'}
-              />
+            {/* Stats Grid with Color-Coded Visual Indicators */}
+            <motion.div variants={itemVariants} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 rounded-2xl border border-blue-200/50 dark:border-blue-800/30 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-blue-500/20">
+                    <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Total Unassigned</span>
+                </div>
+                <div className="text-3xl font-bold text-blue-700 dark:text-blue-300">{stats.total}</div>
+                <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">All tickets needing assignment</p>
+              </div>
+
+              <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/20 rounded-2xl border border-red-200/50 dark:border-red-800/30 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-red-500/20 animate-pulse">
+                    <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <span className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">Critical</span>
+                </div>
+                <div className="text-3xl font-bold text-red-700 dark:text-red-300">{stats.critical}</div>
+                <p className="text-xs text-red-600/70 dark:text-red-400/70 mt-1">System-wide impact</p>
+              </div>
+
+              <div className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/20 rounded-2xl border border-orange-200/50 dark:border-orange-800/30 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-orange-500/20">
+                    <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <span className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wider">Urgent</span>
+                </div>
+                <div className="text-3xl font-bold text-orange-700 dark:text-orange-300">{stats.urgent}</div>
+                <p className="text-xs text-orange-600/70 dark:text-orange-400/70 mt-1">Immediate attention</p>
+              </div>
+
+              <div className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950/30 dark:to-yellow-900/20 rounded-2xl border border-yellow-200/50 dark:border-yellow-800/30 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-yellow-500/20">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400 uppercase tracking-wider">High</span>
+                </div>
+                <div className="text-3xl font-bold text-yellow-700 dark:text-yellow-300">{stats.high}</div>
+                <p className="text-xs text-yellow-600/70 dark:text-yellow-400/70 mt-1">Important issues</p>
+              </div>
+
+              <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/20 rounded-2xl border border-green-200/50 dark:border-green-800/30 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-green-500/20">
+                    <AlertCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">Medium</span>
+                </div>
+                <div className="text-3xl font-bold text-green-700 dark:text-green-300">{stats.medium}</div>
+                <p className="text-xs text-green-600/70 dark:text-green-400/70 mt-1">Normal priority</p>
+              </div>
+
+              <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950/30 dark:to-gray-900/20 rounded-2xl border border-gray-200/50 dark:border-gray-800/30 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-gray-500/20">
+                    <Clock className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Oldest</span>
+                </div>
+                <div className="text-3xl font-bold text-gray-700 dark:text-gray-300">{stats.oldestDays}</div>
+                <p className="text-xs text-gray-600/70 dark:text-gray-400/70 mt-1">{stats.oldestDays === 1 ? 'day old' : 'days old'}</p>
+              </div>
             </motion.div>
 
             {/* Alerts Section */}

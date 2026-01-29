@@ -17,16 +17,16 @@ interface StatusCellProps {
 // Status color mapping
 const STATUS_COLORS: Record<TicketStatus, { dot: string; text: string }> = {
   open: {
-    dot: 'bg-gray-400',
-    text: 'text-gray-700 dark:text-gray-300',
+    dot: 'bg-yellow-500',
+    text: 'text-yellow-700 dark:text-yellow-300',
   },
   in_progress: {
     dot: 'bg-blue-500',
     text: 'text-blue-700 dark:text-blue-300',
   },
   on_hold: {
-    dot: 'bg-yellow-500',
-    text: 'text-yellow-700 dark:text-yellow-300',
+    dot: 'bg-orange-500',
+    text: 'text-orange-700 dark:text-orange-300',
   },
   resolved: {
     dot: 'bg-green-500',

@@ -79,14 +79,19 @@ export function SystemConfigSettings() {
   const handleSave = async () => {
     setIsSaving(true)
     try {
+      console.log('Saving system config:', config)
       const result = await updateSystemConfig(config)
+      console.log('Save result:', result)
 
       if (result.success) {
         toast({
           title: 'Success',
           description: 'System configuration saved successfully',
         })
+        // Reload to verify it saved
+        await loadConfig()
       } else {
+        console.error('Save failed:', result.error)
         toast({
           title: 'Error',
           description: result.error || 'Failed to save system configuration',
@@ -97,7 +102,7 @@ export function SystemConfigSettings() {
       console.error('Error saving config:', error)
       toast({
         title: 'Error',
-        description: 'Failed to save system configuration',
+        description: error instanceof Error ? error.message : 'Failed to save system configuration',
         variant: 'destructive',
       })
     } finally {

@@ -179,11 +179,11 @@ export function buildRAGPrompt(
 ): string {
   let prompt = ''
 
-  // Add conversation history if provided
+  // Add conversation history if provided (increased from 4 to 10 for better context)
   if (conversationHistory && conversationHistory.length > 0) {
     prompt += '**Previous Conversation:**\n\n'
-    for (const msg of conversationHistory.slice(-4)) {
-      // Last 4 messages
+    // Include up to last 10 messages for fuller context
+    for (const msg of conversationHistory.slice(-10)) {
       prompt += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}\n\n`
     }
     prompt += '---\n\n'

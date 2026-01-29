@@ -44,12 +44,27 @@ export function Robot(): ReactElement {
           style={{ transformOrigin: '55% 55%' }}
           className="relative h-full w-full"
         >
+          {/* Subtle pulsing glow effect */}
+          {!reduce && (
+            <motion.div
+              className="absolute inset-0 rounded-full blur-3xl opacity-30"
+              animate={{
+                backgroundColor: ['rgba(44, 175, 221, 0.3)', 'rgba(31, 52, 99, 0.2)', 'rgba(44, 175, 221, 0.3)'],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+          )}
           <Image
             src="/assets/timi-bot1.svg"
             alt="Timi Assistant"
             fill
             priority
-            className="object-contain drop-shadow-2xl"
+            className="object-contain drop-shadow-2xl relative z-10"
           />
         </motion.div>
       </motion.div>

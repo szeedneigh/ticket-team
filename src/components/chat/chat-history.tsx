@@ -16,9 +16,10 @@
 
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   MessageSquare,
   Plus,
@@ -83,6 +84,42 @@ export function ChatHistory({
   const [showArchived, setShowArchived] = useState(false)
   const [archivedSessions, setArchivedSessions] = useState<SessionSummary[]>([])
   const [isLoadingArchived, setIsLoadingArchived] = useState(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // Load archived sessions (via API route to avoid importing server actions in client)
+  const loadArchivedSessions = useCallback(async () => {
+    setIsLoadingArchived(true)
+    try {
+      const response = await fetch('/api/v1/chat/archived-sessions', {
+        method: 'GET',
+      })
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}))
+        const message =
+          (errorBody && (errorBody.error as string)) ||
+          'Failed to load archived conversations'
+        console.error('[ChatHistory] Failed to load archived sessions:', {
+          status: response.status,
+          message,
+        })
+        toast.error(message)
+        return
+      }
+
+      const body = (await response.json()) as {
+        sessions: SessionSummary[]
+      }
+
+      setArchivedSessions(body.sessions || [])
+      setShowArchived(true)
+    } catch (error) {
+      console.error('Failed to load archived sessions:', error)
+      toast.error('Failed to load archived conversations')
+    } finally {
+      setIsLoadingArchived(false)
+    }
+  }, [])
 
   // Filter sessions based on search query (debounced effect handled in parent)
   const filteredSessions = useMemo(() => {
@@ -116,29 +153,16 @@ export function ChatHistory({
       await onArchiveSession(sessionToArchive)
       setArchiveDialogOpen(false)
       setSessionToArchive(null)
+      // If we're currently viewing archived conversations, refresh the list
+      if (showArchived) {
+        await loadArchivedSessions()
+      }
     } catch (error) {
       console.error('Failed to archive session:', error)
     } finally {
       setIsArchiving(false)
     }
-  }, [sessionToArchive, onArchiveSession])
-
-  // Load archived sessions
-  const loadArchivedSessions = useCallback(async () => {
-    setIsLoadingArchived(true)
-    try {
-      const { getArchivedChatSessions } = await import('@/app/actions/chat')
-      const result = await getArchivedChatSessions()
-      if (result.success) {
-        setArchivedSessions(result.data)
-        setShowArchived(true)
-      }
-    } catch (error) {
-      console.error('Failed to load archived sessions:', error)
-    } finally {
-      setIsLoadingArchived(false)
-    }
-  }, [])
+  }, [sessionToArchive, onArchiveSession, showArchived, loadArchivedSessions])
 
   // Handle session click
   const handleSessionClick = useCallback(
@@ -160,6 +184,7 @@ export function ChatHistory({
       onToggle()
     }
   }, [onNewChat, onToggle])
+
 
   return (
     <>
@@ -187,7 +212,8 @@ export function ChatHistory({
                 ease: [0.2, 0.7, 0.2, 1]
               }}
               className={cn(
-                'flex h-full flex-col',
+                // Use dvh so the fixed mobile drawer has a real scroll container height
+                'flex h-dvh min-h-0 flex-col md:h-full',
                 'w-full md:w-80',
                 'bg-background/80 backdrop-blur-md',
                 'border-l border-border/50',
@@ -249,8 +275,12 @@ export function ChatHistory({
               </div>
 
               {/* Sessions List */}
-              <ScrollArea className="flex-1 px-3 py-2">
-                {isLoading ? (
+              <div
+                ref={scrollContainerRef}
+                className="flex-1 min-h-0 flex flex-col overflow-hidden"
+              >
+                <ScrollArea className="h-full px-3 py-2">
+                  {isLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
@@ -259,10 +289,10 @@ export function ChatHistory({
                     <MessageSquare className="h-12 w-12 text-muted-foreground/50" />
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-muted-foreground">
-                        {showArchived 
-                          ? 'No archived conversations' 
-                          : searchQuery 
-                            ? 'No conversations found' 
+                        {showArchived
+                          ? 'No archived conversations yet'
+                          : searchQuery
+                            ? 'No conversations found'
                             : 'No conversations yet'}
                       </p>
                       {!searchQuery && !showArchived && (
@@ -359,7 +389,8 @@ export function ChatHistory({
                     })}
                   </div>
                 )}
-              </ScrollArea>
+                </ScrollArea>
+              </div>
 
               {/* Footer */}
               {(showArchived ? archivedSessions : filteredSessions).length > 0 && (

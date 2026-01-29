@@ -58,7 +58,11 @@ export function ChatPageClient({
     Record<string, ChatMessage[]>
   >({})
   const [isLoadingSession, setIsLoadingSession] = useState(false)
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  // Default: open on desktop, closed on mobile (prevents overlay on first load)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return window.innerWidth >= 768
+  })
 
   // Handle session selection
   const handleSessionSelect = useCallback(
@@ -67,65 +71,71 @@ export function ChatPageClient({
         return // Already active
       }
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-start',message:'Session selection started',data:{fromSessionId:activeSessionId,toSessionId:sessionId,hasCachedMessages:!!sessionMessages[sessionId]},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'})}).catch(()=>{});
-      // #endregion
-
       setIsLoadingSession(true)
       
+      // Safety timeout to prevent infinite loading
+      const loadingTimeout = setTimeout(() => {
+        console.error('Session selection timed out')
+        setIsLoadingSession(false)
+        toast.error('Loading session timed out. Please try again.')
+      }, 10000) // 10 second timeout
+      
       try {
-        // Update URL first
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('session', sessionId)
-        router.replace(`/chat?${params.toString()}`)
-
         // Always fetch fresh messages to ensure we have the latest
         const result = await getChatSession(sessionId)
 
         if (!result.success) {
           toast.error(result.error || 'Failed to load conversation')
+          clearTimeout(loadingTimeout)
+          setIsLoadingSession(false)
           return
         }
 
-        if (result.data) {
-          const loadedMessages = result.data.messages
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-loaded',message:'Session messages loaded',data:{sessionId,messagesCount:loadedMessages.length,lastMessageRole:loadedMessages[loadedMessages.length-1]?.role,lastMessageIndex:loadedMessages.length-1},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2,H5'})}).catch(()=>{});
-          // #endregion
-          
-          // Update messages cache
-          setSessionMessages(prev => ({
-            ...prev,
-            [sessionId]: loadedMessages,
-          }))
-          
-          // Update active session ID after messages are loaded
-          setActiveSessionId(sessionId)
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-complete',message:'Session switch complete',data:{sessionId,activeSessionId:sessionId,messagesCount:loadedMessages.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'})}).catch(()=>{});
-          // #endregion
-        } else {
-          // Session exists but has no messages - still switch to it
-          setSessionMessages(prev => ({
-            ...prev,
-            [sessionId]: [],
-          }))
-          setActiveSessionId(sessionId)
+        if (!result.data) {
+          // Session not found or archived - cannot switch to it
+          toast.error('Conversation not found or has been archived')
+          clearTimeout(loadingTimeout)
+          setIsLoadingSession(false)
+          return
         }
+
+        // Update URL after successful fetch
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('session', sessionId)
+        router.replace(`/chat?${params.toString()}`)
+
+        const loadedMessages = result.data.messages
+        
+        // Update messages cache
+        setSessionMessages(prev => ({
+          ...prev,
+          [sessionId]: loadedMessages,
+        }))
+        
+        // Update active session ID after messages are loaded
+        setActiveSessionId(sessionId)
       } catch (error) {
         console.error('Failed to load session:', error)
         toast.error('Failed to load conversation')
       } finally {
+        clearTimeout(loadingTimeout)
         setIsLoadingSession(false)
       }
     },
-    [activeSessionId, router, searchParams, sessionMessages]
+    [activeSessionId, router, searchParams]
   )
 
   // Handle new chat creation
   const handleNewChat = useCallback(async () => {
     setIsLoadingSession(true)
+    
+    // Safety timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      console.error('New chat creation timed out')
+      setIsLoadingSession(false)
+      toast.error('Creating new chat timed out. Please try again.')
+    }, 10000) // 10 second timeout
+    
     try {
       const result = await createChatSession()
 
@@ -165,6 +175,7 @@ export function ChatPageClient({
       console.error('Failed to create new chat:', error)
       toast.error('Failed to create new chat')
     } finally {
+      clearTimeout(loadingTimeout)
       setIsLoadingSession(false)
     }
   }, [router, searchParams])
@@ -199,35 +210,47 @@ export function ChatPageClient({
 
         // If archived session was active, switch to another
         if (sessionId === activeSessionId) {
-          if (remainingSessions.length > 0) {
-            // Switch to the first remaining session
-            await handleSessionSelect(remainingSessions[0].session_id)
-          } else {
-            // Create new session if no sessions left
-            await handleNewChat()
-          }
+          // Use setTimeout to ensure state updates complete before navigation
+          setTimeout(async () => {
+            try {
+              if (remainingSessions.length > 0) {
+                // Switch to the first remaining session
+                await handleSessionSelect(remainingSessions[0].session_id)
+              } else {
+                // Create new session if no sessions left
+                await handleNewChat()
+              }
+            } catch (error) {
+              console.error('Failed to switch session after archive:', error)
+              toast.error('Failed to switch conversation')
+              // Force reset loading state
+              setIsLoadingSession(false)
+            }
+          }, 100)
         }
       } catch (error) {
         console.error('Failed to archive session:', error)
         toast.error('Failed to archive conversation')
+        setIsLoadingSession(false)
       }
     },
     [activeSessionId, sessions, handleSessionSelect, handleNewChat]
   )
 
   return (
-    <>
+    <div className="flex h-full min-h-0 w-full overflow-hidden">
       {/* Chat Area - NOW FIRST */}
-      <div className="flex flex-1 flex-col relative h-full overflow-hidden bg-background/50 backdrop-blur-sm">
+      <div className="flex min-h-0 flex-1 flex-col relative h-full overflow-hidden bg-background/50 backdrop-blur-sm">
         {/* History Toggle Button */}
         <Button
           variant="ghost"
           size="icon"
           className={cn(
             'fixed z-50',
-            'top-4 right-4',
-            'md:top-6 md:right-6',
-            'hover:bg-muted/50'
+            'top-4 right-8',
+            'md:top-6 md:right-10',
+            'hover:bg-muted/50',
+            'transition-all duration-200'
           )}
           onClick={() => setIsHistoryOpen(!isHistoryOpen)}
           aria-label={isHistoryOpen ? 'Close chat history' : 'Open chat history'}
@@ -235,7 +258,7 @@ export function ChatPageClient({
           <History className="h-5 w-5 text-muted-foreground" />
         </Button>
 
-        <div className="flex-1 w-full flex flex-col h-full">
+        <div className="flex min-h-0 flex-1 w-full flex-col h-full">
           {isLoadingSession ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center space-y-2">
@@ -265,6 +288,6 @@ export function ChatPageClient({
         isOpen={isHistoryOpen}
         onToggle={() => setIsHistoryOpen(!isHistoryOpen)}
       />
-    </>
+    </div>
   )
 }

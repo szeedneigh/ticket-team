@@ -25,8 +25,6 @@ import { useRouter } from 'next/navigation'
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters'),
   position: z.string().optional(),
-  department: z.string().optional(),
-  phone: z.string().optional(),
 })
 
 type ProfileFormData = z.infer<typeof profileSchema>
@@ -51,8 +49,6 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
     defaultValues: {
       full_name: user.full_name || '',
       position: user.position || '',
-      department: user.department || '',
-      phone: user.phone || '',
     }
   })
 
@@ -62,8 +58,6 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
         const formData = new FormData()
         formData.append('full_name', data.full_name)
         if (data.position) formData.append('position', data.position)
-        if (data.department) formData.append('department', data.department)
-        if (data.phone) formData.append('phone', data.phone)
 
         const result = await updateProfile(formData)
 
@@ -172,24 +166,13 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
                 <Label htmlFor="department">Department</Label>
                 <Input
                   id="department"
-                  {...register('department')}
-                  placeholder="e.g., IT Department"
+                  value={user.department || 'Not set'}
+                  disabled
+                  className="bg-muted"
                 />
-                {errors.department && (
-                  <p className="text-sm text-destructive">{errors.department.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  {...register('phone')}
-                  placeholder="+1 (555) 000-0000"
-                />
-                {errors.phone && (
-                  <p className="text-sm text-destructive">{errors.phone.message}</p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  Department is set during onboarding and cannot be changed. Contact IT Support if you need to update it.
+                </p>
               </div>
             </div>
           </div>

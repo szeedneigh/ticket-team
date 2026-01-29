@@ -40,6 +40,8 @@ export interface ChatMessageProps {
   isStreaming?: boolean
   interactionId?: string
   wasHelpful?: boolean | null
+  /** When true, disables layout-affecting animations to prevent scroll jumps in virtualized lists */
+  disableLayoutAnimation?: boolean
 }
 
 // ============================================================================
@@ -55,6 +57,7 @@ export function ChatMessage({
   isStreaming = false,
   interactionId,
   wasHelpful,
+  disableLayoutAnimation = false,
 }: ChatMessageProps) {
   const [copied, setCopied] = useState(false)
 
@@ -72,24 +75,26 @@ export function ChatMessage({
     }
   }
 
+  const containerClassName = cn(
+    'group flex gap-4 px-4 md:px-6 py-6',
+    'border-b border-border/30',
+    isUser && 'justify-end'
+  )
+
   return (
     <motion.div
-      initial={{ y: 10, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.2, ease: [0.2, 0.7, 0.2, 1] }}
-      className={cn(
-        'group flex gap-4 px-4 md:px-6 py-6',
-        'border-b border-border/30',
-        isUser && 'justify-end'
-      )}
+      initial={disableLayoutAnimation ? false : { y: 10, opacity: 0 }}
+      animate={disableLayoutAnimation ? false : { y: 0, opacity: 1 }}
+      transition={disableLayoutAnimation ? undefined : { duration: 0.2, ease: [0.2, 0.7, 0.2, 1] }}
+      className={containerClassName}
       role="article"
       aria-label={`${role} message`}
     >
       {/* Avatar */}
       {!isUser && (
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ 
+          initial={disableLayoutAnimation ? false : { scale: 0.8, opacity: 0 }}
+          animate={disableLayoutAnimation ? false : { 
             scale: 1, 
             opacity: 1,
             rotate: [0, -10, 10, -10, 10, 0],
@@ -107,13 +112,26 @@ export function ChatMessage({
         >
           {isAssistant ? (
             <div className="relative h-10 w-10">
-                <Image
+              {/* Subtle breathing pulse ring */}
+              <motion.div
+                className="absolute inset-0 rounded-full bg-[#2cafdd]/20"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.5, 0.2, 0.5],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+              <Image
                 src="/assets/timi-bot1.svg"
                 alt="Timi AI Assistant"
                 fill
                 className="object-contain drop-shadow-[0_0_8px_rgba(44,175,221,0.4)]"
                 priority
-                />
+              />
             </div>
           ) : (
             <User className="h-4 w-4 text-muted-foreground" />
@@ -196,9 +214,10 @@ export function ChatMessage({
                           {children}
                         </a>
                       ),
-                      // Customize paragraphs
+                      // Customize paragraphs - use padding instead of margin for Virtuoso
+                      // (ResizeObserver excludes margins, causing scroll jump)
                       p: ({ children, ...props }) => (
-                        <p className="mb-2 last:mb-0" {...props}>
+                        <p className="pb-2 last:pb-0" {...props}>
                           {children}
                         </p>
                       ),

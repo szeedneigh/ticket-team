@@ -84,7 +84,7 @@ export function WelcomeBanner({ user }: WelcomeBannerProps) {
               transition={{ duration: 0.4, delay: 0.2 }}
             >
               {getGreeting()}, <br className="hidden md:block" />
-              <span className="text-foreground">{user.full_name?.split(' ')[0] || 'there'}</span>! 👋
+              <span className="text-foreground">{user.full_name || 'there'}</span>! 👋
             </motion.h1>
           </div>
           

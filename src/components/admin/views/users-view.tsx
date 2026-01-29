@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Download, RefreshCw, Users, UserCheck, Briefcase, Building2, Sparkles } from 'lucide-react'
+import { Download, RefreshCw, Users, UserCheck, Briefcase, Building2, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -346,18 +346,6 @@ export function UsersView() {
                 <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => {
-                  setSelectedUser(undefined)
-                  setIsFormOpen(true)
-                }}
-                className="h-10 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add User
-              </Button>
             </div>
           </motion.div>
 
@@ -457,19 +445,17 @@ export function UsersView() {
         </motion.div>
       </motion.div>
 
-      {/* Create/Edit User Dialog */}
+      {/* Edit User Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-2xl bg-card/95 backdrop-blur-xl">
           <DialogHeader>
-            <DialogTitle>{selectedUser ? 'Edit User' : 'Create New User'}</DialogTitle>
+            <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
-              {selectedUser
-                ? 'Update user details and permissions.'
-                : 'Add a new user to the system. They will receive an email to set their password.'}
+              Update user details and permissions.
             </DialogDescription>
           </DialogHeader>
           <UserForm
-            mode={selectedUser ? 'edit' : 'create'}
+            mode="edit"
             user={selectedUser}
             currentUserRole={currentUserRole}
             onSuccess={handleFormSuccess}

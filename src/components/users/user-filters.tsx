@@ -150,7 +150,7 @@ export function UserFilters({
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Deactivated</SelectItem>
+              <SelectItem value="inactive">Archived</SelectItem>
             </SelectContent>
           </Select>
 

@@ -79,18 +79,23 @@ export function EmailSettings() {
   const handleSave = async () => {
     setIsSaving(true)
     try {
+      console.log('Saving email config:', config)
       const result = await updateSetting(
         'email_notifications_config',
         config,
         'Email notification configuration'
       )
+      console.log('Save result:', result)
 
       if (result.success) {
         toast({
           title: 'Success',
           description: 'Email configuration saved successfully',
         })
+        // Reload to verify it saved
+        await loadConfig()
       } else {
+        console.error('Save failed:', result.error)
         toast({
           title: 'Error',
           description: result.error || 'Failed to save email configuration',
@@ -101,7 +106,7 @@ export function EmailSettings() {
       console.error('Error saving config:', error)
       toast({
         title: 'Error',
-        description: 'Failed to save email configuration',
+        description: error instanceof Error ? error.message : 'Failed to save email configuration',
         variant: 'destructive',
       })
     } finally {

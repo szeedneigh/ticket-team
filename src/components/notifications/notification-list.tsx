@@ -81,9 +81,11 @@ export const NotificationList = memo(function NotificationList({
   const [isLoading, setIsLoading] = useState(false)
 
   // Refresh notifications - useCallback for stable reference
-  const refreshNotifications = useCallback(async () => {
+  // Takes optional filterOverride to avoid stale closure issues
+  const refreshNotifications = useCallback(async (filterOverride?: 'all' | 'unread') => {
     setIsLoading(true)
     const supabase = createClient()
+    const currentFilter = filterOverride ?? filter
 
     let query = supabase
       .from('notifications')
@@ -100,7 +102,7 @@ export const NotificationList = memo(function NotificationList({
       .order('created_at', { ascending: false })
       .limit(50)
 
-    if (filter === 'unread') {
+    if (currentFilter === 'unread') {
       query = query.is('read_at', null)
     }
 
@@ -137,7 +139,10 @@ export const NotificationList = memo(function NotificationList({
       .update({ read_at: new Date().toISOString() })
       .is('read_at', null)
 
-    refreshNotifications()
+    // Always refresh with 'all' filter after marking all as read to avoid empty state
+    refreshNotifications('all')
+    // Update the filter state to 'all' as well
+    setFilter('all')
   }, [refreshNotifications])
 
   // Archive notification - useCallback for stable reference
@@ -172,8 +177,9 @@ export const NotificationList = memo(function NotificationList({
 
   // Filter change - useCallback for stable reference
   const handleFilterChange = useCallback((value: string) => {
-    setFilter(value as 'all' | 'unread')
-    setTimeout(refreshNotifications, 0)
+    const newFilter = value as 'all' | 'unread'
+    setFilter(newFilter)
+    setTimeout(() => refreshNotifications(newFilter), 0)
   }, [refreshNotifications])
 
   // Memoize filtered notifications to avoid re-filtering on every render

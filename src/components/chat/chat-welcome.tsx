@@ -83,6 +83,32 @@ export function ChatWelcome({
           }}
           className="relative h-16 w-16"
         >
+          {/* Multi-layer breathing pulse background */}
+          <motion.div
+            className="absolute inset-0 rounded-full bg-[#2cafdd]/20"
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.5, 0.2, 0.5],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div
+            className="absolute inset-0 rounded-full bg-[#1f3463]/10"
+            animate={{
+              scale: [1, 1.4, 1],
+              opacity: [0.3, 0.1, 0.3],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 0.5
+            }}
+          />
           <Image
             src="/assets/timi-bot1.svg"
             alt="Timi AI Assistant"
@@ -90,10 +116,11 @@ export function ChatWelcome({
             className="object-contain drop-shadow-[0_0_15px_rgba(44,175,221,0.5)]"
             priority
           />
-          {/* Pulse Animation */}
+          {/* Enhanced Pulse Animation with double ring */}
           <span className="absolute -right-1 -top-1 flex h-4 w-4">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2cafdd] opacity-75" />
-            <span className="relative inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#2cafdd]">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2cafdd] opacity-75" style={{ animationDuration: '2s' }} />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2cafdd] opacity-50" style={{ animationDuration: '3s', animationDelay: '0.5s' }} />
+            <span className="relative inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#2cafdd] animate-pulse">
               <MessageSquare className="h-2.5 w-2.5 text-white" />
             </span>
           </span>
