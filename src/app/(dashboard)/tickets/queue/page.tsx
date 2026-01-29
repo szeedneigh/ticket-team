@@ -4,6 +4,7 @@ import type { TicketFilters as TTicketFilters, TimePeriod } from '@/lib/types/ti
 import type { TicketPriority } from '@/lib/types/database'
 import { isStaffOrAbove } from '@/lib/types/database'
 import { PAGINATION } from '@/lib/constants'
+import { getTicketsPaged } from '@/lib/tickets/queries'
 import { QueuePageClient } from './queue-client'
 
 interface PageProps {
@@ -19,8 +20,8 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
   const params = await searchParams
   const supabase = await createClient()
 
-  // Parallelize: Get authenticated user info AND fetch tickets simultaneously
-  const [authResult, userResult, ticketsResult] = await Promise.all([
+  // Parallelize: Get authenticated user info
+  const [authResult, userResult] = await Promise.all([
     supabase.auth.getUser(),
     (async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -30,17 +31,7 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
         .select('id, email, full_name, role, avatar_url')
         .eq('id', authUser.id)
         .single()
-    })(),
-    supabase
-      .from('tickets')
-      .select(`
-        *,
-        user:users!tickets_user_id_fkey(id, full_name, email, avatar_url),
-        assigned_user:users!tickets_assigned_to_fkey(id, full_name, email, avatar_url)
-      `)
-      .in('status', ['open', 'in_progress'])
-      .is('assigned_to', null)
-      .order('created_at', { ascending: false })
+    })()
   ])
 
   const { data: { user: authUser } } = authResult
@@ -60,18 +51,11 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
     redirect('/tickets')
   }
 
-  const { data: allTickets, error: ticketsError } = ticketsResult
-
-  if (ticketsError) {
-    console.error('Error fetching queue tickets:', ticketsError)
-  }
-
-  const queueTickets = allTickets || []
-
   // Build filters for unassigned tickets
   const filters: TTicketFilters = {
     // Only show open and in_progress tickets that are unassigned
     status: ['open', 'in_progress'],
+    assigned_to: null,
   }
 
   // Apply URL query param filters
@@ -94,78 +78,67 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
   const page = params.page ? parseInt(params.page, 10) : 1
   filters.page = page
 
-  // Apply additional filters (priority, search, time period)
-  let filteredTickets = queueTickets
+  // Fetch paged tickets (DB-level pagination to keep payload small)
+  const paged = await getTicketsPaged(supabase, filters, PAGINATION.DEFAULT_PAGE_SIZE)
 
-  if (params.priority) {
-    filteredTickets = filteredTickets.filter(t => t.priority === params.priority)
-  }
+  // Fetch queue statistics (unfiltered by priority/search/time)
+  const baseQueueQuery = () =>
+    supabase
+      .from('tickets')
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['open', 'in_progress'])
+      .is('assigned_to', null)
 
-  if (params.search) {
-    const searchLower = params.search.toLowerCase()
-    filteredTickets = filteredTickets.filter(
-      t =>
-        t.title.toLowerCase().includes(searchLower) ||
-        t.description?.toLowerCase().includes(searchLower)
-    )
-  }
+  const priorityCountQuery = (priority: TicketPriority) =>
+    supabase
+      .from('tickets')
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['open', 'in_progress'])
+      .is('assigned_to', null)
+      .eq('priority', priority)
 
-  // Apply time period filter
-  if (params.timePeriod && params.timePeriod !== 'all') {
-    const now = new Date()
-    let startDate: Date | null = null
+  const [
+    totalQueueCountResult,
+    criticalCountResult,
+    urgentCountResult,
+    highCountResult,
+    mediumCountResult,
+    oldestTicketResult,
+  ] = await Promise.all([
+    baseQueueQuery(),
+    priorityCountQuery('critical'),
+    priorityCountQuery('urgent'),
+    priorityCountQuery('high'),
+    priorityCountQuery('medium'),
+    supabase
+      .from('tickets')
+      .select('created_at')
+      .in('status', ['open', 'in_progress'])
+      .is('assigned_to', null)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ])
 
-    switch (params.timePeriod) {
-      case 'today':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        break
-      case 'this_week':
-        const dayOfWeek = now.getDay()
-        startDate = new Date(now)
-        startDate.setDate(now.getDate() - dayOfWeek)
-        startDate.setHours(0, 0, 0, 0)
-        break
-      case 'this_month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-        break
-    }
+  const totalQueueCount = totalQueueCountResult.count || 0
+  const criticalPriorityCount = criticalCountResult.count || 0
+  const urgentPriorityCount = urgentCountResult.count || 0
+  const highPriorityCount = highCountResult.count || 0
+  const mediumPriorityCount = mediumCountResult.count || 0
 
-    if (startDate) {
-      filteredTickets = filteredTickets.filter(
-        t => new Date(t.created_at) >= startDate!
-      )
-    }
-  }
-
-  // Implement pagination
-  const totalCount = filteredTickets.length
-  const totalPages = Math.ceil(totalCount / PAGINATION.DEFAULT_PAGE_SIZE)
-  const startIndex = (page - 1) * PAGINATION.DEFAULT_PAGE_SIZE
-  const endIndex = startIndex + PAGINATION.DEFAULT_PAGE_SIZE
-  const paginatedTickets = filteredTickets.slice(startIndex, endIndex)
-
-  // Calculate queue statistics
-  const criticalPriorityCount = queueTickets.filter(t => t.priority === 'critical').length
-  const urgentPriorityCount = queueTickets.filter(t => t.priority === 'urgent').length
-  const highPriorityCount = queueTickets.filter(t => t.priority === 'high').length
-  const mediumPriorityCount = queueTickets.filter(t => t.priority === 'medium').length
-
-  // Calculate oldest ticket age (in days)
   let oldestTicketDays = 0
-  if (queueTickets.length > 0) {
-    const oldestTicket = queueTickets.reduce((oldest, ticket) =>
-      new Date(ticket.created_at) < new Date(oldest.created_at) ? ticket : oldest
-    )
+  const oldestCreatedAt = oldestTicketResult.data?.created_at
+  if (oldestCreatedAt) {
     const now = new Date()
-    const ticketDate = new Date(oldestTicket.created_at)
+    const ticketDate = new Date(oldestCreatedAt)
     oldestTicketDays = Math.floor((now.getTime() - ticketDate.getTime()) / (1000 * 60 * 60 * 24))
   }
 
   return (
     <QueuePageClient
-      tickets={paginatedTickets}
+      tickets={paged.tickets}
       stats={{
-        total: queueTickets.length,
+        total: totalQueueCount,
         critical: criticalPriorityCount,
         urgent: urgentPriorityCount,
         high: highPriorityCount,
@@ -173,9 +146,9 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
         oldestDays: oldestTicketDays
       }}
       pagination={{
-        currentPage: page,
-        totalPages: totalPages,
-        totalCount: totalCount
+        currentPage: paged.currentPage,
+        totalPages: paged.totalPages,
+        totalCount: paged.totalCount
       }}
       currentPriority={params.priority}
     />
