@@ -64,7 +64,7 @@ interface LoginHistoryData {
   failure_reason?: string
 }
 
-function SecurityTabComponent({ user }: SecurityTabProps) {
+function SecurityTabComponent({ user: _user }: SecurityTabProps) {
   const [activeSessions, setActiveSessions] = useState<SessionData[]>([])
   const [loginHistory, setLoginHistory] = useState<LoginHistoryData[]>([])
   const [isLoadingSessions, setIsLoadingSessions] = useState(true)
