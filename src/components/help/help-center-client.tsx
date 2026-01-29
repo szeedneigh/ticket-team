@@ -3,9 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { 
-  BookOpen, 
   MessageSquare, 
-  FileQuestion, 
   Search,
   Book,
   Play,
