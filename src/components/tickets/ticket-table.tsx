@@ -153,7 +153,7 @@ export function TicketTable({ tickets }: TicketTableProps) {
                   </TableCell>
                   <TableCell className="py-5">
                     <span className="text-sm text-muted-foreground">
-                      {ticket.user.department || 'N/A'}
+                      {ticket.user?.department || 'N/A'}
                     </span>
                   </TableCell>
                   <TableCell className="py-5">
