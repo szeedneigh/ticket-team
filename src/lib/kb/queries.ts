@@ -25,7 +25,9 @@ const UNKNOWN_AUTHOR: AuthorPick = {
   id: 'unknown',
   full_name: 'Unknown',
   email: '',
-  avatar_url: null
+  avatar_url: null,
+  position: null,
+  role: 'employee'
 }
 
 function normalizeAuthor(author: unknown): AuthorPick {
