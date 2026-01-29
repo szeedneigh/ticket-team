@@ -94,8 +94,11 @@ export async function getTickets(
     query = query.eq('category', filters.category)
   }
 
-  if (filters.assigned_to) {
-    query = query.eq('assigned_to', filters.assigned_to)
+  if (filters.assigned_to !== undefined) {
+    query =
+      filters.assigned_to === null
+        ? query.is('assigned_to', null)
+        : query.eq('assigned_to', filters.assigned_to)
   }
 
   if (filters.user_id) {
@@ -209,8 +212,11 @@ export async function getTicketsPaged(
       query = query.eq('category', filters.category)
     }
 
-    if (filters.assigned_to) {
-      query = query.eq('assigned_to', filters.assigned_to)
+    if (filters.assigned_to !== undefined) {
+      query =
+        filters.assigned_to === null
+          ? query.is('assigned_to', null)
+          : query.eq('assigned_to', filters.assigned_to)
     }
 
     if (filters.user_id) {
