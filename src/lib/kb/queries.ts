@@ -25,7 +25,9 @@ const UNKNOWN_AUTHOR: AuthorPick = {
   id: 'unknown',
   full_name: 'Unknown',
   email: '',
-  avatar_url: null
+  avatar_url: null,
+  position: null,
+  role: 'employee'
 }
 
 function normalizeAuthor(author: unknown): AuthorPick {
@@ -75,7 +77,9 @@ export async function getArticles(
         id,
         full_name,
         email,
-        avatar_url
+        avatar_url,
+        position,
+        role
       )
     `,
       { count: 'exact' }
@@ -187,7 +191,9 @@ export async function getArticleById(
         id,
         full_name,
         email,
-        avatar_url
+        avatar_url,
+        position,
+        role
       )
     `
     )

@@ -37,6 +37,7 @@ interface TagInputProps {
   placeholder?: string
   maxTags?: number
   className?: string
+  inputClassName?: string
 }
 
 export function TagInput({
@@ -45,7 +46,8 @@ export function TagInput({
   suggestions = [],
   placeholder = 'Add tags...',
   maxTags = 10,
-  className
+  className,
+  inputClassName
 }: TagInputProps) {
   const [inputValue, setInputValue] = useState('')
   const [open, setOpen] = useState(false)
@@ -173,7 +175,7 @@ export function TagInput({
                   : placeholder
               }
               disabled={value.length >= maxTags}
-              className="pr-8"
+              className={cn('pr-8', inputClassName)}
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
               <Tag className="h-4 w-4" />

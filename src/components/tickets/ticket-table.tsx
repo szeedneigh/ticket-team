@@ -22,6 +22,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { StatusCell } from './status-cell'
+import { PriorityBadge } from './priority-badge'
 import type { TicketWithUser } from '@/lib/types/tickets'
 import { motion } from 'framer-motion'
 
@@ -31,6 +32,10 @@ interface TicketTableProps {
 
 export function TicketTable({ tickets }: TicketTableProps) {
   const router = useRouter()
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ticket-table.tsx:32',message:'TicketTable: Rendering',data:{ticketsLength:tickets.length,ticketIds:tickets.map(t => t.id),hasDuplicateIds:tickets.length !== new Set(tickets.map(t => t.id)).size,duplicateIds:tickets.length !== new Set(tickets.map(t => t.id)).size ? tickets.map(t => t.id).filter((id, idx, arr) => arr.indexOf(id) !== idx) : []},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
 
   // Enhanced empty state
   if (tickets.length === 0) {
@@ -104,11 +109,13 @@ export function TicketTable({ tickets }: TicketTableProps) {
         <Table>
           <TableHeader>
             <TableRow className="bg-white/5 hover:bg-white/5 border-b border-white/10">
-              <TableHead className="font-semibold w-[180px] h-14 text-muted-foreground">Ticket No.</TableHead>
+              <TableHead className="font-semibold w-[140px] h-14 text-muted-foreground">Ticket No.</TableHead>
               <TableHead className="font-semibold min-w-[200px] h-14 text-muted-foreground">Concern</TableHead>
-              <TableHead className="font-semibold w-[160px] h-14 text-muted-foreground">Category</TableHead>
-              <TableHead className="font-semibold w-[160px] h-14 text-muted-foreground">Status</TableHead>
-              <TableHead className="font-semibold w-[140px] h-14 text-right pr-6 text-muted-foreground">Date</TableHead>
+              <TableHead className="font-semibold w-[120px] h-14 text-muted-foreground">Priority</TableHead>
+              <TableHead className="font-semibold w-[140px] h-14 text-muted-foreground">Department</TableHead>
+              <TableHead className="font-semibold w-[140px] h-14 text-muted-foreground">Category</TableHead>
+              <TableHead className="font-semibold w-[140px] h-14 text-muted-foreground">Status</TableHead>
+              <TableHead className="font-semibold w-[120px] h-14 text-right pr-6 text-muted-foreground">Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -139,6 +146,14 @@ export function TicketTable({ tickets }: TicketTableProps) {
                   <TableCell className="font-medium py-5">
                     <span className="line-clamp-1 group-hover:text-foreground transition-colors text-base">
                       {ticket.title}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-5">
+                    <PriorityBadge priority={ticket.priority} />
+                  </TableCell>
+                  <TableCell className="py-5">
+                    <span className="text-sm text-muted-foreground">
+                      {ticket.user?.department || 'N/A'}
                     </span>
                   </TableCell>
                   <TableCell className="py-5">

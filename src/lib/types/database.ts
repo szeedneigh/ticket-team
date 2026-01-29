@@ -61,12 +61,12 @@ export function isSuperAdmin(role: UserRole): boolean {
 // ============================================================================
 
 export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
-  open: 'Open',
-  in_progress: 'In Progress',
+  open: 'Pending',
+  in_progress: 'Ongoing',
   on_hold: 'On Hold',
   resolved: 'Resolved',
   closed: 'Closed',
-  canceled: 'Canceled',
+  canceled: 'Cancelled',
 }
 
 export const TICKET_PRIORITY_LABELS: Record<TicketPriority, string> = {
@@ -105,7 +105,7 @@ export function isValidTicketStatus(status: string): status is TicketStatus {
 export function isValidTicketPriority(
   priority: string
 ): priority is TicketPriority {
-  return ['low', 'medium', 'high'].includes(priority)
+  return ['low', 'medium', 'high', 'urgent', 'critical'].includes(priority)
 }
 
 export function isValidArticleStatus(

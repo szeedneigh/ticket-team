@@ -10,6 +10,7 @@ import { BookOpen, Plus } from 'lucide-react'
 import { requireAuth } from '@/lib/auth/session'
 import { getArticles, getCategories, getAllTags } from '@/lib/kb/queries'
 import { isStaffOrAbove } from '@/lib/types/database'
+import type { UserRole } from '@/lib/types/database'
 import { Button } from '@/components/ui/button'
 import {
   Empty,
@@ -63,6 +64,15 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
   const allTags = JSON.parse(JSON.stringify(allTagsData))
 
   const serializedArticles = articles.map((article) => {
+    const author = article.author as unknown as {
+      id: string
+      full_name: string
+      email: string
+      avatar_url: string | null
+      role?: UserRole
+      position?: string | null
+    } | null
+
     return {
       id: article.id,
       title: article.title,
@@ -78,16 +88,20 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
       created_at: article.created_at,
       updated_at: article.updated_at,
       published_at: article.published_at,
-      author: article.author ? {
-        id: article.author.id,
-        full_name: article.author.full_name,
-        email: article.author.email,
-        avatar_url: article.author.avatar_url
+      author: author ? {
+        id: author.id,
+        full_name: author.full_name,
+        email: author.email,
+        avatar_url: author.avatar_url,
+        role: author.role ?? ('employee' as UserRole),
+        position: author.position ?? null
       } : {
         id: article.author_id,
         full_name: 'Unknown Author',
         email: '',
-        avatar_url: null
+        avatar_url: null,
+        role: 'employee' as UserRole,
+        position: null
       }
     }
   })

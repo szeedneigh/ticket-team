@@ -37,23 +37,6 @@ export const emailSchema = z
   )
 
 // ============================================================================
-// Phone Number Validation
-// ============================================================================
-
-/**
- * Validates Philippine phone numbers
- * Accepts: +63 format, 09 format, or local format
- */
-const phoneSchema = z
-  .string()
-  .regex(
-    /^(\+63|0)[0-9]{10}$|^[0-9]{7}$/,
-    'Invalid phone number. Use format: +639XXXXXXXXX or 09XXXXXXXXX'
-  )
-  .optional()
-  .or(z.literal(''))
-
-// ============================================================================
 // Create User Schema
 // ============================================================================
 
@@ -71,7 +54,6 @@ export const createUserSchema = z.object({
   role: userRoleSchema.default('employee'),
   department: z.string().max(100, 'Department must not exceed 100 characters').optional(),
   position: z.string().max(100, 'Position must not exceed 100 characters').optional(),
-  phone: phoneSchema,
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
@@ -99,7 +81,6 @@ export const updateUserSchema = z.object({
     .optional(),
   department: z.string().max(100, 'Department must not exceed 100 characters').optional(),
   position: z.string().max(100, 'Position must not exceed 100 characters').optional(),
-  phone: phoneSchema,
   avatar_url: z.string().url('Invalid avatar URL').optional(),
 })
 

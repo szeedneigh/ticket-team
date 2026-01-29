@@ -55,7 +55,6 @@ export interface SignUpData {
   full_name: string
   department?: string
   position?: string
-  phone?: string
 }
 
 // ============================================================================
@@ -68,7 +67,6 @@ export interface CreateUserData {
   role?: UserRole
   department?: string
   position?: string
-  phone?: string
   password: string
 }
 

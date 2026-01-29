@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, useScroll, useSpring, Variants } from 'framer-motion'
-import { Share2, Edit, Calendar, Eye, Clock, Bookmark, ChevronLeft } from 'lucide-react'
+import { Share2, Edit, Calendar, Eye, Clock, Bookmark, ChevronLeft, MessageSquare, FileQuestion } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { toast } from 'sonner'
@@ -22,6 +22,8 @@ interface KBArticleClientProps {
     author: {
       full_name: string
       avatar_url?: string | null
+      position?: string | null
+      role?: string | null
     } | null
     helpful_votes: number
     total_votes: number
@@ -213,7 +215,9 @@ export function KBArticleClient({
                   </Avatar>
                   <div className="flex flex-col">
                     <span className="font-semibold text-foreground">{article.author?.full_name ?? 'Unknown Author'}</span>
-                    <span className="text-xs text-muted-foreground">Technical Writer</span>
+                    <span className="text-xs text-muted-foreground">
+                      {article.author?.position || (article.author?.role ? article.author.role.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase()) : 'Staff Member')}
+                    </span>
                   </div>
                 </div>
 
@@ -354,14 +358,35 @@ export function KBArticleClient({
                 </div>
               </div>
               
-              {/* Optional: Promotion or Help Widget could go here */}
+              {/* Need More Help Widget */}
               <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150" />
                   <h4 className="font-bold text-lg mb-2 relative">Need more help?</h4>
                   <p className="text-blue-100 text-sm mb-4 relative z-10">Our support team is available 24/7 to assist you with any questions.</p>
-                  <Button variant="secondary" size="sm" className="w-full bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-sm">
-                      Contact Support
-                  </Button>
+                  <div className="space-y-2 relative z-10">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="w-full bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-sm"
+                      asChild
+                    >
+                      <Link href="/chat">
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Ask AI Assistant
+                      </Link>
+                    </Button>
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="w-full bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-sm"
+                      asChild
+                    >
+                      <Link href="/tickets/new">
+                        <FileQuestion className="h-4 w-4 mr-2" />
+                        Create Ticket
+                      </Link>
+                    </Button>
+                  </div>
               </div>
 
             </motion.div>

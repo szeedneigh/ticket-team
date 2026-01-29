@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { PanelLeft, User as UserIcon, HelpCircle, LogOut } from 'lucide-react'
+import { PanelLeft, User as UserIcon, HelpCircle } from 'lucide-react'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import type { User } from '@/lib/types/users'
 
@@ -149,8 +149,7 @@ export function Navbar({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="p-0">
-                    <SignOutButton variant="ghost" className="w-full justify-start h-auto px-2 py-1.5 flex items-center gap-2">
-                      <LogOut className="h-4 w-4" />
+                    <SignOutButton variant="ghost" className="w-full justify-start h-auto px-2 py-1.5">
                       Sign Out
                     </SignOutButton>
                   </DropdownMenuItem>

@@ -5,7 +5,6 @@ import { getTicketVolumeTrend, getTicketsByPriority } from '@/lib/dashboard/char
 import { formatStatValue, formatSatisfactionValue } from '@/lib/format'
 import { WelcomeBanner } from '@/components/dashboard/welcome-banner'
 import { StatsCard } from '@/components/dashboard/stats-card'
-import { QuickActions } from '@/components/dashboard/quick-actions'
 import { RecentActivity } from '@/components/dashboard/recent-activity'
 import { TrendChart } from '@/components/analytics/trend-chart'
 import { CategoryChart } from '@/components/analytics/category-chart'
@@ -163,9 +162,6 @@ export default async function DashboardPage() {
             height={300}
             className="bg-card/40 backdrop-blur-xl border-white/10 shadow-lg rounded-[24px]"
           />
-
-          {/* Quick Actions */}
-          <QuickActions user={user} />
         </div>
 
         {/* Sidebar Column - Spans 12 cols on mobile, 4 on desktop */}

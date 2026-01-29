@@ -14,7 +14,10 @@ import { serverEnv } from '@/lib/env/server'
 import type { EmbeddingRequest } from '@/lib/types/ai'
 
 const AI_MODELS = {
-  EMBEDDING: 'text-embedding-004',
+  // Note: @google/genai SDK uses 'gemini-embedding-001' for embeddings
+  // Supports up to 3072-dim with Matryoshka scaling (we use 768 to match DB schema)
+  // Supports RETRIEVAL_QUERY/RETRIEVAL_DOCUMENT task types
+  EMBEDDING: 'gemini-embedding-001',
   CHAT: 'gemini-2.5-flash',  // Verified working with free tier
   CHAT_PRO: 'gemini-2.5-pro',
   CHAT_FALLBACK: 'gemini-2.0-flash',  // Fallback (may have quota limits)
@@ -57,6 +60,8 @@ interface RetryOptions {
   initialDelay?: number
   maxDelay?: number
   onRetry?: (attempt: number, error: Error) => void
+  /** If false, do not retry (e.g. for 429 quota exhausted - daily limit won't reset) */
+  shouldRetry?: (error: Error) => boolean
 }
 
 async function withRetry<T>(
@@ -68,6 +73,7 @@ async function withRetry<T>(
     initialDelay = RETRY_CONFIG.INITIAL_DELAY_MS,
     maxDelay = RETRY_CONFIG.MAX_DELAY_MS,
     onRetry,
+    shouldRetry: shouldRetryFn = () => true,
   } = options
 
   let lastError: Error | null = null
@@ -79,6 +85,11 @@ async function withRetry<T>(
       lastError = error as Error
 
       if (attempt === maxRetries) {
+        break
+      }
+
+      // Don't retry if shouldRetry returns false (e.g. 429 quota exhausted)
+      if (!shouldRetryFn(lastError)) {
         break
       }
 
@@ -106,6 +117,14 @@ export function isQuotaExhaustedError(error: unknown): boolean {
     )
   }
   return false
+}
+
+/**
+ * Don't retry on 429 (quota exhausted) - daily limits reset at midnight,
+ * so retries within the same day always fail.
+ */
+function shouldRetryOnQuotaError(error: Error): boolean {
+  return !isQuotaExhaustedError(error)
 }
 
 export function extractRetryDelay(error: unknown): number | null {
@@ -242,6 +261,7 @@ export interface ChatGenerationResponse {
     totalTokenCount?: number
   }
 }
+
 export async function generateChatResponse(
   params: ChatGenerationParams
 ): Promise<ChatGenerationResponse> {
@@ -267,36 +287,61 @@ export async function generateChatResponse(
       },
     ]
 
-    const response = await withRetry(
-      async () => {
-        return await ai.models.generateContent({
-          model: AI_MODELS.CHAT,
-          contents,
-          config: {
-            systemInstruction,
-            temperature,
-            maxOutputTokens,
-            topP,
-            topK,
-          },
-        })
-      },
-      {
-        onRetry: (attempt, error) => {
-          console.warn(`Chat generation retry ${attempt}/3:`, error.message)
-        },
-      }
-    )
-
-    const text = response.text || ''
-    const finishReason = response.candidates?.[0]?.finishReason
-    const usageMetadata = response.usageMetadata
-
-    return {
-      text,
-      finishReason,
-      usageMetadata,
+    const config = {
+      systemInstruction,
+      temperature,
+      maxOutputTokens,
+      topP,
+      topK,
     }
+
+    // Try primary model first, then fallback on quota exhaustion (different model = separate quota)
+    const modelsToTry = [AI_MODELS.CHAT, AI_MODELS.CHAT_FALLBACK]
+    let lastError: Error | null = null
+
+    for (const model of modelsToTry) {
+      try {
+        const response = await withRetry(
+          async () => {
+            return await ai.models.generateContent({
+              model,
+              contents,
+              config,
+            })
+          },
+          {
+            onRetry: (attempt, error) => {
+              if (shouldRetryOnQuotaError(error)) {
+                console.warn(`Chat generation retry ${attempt}/3 (${model}):`, error.message)
+              }
+            },
+            shouldRetry: shouldRetryOnQuotaError,
+          }
+        )
+
+        const text = response.text || ''
+        const finishReason = response.candidates?.[0]?.finishReason
+        const usageMetadata = response.usageMetadata
+
+        return {
+          text,
+          finishReason,
+          usageMetadata,
+        }
+      } catch (error) {
+        lastError = error as Error
+
+        // If quota exhausted and we have a fallback model, try it (separate daily quota)
+        if (isQuotaExhaustedError(error) && model !== modelsToTry[modelsToTry.length - 1]) {
+          console.warn(`Model ${model} quota exhausted, trying fallback model...`)
+          continue
+        }
+
+        throw error
+      }
+    }
+
+    throw lastError || new Error('All models failed')
   } catch (error) {
     console.error('Chat generation error:', error)
     throw normalizeAIError(error)
@@ -364,8 +409,11 @@ export async function generateChatStreamResponse(
         },
         {
           onRetry: (attempt, error) => {
-            console.warn(`Stream generation retry ${attempt}/3 (${model}):`, error.message)
+            if (shouldRetryOnQuotaError(error)) {
+              console.warn(`Stream generation retry ${attempt}/3 (${model}):`, error.message)
+            }
           },
+          shouldRetry: shouldRetryOnQuotaError,
         }
       )
 

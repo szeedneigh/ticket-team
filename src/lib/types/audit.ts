@@ -61,7 +61,7 @@ export interface AuditLogEntry {
   ticket: {
     id: string
     title: string
-    ticket_number?: string
+    display_number?: string
   } | null
 }
 

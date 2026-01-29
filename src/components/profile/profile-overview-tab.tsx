@@ -10,7 +10,6 @@ import {
   Mail,
   Building,
   User as UserIcon,
-  Phone,
   Briefcase,
   Edit3,
   Ticket,
@@ -140,7 +139,6 @@ function ProfileOverviewTabComponent({ user, ticketStats }: ProfileOverviewTabPr
               <InfoItem icon={Mail} label="Email" value={user.email} />
               {user.position && <InfoItem icon={Briefcase} label="Position" value={user.position} />}
               {user.department && <InfoItem icon={Building} label="Department" value={user.department} />}
-              {user.phone && <InfoItem icon={Phone} label="Phone" value={user.phone} />}
               <InfoItem
                 icon={CalendarDays}
                 label="Member Since"

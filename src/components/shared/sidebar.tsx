@@ -21,11 +21,12 @@ import {
 import { cn } from '@/lib/utils'
 import type { User } from '@/lib/types/users'
 import {
-  Tooltip,
+  TooltipRoot,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { SignOutButton } from '@/components/auth/sign-out-button'
 
 interface SidebarProps {
   user: User
@@ -204,17 +205,17 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
         </div>
 
         {/* Logo Section */}
-        <div className="p-6 pb-2">
+        <div className="p-4 pb-2">
           <Link 
             href="/dashboard"
             className={cn(
               "flex items-center group",
-              !isMobile && isCollapsed ? "justify-center" : "gap-3"
+              !isMobile && isCollapsed ? "justify-center" : "gap-2.5"
             )}
           >
-            <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-white/10 border border-white/20 shadow-inner overflow-hidden group-hover:bg-white/20 transition-all duration-300">
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 border border-white/20 shadow-inner overflow-hidden group-hover:bg-white/20 transition-all duration-300">
               <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <Image src="/logo.svg" alt="TicketTeam" width={22} height={22} className="object-contain" />
+              <Image src="/logo.svg" alt="TicketTeam" width={20} height={20} className="object-contain" />
             </div>
             
             <AnimatePresence mode="wait">
@@ -226,7 +227,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                   transition={{ duration: 0.2 }}
                   className="flex flex-col whitespace-nowrap overflow-hidden"
                 >
-                  <span className="text-xl font-bold text-white tracking-tight">TicketTeam</span>
+                  <span className="text-lg font-bold text-white tracking-tight">TicketTeam</span>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -234,7 +235,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto min-h-0 scrollbar-none">
+        <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto min-h-0 scrollbar-none">
         {filteredNavItems.map((item) => {
             // Check if this route matches the current path
             const isExactMatch = pathname === item.href
@@ -260,7 +261,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                   if (isMobileOpen) setIsMobileOpen(false)
                 }}
                 className={cn(
-                  "relative flex items-center w-full h-12 px-3.5 rounded-xl transition-colors duration-200 group",
+                  "relative flex items-center w-full h-10 px-3 rounded-xl transition-colors duration-200 group",
                   !isMobile && isCollapsed ? "justify-center px-0" : "",
                   isActive 
                     ? "text-white" 
@@ -293,9 +294,9 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                 <div className={cn(
                   "relative z-10 flex items-center justify-center transition-transform duration-300",
                   isActive ? "scale-110 text-cyan-300" : "group-hover:scale-110",
-                  (isMobile || !isCollapsed) && "mr-3"
+                  (isMobile || !isCollapsed) && "mr-2.5"
                 )}>
-                  <item.icon className="h-[22px] w-[22px]" />
+                  <item.icon className="h-5 w-5" />
                 </div>
 
                 {/* Label */}
@@ -309,7 +310,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                       className="flex-1 flex items-center justify-between overflow-hidden whitespace-nowrap"
                     >
                       <span className={cn(
-                        "text-[15px] font-medium transition-colors",
+                        "text-sm font-medium transition-colors",
                         isActive ? "text-white" : "text-white/80 group-hover:text-white"
                       )}>
                         {item.title}
@@ -340,7 +341,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                 className="relative"
               >
                 {!isMobile && isCollapsed ? (
-                  <Tooltip>
+                  <TooltipRoot>
                     <TooltipTrigger asChild>
                       {LinkContent}
                     </TooltipTrigger>
@@ -351,7 +352,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                     >
                       <p>{item.title}</p>
                     </TooltipContent>
-                  </Tooltip>
+                  </TooltipRoot>
                 ) : (
                   LinkContent
                 )}
@@ -361,19 +362,19 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
         </nav>
 
         {/* User Profile Section */}
-        <div className="p-4 mt-auto">
+        <div className="p-3 mt-auto">
           <div className={cn(
             "relative rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md overflow-hidden transition-all duration-300 group",
-            !isMobile && isCollapsed ? "p-2" : "p-3.5",
+            !isMobile && isCollapsed ? "p-2" : "p-2.5",
             "hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-black/10"
           )}>
             <div className={cn(
               "flex items-center",
-              !isMobile && isCollapsed ? "justify-center" : "gap-3"
+              !isMobile && isCollapsed ? "justify-center" : "gap-2.5"
             )}>
               {/* Avatar */}
               <div className="relative flex-shrink-0">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white/10">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white/10">
                   {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
                 </div>
                 <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#002C64] rounded-full" />
@@ -382,7 +383,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
               {/* User Info */}
               {(isMobile || !isCollapsed) && (
                 <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-semibold text-white truncate">
+                  <p className="text-sm font-semibold text-white truncate">
                     {user.full_name || 'User'}
                   </p>
                   <p className="text-xs text-white/60 truncate capitalize">
@@ -393,9 +394,14 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
 
               {/* Settings/Logout Action */}
               {(isMobile || !isCollapsed) && (
-                <button className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors">
+                <SignOutButton
+                  variant="ghost"
+                  size="sm"
+                  showIcon={false}
+                  className="p-1.5 h-auto text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                >
                   <LogOut className="h-4 w-4" />
-                </button>
+                </SignOutButton>
               )}
             </div>
           </div>

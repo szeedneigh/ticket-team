@@ -14,12 +14,11 @@ import { TicketFilters } from '@/components/tickets/ticket-filters'
 import { TicketList } from '@/components/tickets/ticket-list'
 import { StatusTabs } from '@/components/tickets/status-tabs'
 import { TimeFilter } from '@/components/tickets/time-filter'
-import { OnlineUsers } from '@/components/shared/online-users'
+import { OnlineUsersDrawer } from '@/components/shared/online-users-drawer'
 import { createClient } from '@/lib/supabase/server'
 import { getTicketsPaged } from '@/lib/tickets/queries'
 import type { TicketFilters as TTicketFilters, TimePeriod } from '@/lib/types/tickets'
 import type { TicketStatus } from '@/lib/types/database'
-import { isStaffOrAbove } from '@/lib/types/database'
 import { PAGINATION } from '@/lib/constants'
 import { Sparkles } from 'lucide-react'
 
@@ -70,12 +69,9 @@ export default async function TicketsPage({ searchParams }: PageProps) {
   // Build filters based on role and query params
   const filters: TTicketFilters = {}
 
-  // Role-based filtering
-  if (!isStaffOrAbove(user.role)) {
-    // Employees can only see their own tickets
-    filters.user_id = user.id
-  }
-  // Staff and above can see all tickets (no user_id filter)
+  // "My Tickets" page shows ONLY tickets created by the user (for all roles)
+  // This differentiates it from "Ticket Queue" which shows all unassigned tickets
+  filters.user_id = user.id
 
   // Apply URL query param filters
   if (params.status) {
@@ -181,11 +177,9 @@ export default async function TicketsPage({ searchParams }: PageProps) {
           />
         </Suspense>
 
-        {/* Who is Online - Bottom of page */}
+        {/* Who is Online - Floating Drawer */}
         <Suspense fallback={null}>
-          <div className="mt-8">
-            <OnlineUsers />
-          </div>
+          <OnlineUsersDrawer />
         </Suspense>
       </div>
     </div>

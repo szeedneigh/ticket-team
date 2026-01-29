@@ -84,26 +84,36 @@ export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrappe
     }
   }, [isCollapsed, isHydrated])
 
-  // Track scroll position for shadow indicators
+  // Track scroll position for shadow indicators (disabled on chat page)
   useEffect(() => {
+    // For the AI chat page, we intentionally disable outer scrolling.
+    if (isChatPage) {
+      setScrollState({ atTop: true, atBottom: true })
+      return
+    }
+
     const handleScroll = () => {
       if (mainRef.current) {
         const { scrollTop, scrollHeight, clientHeight } = mainRef.current
         setScrollState({
           atTop: scrollTop === 0,
-          atBottom: scrollTop + clientHeight >= scrollHeight - 1
+          atBottom: scrollTop + clientHeight >= scrollHeight - 1,
         })
       }
     }
 
     const main = mainRef.current
-    main?.addEventListener('scroll', handleScroll)
+    if (!main) return
+
+    main.addEventListener('scroll', handleScroll)
 
     // Initial check
     handleScroll()
 
-    return () => main?.removeEventListener('scroll', handleScroll)
-  }, [])
+    return () => {
+      main.removeEventListener('scroll', handleScroll)
+    }
+  }, [isChatPage])
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden" suppressHydrationWarning>
@@ -122,35 +132,47 @@ export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrappe
           setIsMobileOpen={setIsMobileOpen}
         />
         <div className="relative flex flex-col flex-1 min-h-0 overflow-hidden" suppressHydrationWarning>
-          {/* Top scroll shadow */}
-          <div
-            className={cn(
-              "absolute top-0 left-0 right-0 h-8 pointer-events-none z-10 transition-opacity duration-300",
-              "bg-gradient-to-b from-background to-transparent",
-              scrollState.atTop ? "opacity-0" : "opacity-100"
-            )}
-          />
+          {/* Top scroll shadow (disabled on chat page where shell doesn't scroll) */}
+          {!isChatPage && (
+            <div
+              className={cn(
+                "absolute top-0 left-0 right-0 h-8 pointer-events-none z-10 transition-opacity duration-300",
+                "bg-gradient-to-b from-background to-transparent",
+                scrollState.atTop ? "opacity-0" : "opacity-100"
+              )}
+            />
+          )}
 
-          <main 
-            ref={mainRef} 
+          <main
+            ref={mainRef}
             className={cn(
-              "flex-1 min-h-0 overflow-y-auto",
-              isChatPage || pathname?.startsWith('/kb') || pathname?.startsWith('/tickets') || pathname?.startsWith('/admin') || pathname?.startsWith('/performance') ? "p-0" : "p-6 lg:p-8"
+              "flex-1 min-h-0",
+              // Chat page: disable outer scrolling so only chat internals (history drawer, messages) scroll
+              isChatPage ? "overflow-hidden" : "overflow-y-auto",
+              isChatPage ||
+                pathname?.startsWith('/kb') ||
+                pathname?.startsWith('/tickets') ||
+                pathname?.startsWith('/admin') ||
+                pathname?.startsWith('/performance')
+                ? "p-0"
+                : "p-6 lg:p-8"
             )}
           >
             {children}
           </main>
 
-          {/* Bottom scroll shadow */}
-          <div
-            className={cn(
-              "absolute bottom-0 left-0 right-0 h-8 pointer-events-none z-10 transition-opacity duration-300",
-              "bg-gradient-to-t from-background to-transparent",
-              scrollState.atBottom ? "opacity-0" : "opacity-100"
-            )}
-          />
+          {/* Bottom scroll shadow (disabled on chat page where shell doesn't scroll) */}
+          {!isChatPage && (
+            <div
+              className={cn(
+                "absolute bottom-0 left-0 right-0 h-8 pointer-events-none z-10 transition-opacity duration-300",
+                "bg-gradient-to-t from-background to-transparent",
+                scrollState.atBottom ? "opacity-0" : "opacity-100"
+              )}
+            />
+          )}
         </div>
-        <BackToTop target={mainRef} />
+        {!isChatPage && <BackToTop target={mainRef} />}
       </div>
     </div>
   )
