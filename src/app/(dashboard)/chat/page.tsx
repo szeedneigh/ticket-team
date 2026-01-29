@@ -22,58 +22,87 @@ export const metadata = {
   description: 'Get instant IT support from your AI assistant',
 }
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function ChatPage({
   searchParams,
 }: {
   searchParams: Promise<{ session?: string }>
 }) {
-  // Await searchParams (Next.js 15 requirement)
-  const params = await searchParams
-
-  // Authenticate user
-  let user
   try {
-    user = await requireAuth()
-  } catch (error) {
-    logger.error('Auth error in chat page', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+    // Await searchParams (Next.js 15 requirement)
+    const params = await searchParams
+
+    // Authenticate user
+    let user
+    try {
+      user = await requireAuth()
+    } catch (error) {
+      logger.error('Auth error in chat page', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+      throw error
+    }
+
+    // Get existing sessions with timeout
+    const sessionsResult = await Promise.race([
+      getUserChatSessions({ limit: 50 }),
+      new Promise<{ success: false; error: string }>((_, reject) =>
+        setTimeout(() => reject(new Error('Session fetch timeout after 10 seconds')), 10000)
+      ),
+    ]).catch((error) => {
+      logger.error('Session fetch error or timeout', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        userId: user.id,
+      })
+      return {
+        success: false as const,
+        error: error instanceof Error ? error.message : 'Failed to fetch chat sessions',
+      }
     })
-    throw error
-  }
 
-  // Get existing sessions
-  const sessionsResult = await getUserChatSessions({ limit: 50 })
+    if (!sessionsResult.success) {
+      logger.error('Failed to fetch chat sessions', {
+        error: sessionsResult.error,
+        userId: user.id,
+      })
 
-  if (!sessionsResult.success) {
-    logger.error('Failed to fetch chat sessions', {
-      error: sessionsResult.error,
-      userId: user.id,
-    })
+      return (
+        <div className="flex h-full items-center justify-center p-4">
+          <Alert variant="destructive" className="max-w-md">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Failed to load chat history</AlertTitle>
+            <AlertDescription>{sessionsResult.error}</AlertDescription>
+          </Alert>
+        </div>
+      )
+    }
 
-    return (
-      <div className="flex h-full items-center justify-center p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Failed to load chat history</AlertTitle>
-          <AlertDescription>{sessionsResult.error}</AlertDescription>
-        </Alert>
-      </div>
-    )
-  }
+    const sessions = sessionsResult.data
 
-  const sessions = sessionsResult.data
+    // Determine active session
+    // When visiting /chat without ?session=, always start with a fresh session.
+    // Users access previous chats only by selecting them from the history sidebar.
+    let activeSessionId = params.session || null
 
-  // Determine active session
-  let activeSessionId = params.session || null
-
-  // If no active session specified, create a new one or use the most recent
-  if (!activeSessionId) {
-    if (sessions.length > 0) {
-      // Use most recent session
-      activeSessionId = sessions[0].session_id
-    } else {
-      // Create new session
-      const newSessionResult = await createChatSession()
+    if (!activeSessionId) {
+      // Create new session with timeout
+      const newSessionResult = await Promise.race([
+        createChatSession(),
+        new Promise<{ success: false; error: string }>((_, reject) =>
+          setTimeout(() => reject(new Error('Session creation timeout after 10 seconds')), 10000)
+        ),
+      ]).catch((error) => {
+        logger.error('Session creation error or timeout', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          userId: user.id,
+        })
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : 'Failed to create chat session',
+        }
+      })
 
       if (newSessionResult.success) {
         activeSessionId = newSessionResult.data.sessionId
@@ -96,34 +125,51 @@ export default async function ChatPage({
         )
       }
     }
-  }
 
-  // activeSessionId should always be a string at this point
-  // (either from searchParams, most recent session, or newly created session)
-  if (!activeSessionId) {
-    logger.error('No active session ID after session initialization', {
-      userId: user.id,
+    // activeSessionId should always be a string at this point
+    // (either from searchParams.session or newly created session)
+    if (!activeSessionId) {
+      logger.error('No active session ID after session initialization', {
+        userId: user.id,
+      })
+      return (
+        <div className="flex h-full items-center justify-center p-4">
+          <Alert variant="destructive" className="max-w-md">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Failed to initialize chat</AlertTitle>
+            <AlertDescription>
+              Unable to create or load a chat session. Please try again.
+            </AlertDescription>
+          </Alert>
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex h-full min-h-0 overflow-hidden">
+        <ChatPageClient
+          initialSessions={sessions}
+          activeSessionId={activeSessionId}
+          userName={user.full_name}
+        />
+      </div>
+    )
+  } catch (error) {
+    logger.error('Error rendering chat page', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
     })
+    
     return (
       <div className="flex h-full items-center justify-center p-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Failed to initialize chat</AlertTitle>
+          <AlertTitle>Error loading chat</AlertTitle>
           <AlertDescription>
-            Unable to create or load a chat session. Please try again.
+            {error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'}
           </AlertDescription>
         </Alert>
       </div>
     )
   }
-
-  return (
-    <div className="flex h-full">
-      <ChatPageClient
-        initialSessions={sessions}
-        activeSessionId={activeSessionId}
-        userName={user.full_name}
-      />
-    </div>
-  )
 }
