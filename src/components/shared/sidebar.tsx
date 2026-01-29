@@ -21,11 +21,12 @@ import {
 import { cn } from '@/lib/utils'
 import type { User } from '@/lib/types/users'
 import {
-  Tooltip,
+  TooltipRoot,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { SignOutButton } from '@/components/auth/sign-out-button'
 
 interface SidebarProps {
   user: User
@@ -340,7 +341,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                 className="relative"
               >
                 {!isMobile && isCollapsed ? (
-                  <Tooltip>
+                  <TooltipRoot>
                     <TooltipTrigger asChild>
                       {LinkContent}
                     </TooltipTrigger>
@@ -351,7 +352,7 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
                     >
                       <p>{item.title}</p>
                     </TooltipContent>
-                  </Tooltip>
+                  </TooltipRoot>
                 ) : (
                   LinkContent
                 )}
@@ -393,9 +394,14 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
 
               {/* Settings/Logout Action */}
               {(isMobile || !isCollapsed) && (
-                <button className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors">
+                <SignOutButton
+                  variant="ghost"
+                  size="sm"
+                  showIcon={false}
+                  className="p-1.5 h-auto text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                >
                   <LogOut className="h-4 w-4" />
-                </button>
+                </SignOutButton>
               )}
             </div>
           </div>
