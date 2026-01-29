@@ -87,13 +87,28 @@ export function ChatClient({
   const virtuosoRef = useRef<VirtuosoHandle>(null)
   const streamingContentRef = useRef<string>('')
   const currentInteractionIdRef = useRef<string | null>(null)
+  const atBottomRef = useRef(true)
+  const atBottomStableRef = useRef(true)
+  const atBottomTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Sync initialMessages when session changes (if component doesn't remount)
+  // Sync initialMessages when session changes (if component doesn't remount).
+  // Intentionally omit 'messages' - we only want to sync when session/props change,
+  // not when local messages update (would overwrite new messages with stale initialMessages).
   useEffect(() => {
     if (initialMessages.length > 0 && JSON.stringify(initialMessages) !== JSON.stringify(messages)) {
       setMessages(initialMessages)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- messages omitted by design
   }, [sessionId, initialMessages])
+
+  // Cleanup atBottom timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (atBottomTimeoutRef.current) {
+        clearTimeout(atBottomTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Scroll to bottom when session changes (for session switching)
   useEffect(() => {
@@ -501,16 +516,52 @@ export function ChatClient({
               ref={virtuosoRef}
               style={{ height: '100%' }}
               data={displayItems}
-              followOutput={(isAtBottom) =>
-                isAtBottom
+              followOutput={(isAtBottom) => {
+                atBottomRef.current = isAtBottom
+                if (!isAtBottom) {
+                  atBottomStableRef.current = false
+                  if (atBottomTimeoutRef.current) {
+                    clearTimeout(atBottomTimeoutRef.current)
+                    atBottomTimeoutRef.current = null
+                  }
+                } else if (!atBottomStableRef.current) {
+                  if (!atBottomTimeoutRef.current) {
+                    atBottomTimeoutRef.current = setTimeout(() => {
+                      atBottomStableRef.current = true
+                      atBottomTimeoutRef.current = null
+                    }, 200)
+                  }
+                } else {
+                  atBottomStableRef.current = true
+                }
+                return atBottomStableRef.current
                   ? isStreaming
                     ? 'auto'
                     : 'smooth'
                   : false
-              }
+              }}
+              atBottomStateChange={(atBottom) => {
+                atBottomRef.current = atBottom
+                if (!atBottom) {
+                  atBottomStableRef.current = false
+                  if (atBottomTimeoutRef.current) {
+                    clearTimeout(atBottomTimeoutRef.current)
+                    atBottomTimeoutRef.current = null
+                  }
+                } else if (!atBottomTimeoutRef.current) {
+                  atBottomTimeoutRef.current = setTimeout(() => {
+                    atBottomStableRef.current = true
+                    atBottomTimeoutRef.current = null
+                  }, 200)
+                }
+              }}
               alignToBottom
-              atBottomThreshold={50}
+              atBottomThreshold={20}
               initialTopMostItemIndex={displayItems.length > 0 ? displayItems.length - 1 : undefined}
+              increaseViewportBy={{ top: 200, bottom: 200 }}
+              computeItemKey={(index, item) =>
+                item.isStreaming ? `streaming` : `${index}-${item.timestamp ?? index}`
+              }
               itemContent={(index, message) => (
                 <div key={index}>
                   <ChatMessage
@@ -520,6 +571,7 @@ export function ChatClient({
                     sources={message.sources}
                     isStreaming={message.isStreaming}
                     isLoading={message.isLoading}
+                    disableLayoutAnimation
                   />
 
                   {/* Show sources if available */}
