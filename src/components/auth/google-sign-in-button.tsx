@@ -41,8 +41,8 @@ export function GoogleSignInButton() {
           variant="outline"
           className={cn(
             "relative w-full h-12 rounded-xl text-base font-medium transition-all duration-300",
-            "bg-white border-slate-200 text-slate-700 shadow-sm",
-            "hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 hover:shadow-md",
+            "bg-background border-white/20 dark:border-white/10 text-foreground shadow-sm",
+            "hover:bg-[#2cafdd]/5 hover:border-[#2cafdd]/30 hover:shadow-[#1f3463]/5",
             "active:scale-[0.99]",
             isPending && "opacity-70 cursor-not-allowed"
           )}
@@ -51,8 +51,8 @@ export function GoogleSignInButton() {
         >
           {isPending ? (
             <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin text-slate-400" />
-              <span className="text-slate-500">Connecting...</span>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin text-[#0693D2]" />
+              <span className="text-muted-foreground">Connecting...</span>
             </>
           ) : (
             <>
