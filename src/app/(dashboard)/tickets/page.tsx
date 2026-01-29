@@ -19,7 +19,6 @@ import { createClient } from '@/lib/supabase/server'
 import { getTicketsPaged } from '@/lib/tickets/queries'
 import type { TicketFilters as TTicketFilters, TimePeriod } from '@/lib/types/tickets'
 import type { TicketStatus } from '@/lib/types/database'
-import { isStaffOrAbove } from '@/lib/types/database'
 import { PAGINATION } from '@/lib/constants'
 import { Sparkles } from 'lucide-react'
 
@@ -99,20 +98,12 @@ export default async function TicketsPage({ searchParams }: PageProps) {
   const page = params.page ? parseInt(params.page, 10) : 1
   filters.page = page
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:105',message:'TicketsPage: Before getTicketsPaged',data:{filters,userId:user.id,userRole:user.role},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,D'})}).catch(()=>{});
-  // #endregion
-
   // Fetch tickets with page-based pagination
   const result = await getTicketsPaged(
     supabase,
     filters,
     PAGINATION.DEFAULT_PAGE_SIZE
   )
-
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:111',message:'TicketsPage: After getTicketsPaged',data:{resultTicketsLength:result.tickets.length,totalCount:result.totalCount,ticketIds:result.tickets.map(t => t.id)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,D'})}).catch(()=>{});
-  // #endregion
 
   return (
     <div className="min-h-full bg-background relative">
