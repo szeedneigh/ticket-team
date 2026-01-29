@@ -53,7 +53,7 @@ export interface TicketComment {
 }
 
 export interface TicketCommentWithUser extends TicketComment {
-  user: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url' | 'role'>
+  user: Pick<User, 'id' | 'full_name' | 'email' | 'avatar_url' | 'role'> | null
 }
 
 // ============================================================================
@@ -135,7 +135,13 @@ export interface TicketFilters {
   status?: TicketStatus | TicketStatus[]
   priority?: TicketPriority | TicketPriority[]
   category?: string
-  assigned_to?: string
+  /**
+   * Assignment filter:
+   * - string: tickets assigned to that user id
+   * - null: unassigned tickets
+   * - undefined: no assignment filter
+   */
+  assigned_to?: string | null
   user_id?: string
   search?: string
   created_after?: string
