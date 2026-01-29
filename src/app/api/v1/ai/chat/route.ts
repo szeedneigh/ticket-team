@@ -59,18 +59,23 @@ export const maxDuration = 60 // 60 seconds max for streaming
 // Helper Functions
 // ============================================================================
 
+/** Max length for session titles (DB column limit) */
+const SESSION_TITLE_MAX_LENGTH = 60
+
 /**
- * Generate and save session title based on first user message
+ * Generate and save session title based on first user message.
+ * Falls back to truncated message when AI quota is exhausted.
  */
 async function generateSessionTitle(
   sessionId: string,
   userId: string,
   firstMessage: string
 ): Promise<void> {
+  let title: string | null = null
+
   try {
-    // Generate title using AI
+    // Try AI-generated title first
     const titlePrompt = SESSION_TITLE_PROMPT.replace('{query}', firstMessage)
-    
     const result = await generateChatResponse({
       prompt: titlePrompt,
       temperature: 0.3, // Low temperature for consistent titles
@@ -78,26 +83,40 @@ async function generateSessionTitle(
     })
 
     if (result.text) {
-      // Clean up the title
-      const title = result.text
+      title = result.text
         .trim()
         .replace(/^["']|["']$/g, '') // Remove quotes
-        .substring(0, 60) // Max 60 chars
-
-      // Update session title in database
-      await updateSessionTitle(sessionId, userId, title)
-      
-      logger.info('Auto-generated session title', {
-        sessionId,
-        title,
-      })
+        .substring(0, SESSION_TITLE_MAX_LENGTH)
     }
   } catch (error) {
-    // Silently fail - title generation is not critical
-    logger.error('Error generating session title', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+    // AI failed (quota exhausted, etc.) - use fallback
+    logger.debug('AI title generation failed, using fallback', {
       sessionId,
+      error: error instanceof Error ? error.message : 'Unknown error',
     })
+  }
+
+  // Fallback: use truncated first message when AI fails or returns empty
+  if (!title || title.length === 0) {
+    title = firstMessage
+      .trim()
+      .replace(/\s+/g, ' ')
+      .substring(0, SESSION_TITLE_MAX_LENGTH)
+    if (title.length < firstMessage.length) {
+      title = `${title}…`
+    }
+  }
+
+  if (title) {
+    try {
+      await updateSessionTitle(sessionId, userId, title)
+      logger.info('Auto-generated session title', { sessionId, title })
+    } catch (error) {
+      logger.error('Error saving session title', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        sessionId,
+      })
+    }
   }
 }
 
