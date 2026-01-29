@@ -35,7 +35,7 @@ interface CommentItemProps {
   is_internal: boolean
   attachments: CommentAttachment[]
   created_at: string
-  user: CommentUser
+  user: CommentUser | null
 }
 
 export function CommentItem({
@@ -45,13 +45,15 @@ export function CommentItem({
   created_at,
   user,
 }: CommentItemProps) {
-  // Get user initials for avatar fallback
-  const initials = user.full_name
+  // Handle null user (e.g. deleted/deactivated author)
+  const displayName = user?.full_name ?? 'Former User'
+  const initials = displayName
     .split(' ')
     .map((n) => n[0])
+    .filter(Boolean)
     .join('')
     .toUpperCase()
-    .slice(0, 2)
+    .slice(0, 2) || '?'
 
   return (
     <Card className={is_internal ? 'border-amber-200 bg-amber-50/50' : ''}>
@@ -59,7 +61,7 @@ export function CommentItem({
         <div className="flex gap-3">
           {/* User Avatar */}
           <Avatar className="h-8 w-8 mt-1">
-            <AvatarImage src={user.avatar_url || undefined} alt={user.full_name} />
+            <AvatarImage src={user?.avatar_url || undefined} alt={displayName} />
             <AvatarFallback className="text-xs">{initials}</AvatarFallback>
           </Avatar>
 
@@ -67,7 +69,7 @@ export function CommentItem({
           <div className="flex-1 space-y-2">
             {/* Header: Name, Badge, Time */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium text-sm">{user.full_name}</span>
+              <span className="font-medium text-sm">{displayName}</span>
 
               {is_internal && (
                 <Badge variant="outline" className="text-xs text-amber-700 border-amber-300">
