@@ -153,9 +153,11 @@ export async function getAuditLogs(
       ticket: {
         id: string
         title: string
+        display_number?: string
       }[] | {
         id: string
         title: string
+        display_number?: string
       } | null
     }
 
