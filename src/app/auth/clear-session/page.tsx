@@ -9,7 +9,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -20,7 +20,7 @@ export default function ClearSessionPage() {
   const [status, setStatus] = useState<'idle' | 'clearing' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
 
-  const clearSession = async () => {
+  const clearSession = useCallback(async () => {
     setStatus('clearing')
     setMessage('Clearing session...')
 
@@ -53,12 +53,12 @@ export default function ClearSessionPage() {
       setStatus('error')
       setMessage('Error clearing session. Please clear your browser cookies manually.')
     }
-  }
+  }, [router])
 
   useEffect(() => {
     // Auto-clear on mount
     clearSession()
-  }, [])
+  }, [clearSession])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
