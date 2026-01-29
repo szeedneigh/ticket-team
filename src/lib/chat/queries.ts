@@ -334,16 +334,28 @@ export async function archiveSession(
 ): Promise<void> {
   const supabase = await createClient()
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('ai_interactions')
     .update({ archived_at: new Date().toISOString() })
     .eq('session_id', sessionId)
     .eq('user_id', userId)
     .is('archived_at', null) // Only archive if not already archived
+    .select('id')
 
   if (error) {
     console.error('Error archiving session:', error)
     throw new Error(`Failed to archive session: ${error.message}`)
+  }
+
+  // Verify rows were actually updated (RLS or missing session would return 0)
+  if (!data || data.length === 0) {
+    console.error('Archive affected 0 rows - session may not exist or RLS blocked update', {
+      sessionId,
+      userId,
+    })
+    throw new Error(
+      'Failed to archive session. The conversation may not exist or you may not have permission.'
+    )
   }
 }
 
@@ -385,6 +397,24 @@ export async function recordInteraction(
 
   const supabase = await createClient()
 
+  // Check if session is archived before recording new interaction
+  // A session is archived if ANY interaction has archived_at set (since archiveSession archives all interactions)
+  const { data: archivedCheck } = await supabase
+    .from('ai_interactions')
+    .select('id, archived_at')
+    .eq('session_id', sessionId)
+    .eq('user_id', userId)
+    .not('archived_at', 'is', null)
+    .limit(1)
+    .maybeSingle()
+  
+  const isArchived = !!archivedCheck && archivedCheck.archived_at !== null
+
+  // Prevent recording new interactions in archived sessions
+  if (isArchived) {
+    throw new Error('Cannot add messages to archived sessions. Please start a new conversation.')
+  }
+
   const { data, error } = await supabase
     .from('ai_interactions')
     .insert({
@@ -403,9 +433,16 @@ export async function recordInteraction(
     .single()
 
   if (error) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'queries.ts:recordInteraction-error',message:'Error recording interaction',data:{sessionId,userId,error:error.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+    // #endregion
     console.error('Error recording interaction:', error)
     throw new Error(`Failed to record interaction: ${error.message}`)
   }
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'queries.ts:recordInteraction-success',message:'Successfully recorded interaction',data:{sessionId,userId,interactionId:data?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+  // #endregion
 
   return data as AIInteraction
 }
