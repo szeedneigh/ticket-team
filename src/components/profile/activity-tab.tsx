@@ -187,7 +187,7 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [user.id])
+  }, [user.id, user.role])
 
   useEffect(() => {
     fetchActivityData()
