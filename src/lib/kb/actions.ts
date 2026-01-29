@@ -35,7 +35,7 @@ export async function createArticle(data: KBArticleInput) {
     const validated = kbArticleSchema.parse(data)
 
     // 3. Generate embedding for semantic search
-    const embedding = await generateEmbedding(
+    const embedding = await generateDocumentEmbedding(
       `${validated.title}\n\n${validated.content}`
     )
 
