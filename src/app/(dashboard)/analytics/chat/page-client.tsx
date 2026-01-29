@@ -58,7 +58,11 @@ export function ChatPageClient({
     Record<string, ChatMessage[]>
   >({})
   const [isLoadingSession, setIsLoadingSession] = useState(false)
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  // Default: open on desktop, closed on mobile (prevents overlay on first load)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return window.innerWidth >= 768
+  })
 
   // Handle session selection
   const handleSessionSelect = useCallback(
@@ -66,10 +70,6 @@ export function ChatPageClient({
       if (sessionId === activeSessionId) {
         return // Already active
       }
-
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-start',message:'Session selection started',data:{fromSessionId:activeSessionId,toSessionId:sessionId,hasCachedMessages:!!sessionMessages[sessionId]},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'})}).catch(()=>{});
-      // #endregion
 
       setIsLoadingSession(true)
       
@@ -105,9 +105,6 @@ export function ChatPageClient({
         router.replace(`/chat?${params.toString()}`)
 
         const loadedMessages = result.data.messages
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-loaded',message:'Session messages loaded',data:{sessionId,messagesCount:loadedMessages.length,lastMessageRole:loadedMessages[loadedMessages.length-1]?.role,lastMessageIndex:loadedMessages.length-1},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2,H5'})}).catch(()=>{});
-        // #endregion
         
         // Update messages cache
         setSessionMessages(prev => ({
@@ -117,10 +114,6 @@ export function ChatPageClient({
         
         // Update active session ID after messages are loaded
         setActiveSessionId(sessionId)
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-client.tsx:session-select-complete',message:'Session switch complete',data:{sessionId,activeSessionId:sessionId,messagesCount:loadedMessages.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'})}).catch(()=>{});
-        // #endregion
       } catch (error) {
         console.error('Failed to load session:', error)
         toast.error('Failed to load conversation')
@@ -245,9 +238,9 @@ export function ChatPageClient({
   )
 
   return (
-    <>
+    <div className="flex h-full min-h-0 w-full overflow-hidden">
       {/* Chat Area - NOW FIRST */}
-      <div className="flex flex-1 flex-col relative h-full overflow-hidden bg-background/50 backdrop-blur-sm">
+      <div className="flex min-h-0 flex-1 flex-col relative h-full overflow-hidden bg-background/50 backdrop-blur-sm">
         {/* History Toggle Button */}
         <Button
           variant="ghost"
@@ -265,7 +258,7 @@ export function ChatPageClient({
           <History className="h-5 w-5 text-muted-foreground" />
         </Button>
 
-        <div className="flex-1 w-full flex flex-col h-full">
+        <div className="flex min-h-0 flex-1 w-full flex-col h-full">
           {isLoadingSession ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center space-y-2">
@@ -295,6 +288,6 @@ export function ChatPageClient({
         isOpen={isHistoryOpen}
         onToggle={() => setIsHistoryOpen(!isHistoryOpen)}
       />
-    </>
+    </div>
   )
 }
