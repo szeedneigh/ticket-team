@@ -22,6 +22,8 @@ interface KBArticleClientProps {
     author: {
       full_name: string
       avatar_url?: string | null
+      position?: string | null
+      role?: string | null
     } | null
     helpful_votes: number
     total_votes: number
