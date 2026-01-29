@@ -9,7 +9,15 @@
 'use client'
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { Inbox, Clock, RotateCw, CheckCircle2, XCircle } from 'lucide-react'
+import {
+  Inbox,
+  Clock,
+  RotateCw,
+  PauseCircle,
+  CheckCircle2,
+  Archive,
+  XCircle,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { TicketStatus } from '@/lib/types/database'
 import { motion } from 'framer-motion'
@@ -40,10 +48,22 @@ const STATUS_TABS: StatusTab[] = [
     status: 'in_progress',
   },
   {
+    value: 'on_hold',
+    label: 'On Hold',
+    icon: PauseCircle,
+    status: 'on_hold',
+  },
+  {
     value: 'resolved',
     label: 'Resolved',
     icon: CheckCircle2,
     status: 'resolved',
+  },
+  {
+    value: 'closed',
+    label: 'Closed',
+    icon: Archive,
+    status: 'closed',
   },
   {
     value: 'cancelled',
