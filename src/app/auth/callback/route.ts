@@ -80,11 +80,35 @@ export async function GET(request: Request) {
       // #endregion
 
       // Check if this is a new user (first login) and if onboarding is needed
-      const { data: userData } = await supabase
+      // Use maybeSingle() to avoid 406 when trigger hasn't created the row yet (race condition)
+      let { data: userData } = await supabase
         .from('users')
         .select('last_login, full_name, role, department')
         .eq('id', data.user.id)
-        .single()
+        .maybeSingle()
+
+      // Fallback: Create user row if trigger didn't run (handles OAuth race condition)
+      if (!userData) {
+        const { error: insertError } = await supabase.from('users').upsert(
+          {
+            id: data.user.id,
+            email: email || '',
+            full_name: data.user.user_metadata?.full_name ?? data.user.user_metadata?.name ?? email?.split('@')[0] ?? 'User',
+            role: 'employee',
+          },
+          { onConflict: 'id' }
+        )
+        if (insertError) {
+          logger.error('Failed to create user profile fallback', { userId: data.user.id, error: insertError.message })
+        } else {
+          const { data: created } = await supabase
+            .from('users')
+            .select('last_login, full_name, role, department')
+            .eq('id', data.user.id)
+            .maybeSingle()
+          userData = created ?? null
+        }
+      }
 
       const isNewUser = !userData?.last_login
       const needsOnboarding = !userData?.department
