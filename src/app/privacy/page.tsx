@@ -11,11 +11,12 @@ export default async function PrivacyPage() {
   let user: User | null = null
 
   if (authUser) {
+    // Use maybeSingle() to avoid 406 for first-time users (profile may not exist yet)
     const { data } = await supabase
       .from('users')
       .select('*')
       .eq('id', authUser.id)
-      .single()
+      .maybeSingle()
       
     if (data) {
       user = data as User
