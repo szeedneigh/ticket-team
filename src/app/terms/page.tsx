@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
 import { Navbar } from "@/components/shared/navbar"
 import { Footer } from "@/components/shared/footer"
-import { PrivacyContent } from "./privacy-content"
+import { TermsContent } from "./terms-content"
 import type { User } from "@/lib/types/users"
 
-export default async function PrivacyPage() {
+export default async function TermsPage() {
   const supabase = await createClient()
   const { data: { user: authUser } } = await supabase.auth.getUser()
   
@@ -27,7 +27,7 @@ export default async function PrivacyPage() {
     <main className="relative min-h-screen font-[family-name:var(--font-poppins)] bg-gradient-to-br from-[#d4e8f0] via-[#e8f4f8] to-[#0a4d7e]">
        {/* Pass user to Navbar for server-side auth state handling */}
       <Navbar user={user} transparent />
-      <PrivacyContent />
+      <TermsContent />
       <Footer />
     </main>
   )

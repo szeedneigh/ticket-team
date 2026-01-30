@@ -86,7 +86,7 @@ export default function SignInPage() {
           <span className="text-white/95">TicketTeam</span>
         </motion.div>
         
-        {/* Testimonial Section - Clean & Trustworthy */}
+          {/* Testimonial Section - Clean & Trustworthy */}
         <div className="relative z-20 mt-auto max-w-lg">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
