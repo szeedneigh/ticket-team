@@ -35,16 +35,16 @@ export function ChatWidgetInitializer() {
         const { data: { user } } = await supabase.auth.getUser()
 
         if (user) {
-          // Fetch user profile for full name
+          // Fetch user profile for full name (maybeSingle avoids 406 for first-time users)
           const { data: profile } = await supabase
             .from('users')
             .select('full_name')
             .eq('id', user.id)
-            .single()
+            .maybeSingle()
 
           setUserInfo({
             id: user.id,
-            name: profile?.full_name,
+            name: profile?.full_name ?? user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split('@')[0],
           })
         }
       } catch (error) {
