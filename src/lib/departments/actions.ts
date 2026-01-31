@@ -66,14 +66,19 @@ export async function getDepartments(): Promise<{
     // Get user counts for each department
     const departmentsWithCounts = await Promise.all(
       (data || []).map(async (dept) => {
-        const { data: countData } = await supabase.rpc(
-          'get_department_user_count',
-          { department_name: dept.name }
-        )
-
+        let userCount = 0
+        try {
+          const { data: countData } = await supabase.rpc(
+            'get_department_user_count',
+            { department_name: dept.name }
+          )
+          userCount = countData ?? 0
+        } catch {
+          // RPC may fail if not migrated; continue with 0
+        }
         return {
           ...dept,
-          user_count: countData || 0,
+          user_count: userCount,
         }
       })
     )
