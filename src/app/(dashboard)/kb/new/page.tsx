@@ -77,7 +77,7 @@ export default async function NewArticlePage() {
 
       {/* Form Content */}
       <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-4xl">
-        <KBEditorForm mode="create" existingTags={existingTags} />
+        <KBEditorForm mode="create" existingTags={existingTags ?? []} />
       </div>
     </div>
   )
