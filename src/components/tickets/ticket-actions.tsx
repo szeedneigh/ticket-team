@@ -67,6 +67,8 @@ export function TicketActions({
   const [isPending, startTransition] = useTransition()
   const [reopenDialogOpen, setReopenDialogOpen] = useState(false)
   const [reopenReason, setReopenReason] = useState('')
+  const [resolveDialogOpen, setResolveDialogOpen] = useState(false)
+  const [resolutionNotes, setResolutionNotes] = useState('')
 
   // ============================================================================
   // Status Change Handler
@@ -75,11 +77,36 @@ export function TicketActions({
   const handleStatusChange = (newStatus: string) => {
     if (newStatus === ticket.status) return
 
+    if (newStatus === 'resolved') {
+      setResolutionNotes('')
+      setResolveDialogOpen(true)
+      return
+    }
+
     startTransition(async () => {
       const result = await updateTicketStatus(ticket.id, newStatus as TicketStatus)
 
       if (result.success) {
         toast.success(SUCCESS_MESSAGES.TICKET_UPDATED)
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to update status')
+      }
+    })
+  }
+
+  const handleResolve = () => {
+    startTransition(async () => {
+      const result = await updateTicketStatus(
+        ticket.id,
+        'resolved' as TicketStatus,
+        resolutionNotes
+      )
+
+      if (result.success) {
+        toast.success(SUCCESS_MESSAGES.TICKET_UPDATED)
+        setResolveDialogOpen(false)
+        setResolutionNotes('')
         router.refresh()
       } else {
         toast.error(result.error || 'Failed to update status')
@@ -288,6 +315,62 @@ export function TicketActions({
           )}
         </CardContent>
       </Card>
+
+      {/* Resolve Dialog */}
+      <Dialog open={resolveDialogOpen} onOpenChange={setResolveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resolve Ticket</DialogTitle>
+            <DialogDescription>
+              Provide a summary of how this ticket was resolved. This helps with documentation and future reference.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="resolution-notes">Resolution Notes</Label>
+            <Textarea
+              id="resolution-notes"
+              placeholder="Describe the solution, steps taken, or outcome..."
+              value={resolutionNotes}
+              onChange={(e) => setResolutionNotes(e.target.value)}
+              rows={4}
+              disabled={isPending}
+            />
+            <p className="text-xs text-muted-foreground">
+              May be required depending on system configuration
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setResolveDialogOpen(false)
+                setResolutionNotes('')
+              }}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleResolve}
+              disabled={isPending}
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Resolving...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Resolve Ticket
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reopen Dialog */}
       <Dialog open={reopenDialogOpen} onOpenChange={setReopenDialogOpen}>
