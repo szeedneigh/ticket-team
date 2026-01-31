@@ -13,11 +13,28 @@ import { kbArticleSchema, articleVoteSchema } from '@/lib/validations/kb-article
 import { requireAuth } from '@/lib/auth/session'
 import { isStaffOrAbove } from '@/lib/types/database'
 import type { KBArticleInput } from '@/lib/validations/kb-articles'
-import { generateDocumentEmbedding } from '@/lib/ai/client'
+import { generateDocumentEmbedding, isAIConfigured } from '@/lib/ai/client'
 
 // ============================================================================
 // Article CRUD Actions
 // ============================================================================
+
+/**
+ * Generate embedding for article content, or null if AI is not configured or fails.
+ * Articles without embeddings still save; semantic search won't find them until
+ * embeddings are regenerated (e.g., after GEMINI_API_KEY is set).
+ */
+async function getEmbeddingOrNull(text: string): Promise<number[] | null> {
+  if (!isAIConfigured()) {
+    return null
+  }
+  try {
+    return await generateDocumentEmbedding(text)
+  } catch (err) {
+    console.warn('Embedding generation failed, saving article without embedding:', err)
+    return null
+  }
+}
 
 /**
  * Create new KB article
@@ -34,8 +51,8 @@ export async function createArticle(data: KBArticleInput) {
     // 2. Validate input
     const validated = kbArticleSchema.parse(data)
 
-    // 3. Generate embedding for semantic search
-    const embedding = await generateDocumentEmbedding(
+    // 3. Generate embedding for semantic search (optional; null if AI unavailable)
+    const embedding = await getEmbeddingOrNull(
       `${validated.title}\n\n${validated.content}`
     )
 
@@ -104,12 +121,12 @@ export async function updateArticle(id: string, data: Partial<KBArticleInput>) {
     // 2. Validate partial input
     const validated = kbArticleSchema.partial().parse(data)
 
-    // 3. Regenerate embedding if content changed
-    let embedding: number[] | undefined
+    // 3. Regenerate embedding if content changed (optional; null if AI unavailable)
+    let embedding: number[] | null | undefined
     if (validated.title || validated.content) {
       const titleToEmbed = validated.title || article.title
       const contentToEmbed = validated.content || article.content
-      embedding = await generateDocumentEmbedding(`${titleToEmbed}\n\n${contentToEmbed}`)
+      embedding = await getEmbeddingOrNull(`${titleToEmbed}\n\n${contentToEmbed}`)
     }
 
     // 4. Update article
@@ -118,7 +135,7 @@ export async function updateArticle(id: string, data: Partial<KBArticleInput>) {
       updated_at: new Date().toISOString()
     }
 
-    if (embedding) {
+    if (embedding !== undefined) {
       updateData.embedding = embedding
     }
 
