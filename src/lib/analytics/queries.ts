@@ -876,6 +876,7 @@ export async function getStaffPerformanceMetrics(
           ['open', 'in_progress'].includes(t.status)
         ).length,
         overdueTickets,
+        feedbackCount: staffRatings.length,
         dailyMetrics: [],
       })
     }
@@ -1102,7 +1103,8 @@ export async function getMyPerformanceMetrics(
       if (ticket.status === 'resolved' || ticket.status === 'closed') return false
       const created = new Date(ticket.created_at).getTime()
       const ageInHours = (now - created) / (1000 * 60 * 60)
-      const threshold = slaThresholds[(ticket as { priority?: string }).priority] ?? slaThresholds.medium
+      const priority = (ticket as { priority?: string }).priority ?? 'medium'
+      const threshold = slaThresholds[priority] ?? slaThresholds.medium
       return ageInHours > threshold
     }).length
 
@@ -1121,6 +1123,7 @@ export async function getMyPerformanceMetrics(
         ['open', 'in_progress'].includes(t.status)
       ).length,
       overdueTickets,
+      feedbackCount: ticketSatisfactionMap.size,
       dailyMetrics: calculateDailyMetrics(staffTickets, ticketSatisfactionMap, firstCommentMap, range),
     }
   } catch (error) {
