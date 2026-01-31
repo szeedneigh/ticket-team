@@ -20,6 +20,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FileUpload } from './file-upload'
 import { createTicketSchema, type CreateTicketInput } from '@/lib/validations/tickets'
+import type { AttachmentConfig } from '@/lib/validations/tickets'
 import { createTicket } from '@/app/actions/tickets'
 import type { Category } from '@/lib/tickets/queries'
 import type { TicketPriority } from '@/lib/types/database'
@@ -41,10 +42,11 @@ import { SUCCESS_MESSAGES } from '@/lib/constants'
 
 interface TicketFormProps {
   categories: (Category & { subcategories: Category[] })[]
+  attachmentConfig?: AttachmentConfig
   onCancel?: () => void
 }
 
-export function TicketForm({ categories, onCancel }: TicketFormProps) {
+export function TicketForm({ categories, attachmentConfig, onCancel }: TicketFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [files, setFiles] = useState<File[]>([])
@@ -285,6 +287,7 @@ export function TicketForm({ categories, onCancel }: TicketFormProps) {
             <FileUpload
               files={files}
               onFilesChange={setFiles}
+              attachmentConfig={attachmentConfig}
               disabled={isPending}
             />
             <p className="text-xs text-muted-foreground">
