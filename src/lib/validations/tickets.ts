@@ -151,9 +151,17 @@ export type UpdateTicketInput = z.infer<typeof updateTicketSchema>
 // ============================================================================
 
 /**
+ * Attachment config for config-aware validation (matches settings AttachmentConfig)
+ */
+export interface AttachmentConfig {
+  maxFileSizeBytes: number
+  allowedMimeTypes: string[]
+}
+
+/**
  * File extension to MIME type mapping (for fallback validation)
  */
-const FILE_EXTENSION_MAP: Record<string, string> = {
+export const FILE_EXTENSION_MAP: Record<string, string> = {
   // Images
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
@@ -211,6 +219,43 @@ export function isValidFileType(file: File | string, filename?: string): boolean
  */
 export function isValidFileSize(fileSize: number): boolean {
   return fileSize <= FILE_UPLOAD.MAX_FILE_SIZE
+}
+
+/**
+ * Validate file size against config (falls back to FILE_UPLOAD when config is null)
+ */
+export function isValidFileSizeForConfig(
+  fileSize: number,
+  config: AttachmentConfig | null
+): boolean {
+  if (!config) return isValidFileSize(fileSize)
+  return fileSize <= config.maxFileSizeBytes
+}
+
+/**
+ * Validate file type against config (falls back to default when config is null)
+ */
+export function isValidFileTypeForConfig(
+  file: File | string,
+  config: AttachmentConfig | null,
+  filename?: string
+): boolean {
+  if (!config) return isValidFileType(file, filename)
+  const mimeType = typeof file === 'string' ? file : file.type
+  const fileName = typeof file === 'string' ? (filename || '') : file.name
+  const extension = fileName.split('.').pop()?.toLowerCase()
+
+  if (config.allowedMimeTypes.includes(mimeType)) return true
+  if (extension && FILE_EXTENSION_MAP[extension]) {
+    const expectedMimeType = FILE_EXTENSION_MAP[extension]
+    if (config.allowedMimeTypes.includes(expectedMimeType)) {
+      if (!mimeType || mimeType === 'application/octet-stream' || mimeType === '') {
+        return true
+      }
+      return expectedMimeType === mimeType
+    }
+  }
+  return false
 }
 
 /**
