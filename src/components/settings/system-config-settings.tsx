@@ -141,7 +141,7 @@ export function SystemConfigSettings() {
             size="sm" 
             onClick={handleSave} 
             disabled={isSaving}
-            className="shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all bg-gradient-to-r from-[#1f3463] to-[#2cafdd] hover:opacity-90 text-white border-0"
+            className="btn-primary-brand"
           >
             <Save className="mr-2 h-3.5 w-3.5" />
             {isSaving ? 'Saving...' : 'Save Changes'}

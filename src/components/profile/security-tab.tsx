@@ -40,7 +40,7 @@ interface SecurityTabProps {
   user: User
 }
 
-// Mock data types (to be replaced with actual database queries)
+// Session and login history data types (from getActiveSessions / getLoginHistory)
 interface SessionData {
   id: string
   device_info: string

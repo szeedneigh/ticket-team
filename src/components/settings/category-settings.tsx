@@ -69,6 +69,7 @@ export function CategorySettings() {
           description: result.error || 'Failed to load categories',
           variant: 'destructive',
         })
+        setCategories([])
       }
     } catch (error) {
       console.error('Error loading categories:', error)
@@ -77,6 +78,7 @@ export function CategorySettings() {
         description: 'Failed to load categories',
         variant: 'destructive',
       })
+      setCategories([])
     } finally {
       setIsLoading(false)
     }
@@ -267,9 +269,9 @@ export function CategorySettings() {
 
           <div className="md:col-span-3">
             <Button
-        onClick={handleAddCategory}
-        className="w-full shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all bg-gradient-to-r from-[#1f3463] to-[#2cafdd] hover:opacity-90 text-white border-0"
-      >
+              onClick={handleAddCategory}
+              className="w-full btn-primary-brand"
+            >
         Add Category
       </Button>
           </div>

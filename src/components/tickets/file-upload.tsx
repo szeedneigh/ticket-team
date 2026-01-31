@@ -7,10 +7,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import {
   FILE_UPLOAD,
-  isValidFileType,
-  isValidFileSize,
+  isValidFileTypeForConfig,
+  isValidFileSizeForConfig,
   formatFileSize,
 } from '@/lib/validations/tickets'
+import type { AttachmentConfig } from '@/lib/validations/tickets'
 
 /**
  * File Upload Component
@@ -27,6 +28,7 @@ import {
 interface FileUploadProps {
   files: File[]
   onFilesChange: (files: File[]) => void
+  attachmentConfig?: AttachmentConfig | null
   maxFiles?: number
   disabled?: boolean
 }
@@ -34,6 +36,7 @@ interface FileUploadProps {
 export function FileUpload({
   files,
   onFilesChange,
+  attachmentConfig,
   maxFiles = FILE_UPLOAD.MAX_FILES,
   disabled = false,
 }: FileUploadProps) {
@@ -46,18 +49,17 @@ export function FileUpload({
   // ============================================================================
 
   const validateFile = useCallback((file: File): string | null => {
-    // Check file size
-    if (!isValidFileSize(file.size)) {
-      return `File "${file.name}" exceeds maximum size of ${formatFileSize(FILE_UPLOAD.MAX_FILE_SIZE)}`
+    const maxSize = attachmentConfig?.maxFileSizeBytes ?? FILE_UPLOAD.MAX_FILE_SIZE
+    if (!isValidFileSizeForConfig(file.size, attachmentConfig ?? null)) {
+      return `File "${file.name}" exceeds maximum size of ${formatFileSize(maxSize)}`
     }
 
-    // Check file type (now checks both MIME type and extension)
-    if (!isValidFileType(file)) {
+    if (!isValidFileTypeForConfig(file, attachmentConfig ?? null)) {
       return `File "${file.name}" has an unsupported file type. Allowed: Images (JPG, PNG, GIF, WebP), Documents (PDF, Word, Excel, PowerPoint), Text files, Archives (ZIP, RAR)`
     }
 
     return null
-  }, [])
+  }, [attachmentConfig])
 
   const validateFiles = useCallback(
     (newFiles: File[]): { valid: File[]; error: string | null } => {
@@ -212,7 +214,7 @@ export function FileUpload({
           {isDragging ? 'Drop files here' : 'Click to upload or drag and drop'}
         </p>
         <p className="text-xs text-muted-foreground">
-          Maximum {maxFiles} files, up to {formatFileSize(FILE_UPLOAD.MAX_FILE_SIZE)} each
+          Maximum {maxFiles} files, up to {formatFileSize(attachmentConfig?.maxFileSizeBytes ?? FILE_UPLOAD.MAX_FILE_SIZE)} each
         </p>
         <p className="text-xs text-muted-foreground mt-1">
           Supported: Images, PDFs, Office docs, text files, archives

@@ -1,9 +1,11 @@
 /**
  * Toast Hook
  *
- * Wrapper around sonner for toast notifications
+ * Wrapper around sonner for toast notifications.
+ * Toast function is memoized to prevent infinite loops when used in useEffect/useCallback dependencies.
  */
 
+import { useCallback } from 'react'
 import { toast as sonnerToast } from 'sonner'
 
 interface ToastOptions {
@@ -14,7 +16,7 @@ interface ToastOptions {
 }
 
 export function useToast() {
-  const toast = ({ title, description, variant = 'default', duration = 3000 }: ToastOptions) => {
+  const toast = useCallback(({ title, description, variant = 'default', duration = 3000 }: ToastOptions) => {
     const message = title || description || ''
     const descriptionText = title && description ? description : undefined
 
@@ -29,7 +31,7 @@ export function useToast() {
         duration,
       })
     }
-  }
+  }, [])
 
   return { toast }
 }

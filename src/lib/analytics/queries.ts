@@ -9,6 +9,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
+import { getSystemConfig } from '@/lib/settings/actions'
+import { getSLAThresholds } from '@/lib/settings/sla'
 import type {
   AnalyticsSummary,
   TrendData,
@@ -28,15 +30,6 @@ import type {
   AIVolumeTrend,
   CommonQuery,
 } from '@/lib/types/analytics'
-
-/**
- * SLA thresholds in hours by priority
- */
-const SLA_THRESHOLDS = {
-  low: 48, // 2 days
-  medium: 24, // 1 day
-  high: 8, // 8 hours
-} as const
 
 /**
  * Format duration in hours to human-readable string
@@ -234,14 +227,15 @@ export async function getAnalyticsSummary(
     const resolutionRate =
       totalTickets > 0 ? Math.round(((resolvedTickets + closedTickets) / totalTickets) * 100) : 0
 
-    // Calculate SLA compliance
+    // Calculate SLA compliance (use system config thresholds)
+    const slaThresholds = getSLAThresholds(await getSystemConfig())
     let slaCompliance = 0
     if (resolvedWithTime && resolvedWithTime.length > 0) {
       const withinSLA = resolvedWithTime.filter((ticket) => {
         const created = new Date(ticket.created_at).getTime()
         const resolved = new Date(ticket.resolved_at!).getTime()
         const resolutionTimeHours = (resolved - created) / (1000 * 60 * 60)
-        const threshold = SLA_THRESHOLDS[ticket.priority as keyof typeof SLA_THRESHOLDS]
+        const threshold = slaThresholds[ticket.priority] ?? slaThresholds.medium
         return resolutionTimeHours <= threshold
       }).length
 
@@ -255,7 +249,7 @@ export async function getAnalyticsSummary(
         if (ticket.status === 'resolved' || ticket.status === 'closed') return false
         const created = new Date(ticket.created_at).getTime()
         const ageInHours = (now - created) / (1000 * 60 * 60)
-        const threshold = SLA_THRESHOLDS[ticket.priority as keyof typeof SLA_THRESHOLDS]
+        const threshold = slaThresholds[ticket.priority] ?? slaThresholds.medium
         return ageInHours > threshold
       }).length || 0
 
@@ -733,10 +727,10 @@ export async function getStaffPerformanceMetrics(
       throw new Error(`Failed to fetch staff users: ${staffError.message}`)
     }
 
-    // Get tickets assigned to staff
+    // Get tickets assigned to staff (include priority for SLA thresholds)
     const { data: tickets, error: ticketsError } = await supabase
       .from('tickets')
-      .select('id, assigned_to, status, created_at, resolved_at')
+      .select('id, assigned_to, status, priority, created_at, resolved_at')
       .gte('created_at', range.start.toISOString())
       .lte('created_at', range.end.toISOString())
 
@@ -800,6 +794,9 @@ export async function getStaffPerformanceMetrics(
       }
     }
 
+    // Get SLA thresholds for overdue calculation
+    const slaThresholds = getSLAThresholds(await getSystemConfig())
+
     // Calculate metrics for each staff member
     const performanceData: StaffPerformance[] = []
 
@@ -860,7 +857,7 @@ export async function getStaffPerformanceMetrics(
         if (ticket.status === 'resolved' || ticket.status === 'closed') return false
         const created = new Date(ticket.created_at).getTime()
         const ageInHours = (now - created) / (1000 * 60 * 60)
-        const threshold = 24 // Default threshold
+        const threshold = slaThresholds[ticket.priority] ?? slaThresholds.medium
         return ageInHours > threshold
       }).length
 
@@ -879,6 +876,7 @@ export async function getStaffPerformanceMetrics(
           ['open', 'in_progress'].includes(t.status)
         ).length,
         overdueTickets,
+        feedbackCount: staffRatings.length,
         dailyMetrics: [],
       })
     }
@@ -1003,10 +1001,10 @@ export async function getMyPerformanceMetrics(
   const range = dateRange || getDefaultDateRange()
 
   try {
-    // Get tickets assigned to this user
+    // Get tickets assigned to this user (include priority for SLA thresholds)
     const { data: tickets, error: ticketsError } = await supabase
       .from('tickets')
-      .select('id, assigned_to, status, created_at, resolved_at')
+      .select('id, assigned_to, status, priority, created_at, resolved_at')
       .eq('assigned_to', userId)
       .gte('created_at', range.start.toISOString())
       .lte('created_at', range.end.toISOString())
@@ -1098,13 +1096,15 @@ export async function getMyPerformanceMetrics(
       }
     }
 
-    // Calculate overdue tickets
+    // Calculate overdue tickets (use system config thresholds)
+    const slaThresholds = getSLAThresholds(await getSystemConfig())
     const now = new Date().getTime()
     const overdueTickets = staffTickets.filter((ticket) => {
       if (ticket.status === 'resolved' || ticket.status === 'closed') return false
       const created = new Date(ticket.created_at).getTime()
       const ageInHours = (now - created) / (1000 * 60 * 60)
-      const threshold = 24 // Default threshold
+      const priority = (ticket as { priority?: string }).priority ?? 'medium'
+      const threshold = slaThresholds[priority] ?? slaThresholds.medium
       return ageInHours > threshold
     }).length
 
@@ -1123,6 +1123,7 @@ export async function getMyPerformanceMetrics(
         ['open', 'in_progress'].includes(t.status)
       ).length,
       overdueTickets,
+      feedbackCount: ticketSatisfactionMap.size,
       dailyMetrics: calculateDailyMetrics(staffTickets, ticketSatisfactionMap, firstCommentMap, range),
     }
   } catch (error) {
@@ -1256,6 +1257,7 @@ export async function getSLACompliance(
       throw new Error(`Failed to fetch SLA data: ${error.message}`)
     }
 
+    const slaThresholds = getSLAThresholds(await getSystemConfig())
     let withinSLA = 0
     let breachedSLA = 0
     const breachTimes: number[] = []
@@ -1269,13 +1271,17 @@ export async function getSLACompliance(
       const created = new Date(ticket.created_at).getTime()
       const resolved = new Date(ticket.resolved_at).getTime()
       const resolutionTimeHours = (resolved - created) / (1000 * 60 * 60)
-      const threshold = SLA_THRESHOLDS[priority]
+      const threshold = slaThresholds[priority] ?? slaThresholds.medium
 
-      totalByPriority[priority]++
+      if (['low', 'medium', 'high'].includes(priority)) {
+        totalByPriority[priority]++
+      }
 
       if (resolutionTimeHours <= threshold) {
         withinSLA++
-        byPriority[priority]++
+        if (['low', 'medium', 'high'].includes(priority)) {
+          byPriority[priority]++
+        }
       } else {
         breachedSLA++
         breachTimes.push(resolutionTimeHours - threshold)

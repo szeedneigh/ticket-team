@@ -2,8 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { z } from 'zod'
 import { logger } from '@/lib/logger'
+import type { FeedbackWithDetails, FeedbackSummary } from '@/lib/types/templates'
 
 /**
  * Feedback Server Actions
@@ -188,5 +190,170 @@ export async function hasFeedback(ticketId: string): Promise<boolean> {
       ticketId
     })
     return false
+  }
+}
+
+// ============================================================================
+// Admin Feedback Analytics (RLS-aware: super_admin sees all, admin sees aggregate)
+// ============================================================================
+
+export interface FeedbackAnalyticsResult {
+  success: boolean
+  feedback?: FeedbackWithDetails[]
+  summary?: FeedbackSummary | null
+  error?: string
+}
+
+/**
+ * Fetch feedback analytics for admin settings.
+ * - super_admin: Full feedback list + summary (bypasses RLS via service client)
+ * - admin: Aggregate summary only via get_satisfaction_aggregate RPC (no individual feedback)
+ */
+export async function getFeedbackAnalytics(
+  ratingFilter?: string
+): Promise<FeedbackAnalyticsResult> {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized' }
+    }
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const role = profile?.role
+    if (!role || !['admin', 'super_admin'].includes(role)) {
+      return { success: false, error: 'Admin access required' }
+    }
+
+    if (role === 'super_admin') {
+      const serviceSupabase = createServiceClient()
+      let query = serviceSupabase
+        .from('ticket_feedback')
+        .select(
+          `
+          *,
+          ticket:tickets(id, title, category, status, created_at),
+          user:users(id, full_name, email)
+        `
+        )
+        .order('created_at', { ascending: false })
+        .limit(100)
+
+      if (ratingFilter && ratingFilter !== 'all') {
+        query = query.eq('rating', parseInt(ratingFilter))
+      }
+
+      const { data: feedback, error } = await query
+
+      if (error) {
+        logger.error('Error fetching feedback', { error: error.message })
+        return { success: false, error: error.message }
+      }
+
+      const allFeedback = feedback || []
+      const summary = computeSummaryFromFeedback(allFeedback)
+      return { success: true, feedback: allFeedback as FeedbackWithDetails[], summary }
+    }
+
+    // admin: use get_satisfaction_aggregate RPC
+    const { data: aggregate, error } = await supabase.rpc('get_satisfaction_aggregate', {
+      start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      end_date: new Date().toISOString(),
+    })
+
+    if (error) {
+      logger.error('Error fetching satisfaction aggregate', { error: error.message })
+      return { success: false, error: error.message }
+    }
+
+    const dist = aggregate?.distribution || {}
+    const total = aggregate?.totalResponses || 0
+    const ratingDistribution = [1, 2, 3, 4, 5].map((rating) => {
+      const count = Number(dist[String(rating)] ?? 0)
+      return {
+        rating,
+        count,
+        percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+      }
+    })
+
+    const summary: FeedbackSummary = {
+      totalFeedback: total,
+      averageRating: Number(aggregate?.overallScore ?? 0),
+      ratingDistribution,
+      recentTrend: [],
+    }
+
+    return { success: true, feedback: [], summary }
+  } catch (error) {
+    logger.error('Error in getFeedbackAnalytics', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    })
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to load feedback',
+    }
+  }
+}
+
+function computeSummaryFromFeedback(
+  allFeedback: { rating: number; created_at: string }[]
+): FeedbackSummary {
+  if (!allFeedback.length) {
+    return {
+      totalFeedback: 0,
+      averageRating: 0,
+      ratingDistribution: [1, 2, 3, 4, 5].map((r) => ({ rating: r, count: 0, percentage: 0 })),
+      recentTrend: [],
+    }
+  }
+
+  const totalRating = allFeedback.reduce((sum, f) => sum + f.rating, 0)
+  const avgRating = totalRating / allFeedback.length
+  const distribution = [1, 2, 3, 4, 5].map((rating) => {
+    const count = allFeedback.filter((f) => f.rating === rating).length
+    return {
+      rating,
+      count,
+      percentage: Math.round((count / allFeedback.length) * 100),
+    }
+  })
+
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const recentFeedback = allFeedback.filter(
+    (f) => new Date(f.created_at) >= thirtyDaysAgo
+  )
+  const byDate = recentFeedback.reduce(
+    (acc, f) => {
+      const date = f.created_at.split('T')[0]
+      if (!acc[date]) acc[date] = { total: 0, count: 0 }
+      acc[date].total += f.rating
+      acc[date].count++
+      return acc
+    },
+    {} as Record<string, { total: number; count: number }>
+  )
+  const recentTrend = Object.entries(byDate)
+    .map(([date, { total, count }]) => ({
+      date,
+      avgRating: Math.round((total / count) * 10) / 10,
+      count,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  return {
+    totalFeedback: allFeedback.length,
+    averageRating: Math.round(avgRating * 10) / 10,
+    ratingDistribution: distribution,
+    recentTrend,
   }
 }

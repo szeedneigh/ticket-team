@@ -113,6 +113,7 @@ export interface StaffPerformance {
   satisfactionScore: number
   activeTickets: number
   overdueTickets: number
+  feedbackCount: number
   dailyMetrics: {
     date: string
     assigned: number

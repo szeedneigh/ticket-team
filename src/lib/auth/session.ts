@@ -16,6 +16,25 @@ import type { User } from '@/lib/types/users'
 import type { UserRole } from '@/lib/types/database'
 import { hasPermission } from '@/lib/types/database'
 
+/** E2E test bypass: mock user returned when x-e2e-test-auth header matches E2E_BYPASS_SECRET. Configurable via env. */
+const E2E_MOCK_USER: User = {
+  id: process.env.E2E_TEST_USER_ID ?? '49a84551-f65c-420a-b5f1-97e1b814e41b',
+  email: process.env.E2E_TEST_USER_EMAIL ?? 'test@laverdad.edu.ph',
+  full_name: process.env.E2E_TEST_USER_NAME ?? 'Test User',
+  role: (process.env.E2E_TEST_USER_ROLE as User['role']) ?? 'admin',
+  department: null,
+  position: null,
+  phone: null,
+  avatar_url: null,
+  is_online: false,
+  last_seen: null,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  last_login: null,
+  deactivated_at: null,
+  deactivated_by: null,
+}
+
 /**
  * Get the current authenticated user from Supabase Auth
  * Uses getUser() which authenticates with the Supabase Auth server for security
@@ -77,29 +96,11 @@ export async function requireAuth(): Promise<User> {
     const bypassHeader = headersList.get('x-e2e-test-auth')
     const bypassSecret = process.env.E2E_BYPASS_SECRET
 
-    if (bypassHeader && bypassHeader === bypassSecret) {
-      // Only log in development
+    if (bypassHeader && bypassSecret && bypassHeader === bypassSecret) {
       if (process.env.NODE_ENV === 'development') {
         console.log('[E2E Test Mode] Auth bypass enabled in requireAuth()')
       }
-      // Return a mock test user for E2E tests
-      return {
-        id: '49a84551-f65c-420a-b5f1-97e1b814e41b',
-        email: 'test@laverdad.edu.ph',
-        full_name: 'Test User',
-        role: 'admin',
-        department: null,
-        position: null,
-        phone: null,
-        avatar_url: null,
-        is_online: false,
-        last_seen: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        last_login: null,
-        deactivated_at: null,
-        deactivated_by: null,
-      } as User
+      return E2E_MOCK_USER
     }
   }
 
