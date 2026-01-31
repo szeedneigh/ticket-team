@@ -142,6 +142,7 @@ export function DepartmentSettings() {
           description: result.error || 'Failed to load departments',
           variant: 'destructive',
         })
+        setDepartments([])
       }
     } catch (error) {
       console.error('Error loading departments:', error)
@@ -150,6 +151,7 @@ export function DepartmentSettings() {
         description: 'Failed to load departments',
         variant: 'destructive',
       })
+      setDepartments([])
     } finally {
       setIsLoading(false)
     }
@@ -337,10 +339,10 @@ export function DepartmentSettings() {
             className="flex-1"
           />
           <Button
-          onClick={handleAddDepartment}
-          disabled={isSaving || isLoading}
-          className="shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all bg-gradient-to-r from-[#1f3463] to-[#2cafdd] hover:opacity-90 text-white border-0"
-        >
+            onClick={handleAddDepartment}
+            disabled={isSaving || isLoading}
+            className="btn-primary-brand"
+          >
           Add Department
         </Button>
         </div>
