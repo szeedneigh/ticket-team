@@ -3,7 +3,7 @@
  *
  * Professional "Bento Grid" style dashboard for staff performance.
  * Features:
- * - Smart KPI cards with simulated trend sparklines
+ * - Smart KPI cards with trend sparklines from real daily metrics
  * - Ticket Velocity Area Chart
  * - Skills Radar
  * - Activity Heatmap
@@ -39,7 +39,6 @@ import {
   Radar,
   BarChart,
   Bar,
-  Cell,
 } from 'recharts'
 import type { StaffPerformance } from '@/lib/types/analytics'
 import { Sparkline } from './sparkline'
@@ -76,9 +75,29 @@ const itemVariants = {
   visible: { opacity: 1, scale: 1 }
 }
 
+/** Compute period-over-period % change (first half vs second half of dailyMetrics) */
+function computeTrendPercent(firstHalfSum: number, secondHalfSum: number): number | null {
+  if (firstHalfSum === 0) return secondHalfSum > 0 ? 100 : null
+  return Math.round(((secondHalfSum - firstHalfSum) / firstHalfSum) * 100)
+}
+
+/** Compute response time trend: negative = improvement (faster), positive = slower */
+function computeResponseTimeTrend(dailyMetrics: { avgResponseTime: number }[]): number | null {
+  const withData = dailyMetrics.filter(d => d.avgResponseTime > 0)
+  if (withData.length < 2) return null
+  const mid = Math.floor(withData.length / 2)
+  const firstHalf = withData.slice(0, mid)
+  const secondHalf = withData.slice(mid)
+  const avgFirst = firstHalf.reduce((s, d) => s + d.avgResponseTime, 0) / firstHalf.length
+  const avgSecond = secondHalf.reduce((s, d) => s + d.avgResponseTime, 0) / secondHalf.length
+  if (avgFirst === 0) return null
+  return Math.round(((avgSecond - avgFirst) / avgFirst) * 100)
+}
+
 export function MyPerformanceContent({ performance }: MyPerformanceContentProps) {
   // Use real daily metrics for trends
   const dailyMetrics = performance.dailyMetrics || []
+  const feedbackCount = performance.feedbackCount ?? 0
 
   // Safe fallback if no data
   const resolvedTrend = dailyMetrics.length > 0 
@@ -97,6 +116,22 @@ export function MyPerformanceContent({ performance }: MyPerformanceContentProps)
     ? dailyMetrics.map(d => d.satisfactionScore || 5) // Default to 5 visually if no ratings
     : [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
 
+  // Computed trends from real data (first half vs second half of period)
+  const mid = Math.floor(dailyMetrics.length / 2)
+  const firstHalfResolved = dailyMetrics.slice(0, mid).reduce((s, d) => s + d.resolved, 0)
+  const secondHalfResolved = dailyMetrics.slice(mid).reduce((s, d) => s + d.resolved, 0)
+  const resolvedTrendPercent = computeTrendPercent(firstHalfResolved, secondHalfResolved)
+
+  const firstHalfSat = dailyMetrics.slice(0, mid).filter(d => d.satisfactionScore > 0)
+  const secondHalfSat = dailyMetrics.slice(mid).filter(d => d.satisfactionScore > 0)
+  const avgSatFirst = firstHalfSat.length ? firstHalfSat.reduce((s, d) => s + d.satisfactionScore, 0) / firstHalfSat.length : 0
+  const avgSatSecond = secondHalfSat.length ? secondHalfSat.reduce((s, d) => s + d.satisfactionScore, 0) / secondHalfSat.length : 0
+  const satisfactionTrendPercent = avgSatFirst > 0 && avgSatSecond > 0
+    ? Math.round(((avgSatSecond - avgSatFirst) / avgSatFirst) * 100)
+    : null
+
+  const responseTimeTrendPercent = computeResponseTimeTrend(dailyMetrics)
+
   // Activity Data for Heatmap & Velocity (Last 14 days or available range)
   const activityData = dailyMetrics.slice(-14).map(d => ({
     date: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' }),
@@ -105,13 +140,25 @@ export function MyPerformanceContent({ performance }: MyPerformanceContentProps)
     assigned: d.assigned
   }))
 
-  // Radar Chart Data (Skills Shape)
+  // Radar Chart Data (Skills Shape) - all derived from real metrics
+  const speedScore = performance.avgResponseTimeHours > 0
+    ? Math.max(0, 100 - performance.avgResponseTimeHours * 15) // Faster = higher (e.g. <2h = 70+)
+    : 50
+  const qualityScore = (performance.satisfactionScore / 5) * 100
+  const volumeScore = Math.min(performance.ticketsResolved * 5, 100)
+  const consistencyScore = dailyMetrics.length > 0
+    ? (dailyMetrics.filter(d => d.resolved > 0).length / dailyMetrics.length) * 100
+    : 0
+  const efficiencyScore = performance.ticketsAssigned > 0
+    ? Math.min((performance.ticketsResolved / performance.ticketsAssigned) * 50, 100) // 2:1 ratio = 100
+    : 0
+
   const skillsData = [
-    { subject: 'Speed', A: performance.avgResponseTimeHours > 0 && performance.avgResponseTimeHours < 2 ? 90 : 70, fullMark: 100 },
-    { subject: 'Quality', A: (performance.satisfactionScore / 5) * 100, fullMark: 100 },
-    { subject: 'Volume', A: Math.min(performance.ticketsResolved * 5, 100), fullMark: 100 }, // Scaled
-    { subject: 'Consistency', A: dailyMetrics.filter(d => d.resolved > 0).length / Math.max(dailyMetrics.length, 1) * 100, fullMark: 100 },
-    { subject: 'Empathy', A: 90, fullMark: 100 }, // Static/Subjective placeholder for now
+    { subject: 'Speed', A: speedScore, fullMark: 100 },
+    { subject: 'Quality', A: qualityScore, fullMark: 100 },
+    { subject: 'Volume', A: volumeScore, fullMark: 100 },
+    { subject: 'Consistency', A: consistencyScore, fullMark: 100 },
+    { subject: 'Efficiency', A: efficiencyScore, fullMark: 100 },
   ]
 
   // Velocity Area Chart Data
@@ -132,17 +179,22 @@ export function MyPerformanceContent({ performance }: MyPerformanceContentProps)
       value?: number | string
       fill?: string
       color?: string
+      payload?: { fullDate?: string }
     }>
     label?: string
   }) => {
     if (active && payload && payload.length) {
+      const fullDate = payload[0]?.payload?.fullDate
+      const dateLabel = fullDate 
+        ? new Date(fullDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+        : label
       return (
         <div className="rounded-lg border border-border bg-background/95 backdrop-blur-sm p-3 shadow-xl text-xs">
-          <p className="font-semibold mb-1">{label}</p>
-          {payload.map((p, i) => (
+          <p className="font-semibold mb-2">{dateLabel}</p>
+          {payload.filter(p => p.value !== undefined && p.value !== null).map((p, i) => (
             <div key={i} className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
-              <span className="capitalize text-muted-foreground">{p.name}:</span>
+              <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: p.color || p.fill }} />
+              <span className="text-muted-foreground">{p.name}:</span>
               <span className="font-mono font-medium">{p.value}</span>
             </div>
           ))}
@@ -173,10 +225,16 @@ export function MyPerformanceContent({ performance }: MyPerformanceContentProps)
               <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <CheckCircle className="w-5 h-5" />
               </div>
-              <div className="flex items-center gap-1 text-emerald-600 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-full">
-                <TrendingUp className="w-3 h-3" />
-                +12%
-              </div>
+              {resolvedTrendPercent !== null && (
+                <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+                  resolvedTrendPercent >= 0
+                    ? 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30'
+                    : 'text-muted-foreground bg-muted/50'
+                }`}>
+                  {resolvedTrendPercent >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {resolvedTrendPercent >= 0 ? '+' : ''}{resolvedTrendPercent}%
+                </div>
+              )}
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">Resolved</p>
@@ -221,9 +279,20 @@ export function MyPerformanceContent({ performance }: MyPerformanceContentProps)
               <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
                 <Star className="w-5 h-5" />
               </div>
-              <div className="flex items-center gap-1 text-amber-600 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-full">
-                Top 5%
-              </div>
+              {feedbackCount > 0 ? (
+                <div className="flex items-center gap-1 text-amber-600 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-full">
+                  {feedbackCount} {feedbackCount === 1 ? 'rating' : 'ratings'}
+                </div>
+              ) : satisfactionTrendPercent !== null ? (
+                <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+                  satisfactionTrendPercent >= 0
+                    ? 'text-amber-600 bg-amber-100 dark:bg-amber-900/30'
+                    : 'text-muted-foreground bg-muted/50'
+                }`}>
+                  {satisfactionTrendPercent >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {satisfactionTrendPercent >= 0 ? '+' : ''}{satisfactionTrendPercent}%
+                </div>
+              ) : null}
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">Satisfaction</p>
@@ -246,10 +315,16 @@ export function MyPerformanceContent({ performance }: MyPerformanceContentProps)
               <div className="p-2 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
                 <Clock className="w-5 h-5" />
               </div>
-              <div className="flex items-center gap-1 text-emerald-600 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-full">
-                <TrendingDown className="w-3 h-3" />
-                -5% vs avg
-              </div>
+              {responseTimeTrendPercent !== null && (
+                <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+                  responseTimeTrendPercent <= 0
+                    ? 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30'
+                    : 'text-muted-foreground bg-muted/50'
+                }`}>
+                  {responseTimeTrendPercent <= 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
+                  {responseTimeTrendPercent <= 0 ? 'Improving' : 'Slower'}
+                </div>
+              )}
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">Avg Response</p>
@@ -351,37 +426,89 @@ export function MyPerformanceContent({ performance }: MyPerformanceContentProps)
       </motion.div>
 
       {/* 
-        ROW 3: Activity Heatmap (Full Width)
+        ROW 3: Activity History (Full Width) - Enhanced design
       */}
       <motion.div variants={itemVariants} className="col-span-12">
-        <Card className="border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl">
+        <Card className="border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl relative overflow-hidden group hover:bg-white/60 dark:hover:bg-white/[0.07] transition-colors">
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#2cafdd]/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <CardContent className="p-6">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-muted rounded-xl">
-                <CalendarIcon className="w-5 h-5 text-muted-foreground" />
+            {/* Header with summary stats */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-[#2cafdd]/15 to-transparent text-[#2cafdd]">
+                  <CalendarIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Activity History</h3>
+                  <p className="text-sm text-muted-foreground">Assigned vs resolved tickets (Last 14 days)</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-lg">Activity History</h3>
-                <p className="text-sm text-muted-foreground">Daily resolution volume (Last 14 days)</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-sm font-medium">
+                    {activityData.reduce((sum, d) => sum + d.resolved, 0)} resolved
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#2cafdd]/10 text-[#2cafdd]">
+                  <Ticket className="w-4 h-4" />
+                  <span className="text-sm font-medium">
+                    {activityData.reduce((sum, d) => sum + d.assigned, 0)} assigned
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
+                    Resolved
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-[#2cafdd]" />
+                    Assigned
+                  </span>
+                </div>
               </div>
             </div>
-            
-            <div className="h-[120px] w-full">
+
+            {/* Chart */}
+            <div className="h-[180px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={activityData}>
-                  <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}} />
-                  <Bar dataKey="resolved" radius={[4, 4, 4, 4]} barSize={40}>
-                    {activityData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.resolved > 5 ? COLORS.emerald : entry.resolved > 2 ? COLORS.primary : COLORS.secondary}
-                        fillOpacity={0.8}
-                      />
-                    ))}
-                  </Bar>
+                <BarChart
+                  data={activityData}
+                  margin={{ top: 8, right: 8, left: 0, bottom: 4 }}
+                  barGap={4}
+                  barCategoryGap="12%"
+                >
+                  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    dy={8}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    allowDecimals={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(156, 163, 175, 0.2)' }} />
+                  <Bar dataKey="resolved" name="Resolved" fill={COLORS.emerald} radius={[4, 4, 0, 0]} barSize={24} />
+                  <Bar dataKey="assigned" name="Assigned" fill={COLORS.primary} radius={[4, 4, 0, 0]} barSize={24} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
+
+            {/* Peak day highlight (if any data) */}
+            {activityData.length > 0 && (() => {
+              const maxResolved = Math.max(...activityData.map(d => d.resolved))
+              const peakDay = activityData.find(d => d.resolved === maxResolved)
+              return maxResolved > 0 && peakDay ? (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Peak day: <span className="font-medium text-foreground">{peakDay.date}</span> with {peakDay.resolved} resolved
+                </p>
+              ) : null
+            })()}
           </CardContent>
         </Card>
       </motion.div>
