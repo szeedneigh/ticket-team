@@ -116,8 +116,10 @@ export function EmailSettings() {
 
   const handleTestEmail = async () => {
     toast({
-      title: 'Test Email',
-      description: 'Test email functionality not yet implemented',
+      title: 'Coming Soon',
+      description:
+        'Test email will send a sample message to verify SMTP configuration. This feature is planned for a future release.',
+      variant: 'default',
     })
   }
 
@@ -144,14 +146,14 @@ export function EmailSettings() {
             Test Email
           </Button>
           <Button 
-          size="sm" 
-          onClick={handleSave} 
-          disabled={isSaving}
-          className="shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all bg-gradient-to-r from-[#1f3463] to-[#2cafdd] hover:opacity-90 text-white border-0"
-        >
-          <Save className="mr-2 h-3.5 w-3.5" />
-          {isSaving ? 'Saving...' : 'Save Changes'}
-        </Button>
+            size="sm" 
+            onClick={handleSave} 
+            disabled={isSaving}
+            className="btn-primary-brand"
+          >
+            <Save className="mr-2 h-3.5 w-3.5" />
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
         </div>
       </div>
 

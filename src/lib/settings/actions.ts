@@ -65,6 +65,99 @@ export async function getSystemConfig(): Promise<SystemConfig | null> {
 }
 
 /**
+ * Attachment config for file upload validation (public subset for client components)
+ */
+export interface AttachmentConfig {
+  maxFileSizeBytes: number
+  allowedMimeTypes: string[]
+}
+
+/**
+ * Get attachment config from system settings (for file upload validation)
+ * Returns null-safe defaults when config is missing.
+ */
+export async function getAttachmentConfig(): Promise<AttachmentConfig> {
+  const config = await getSystemConfig()
+  if (!config) {
+    return {
+      maxFileSizeBytes: 10 * 1024 * 1024, // 10MB default
+      allowedMimeTypes: [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain',
+        'text/csv',
+        'application/zip',
+        'application/x-zip-compressed',
+        'application/x-rar-compressed',
+      ],
+    }
+  }
+  const extensions = config.allowed_attachment_types
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+  const allowedMimeTypes = extensionsToMimeTypes(extensions)
+  return {
+    maxFileSizeBytes: (config.max_attachment_size_mb || 10) * 1024 * 1024,
+    allowedMimeTypes: allowedMimeTypes.length > 0 ? allowedMimeTypes : [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'application/pdf',
+    ],
+  }
+}
+
+/**
+ * Get public attachment config for passing to client components (serializable)
+ */
+export async function getPublicAttachmentConfig(): Promise<AttachmentConfig> {
+  return getAttachmentConfig()
+}
+
+/**
+ * Map file extensions to MIME types (matches FILE_EXTENSION_MAP in validations)
+ */
+const EXTENSION_TO_MIME: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  txt: 'text/plain',
+  csv: 'text/csv',
+  zip: 'application/zip',
+  rar: 'application/x-rar-compressed',
+  '7z': 'application/x-7z-compressed',
+}
+
+function extensionsToMimeTypes(extensions: string[]): string[] {
+  const mimeSet = new Set<string>()
+  for (const ext of extensions) {
+    const mime = EXTENSION_TO_MIME[ext]
+    if (mime) mimeSet.add(mime)
+  }
+  return Array.from(mimeSet)
+}
+
+/**
  * Get email configuration
  */
 export async function getEmailConfig(): Promise<EmailConfig | null> {

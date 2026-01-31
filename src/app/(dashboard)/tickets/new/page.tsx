@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { TicketForm } from '@/components/tickets/ticket-form'
 import { getCategoriesWithSubcategories } from '@/lib/tickets/queries'
+import { getPublicAttachmentConfig } from '@/lib/settings/actions'
 import { Button } from '@/components/ui/button'
 
 /**
@@ -31,13 +32,17 @@ export default async function NewTicketPage() {
     redirect('/auth/sign-in?redirect=/tickets/new')
   }
 
-  // 2. Fetch categories with subcategories
+  // 2. Fetch categories with subcategories and attachment config
   let categories: Awaited<ReturnType<typeof getCategoriesWithSubcategories>> = []
+  let attachmentConfig: Awaited<ReturnType<typeof getPublicAttachmentConfig>> | null = null
 
   try {
-    categories = await getCategoriesWithSubcategories(supabase)
+    ;[categories, attachmentConfig] = await Promise.all([
+      getCategoriesWithSubcategories(supabase),
+      getPublicAttachmentConfig(),
+    ])
   } catch (error) {
-    console.error('Failed to fetch categories:', error)
+    console.error('Failed to fetch categories or config:', error)
     // Continue with empty categories - form will show error state
   }
 
@@ -79,7 +84,7 @@ export default async function NewTicketPage() {
 
       {/* Main Content */}
       <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-3xl relative z-10">
-        <TicketForm categories={categories} />
+        <TicketForm categories={categories} attachmentConfig={attachmentConfig ?? undefined} />
       </div>
     </div>
   )

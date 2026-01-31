@@ -15,29 +15,29 @@ import { usePreferences } from '@/providers/preferences-provider'
 const Sidebar = dynamic(() => import('./sidebar').then(mod => ({ default: mod.Sidebar })), {
   loading: () => (
     <aside className="hidden lg:flex flex-col flex-shrink-0 w-[280px] h-screen bg-[linear-gradient(180deg,#002C64_48.56%,#0693D2_100%)] border-r border-white/10">
-      {/* Logo Skeleton */}
-      <div className="p-6 pb-2 mb-2 flex items-center gap-3">
-        <Skeleton className="w-11 h-11 rounded-xl bg-white/20" />
+      {/* Logo Skeleton - matches Sidebar p-4 pb-2, w-10 h-10 */}
+      <div className="p-4 pb-2 flex items-center gap-2.5">
+        <Skeleton className="w-10 h-10 rounded-xl bg-white/20" />
         <Skeleton className="h-6 w-32 bg-white/20" />
       </div>
 
-      {/* Nav Skeleton */}
-      <div className="flex-1 px-4 py-6 space-y-2 overflow-hidden">
+      {/* Nav Skeleton - matches Sidebar px-3 py-4, h-10 nav items */}
+      <div className="flex-1 px-3 py-4 space-y-1.5 overflow-hidden">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="flex items-center w-full h-12 px-3.5 gap-3">
-             <Skeleton className="w-[22px] h-[22px] rounded bg-white/20" />
-             <Skeleton className="h-4 w-32 bg-white/10" />
+          <div key={i} className="flex items-center w-full h-10 px-3 gap-2.5">
+            <Skeleton className="w-5 h-5 rounded bg-white/20" />
+            <Skeleton className="h-4 w-32 bg-white/10" />
           </div>
         ))}
       </div>
 
-      {/* Profile Skeleton */}
-      <div className="p-4 mt-auto">
-        <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 flex items-center gap-3">
-          <Skeleton className="w-10 h-10 rounded-full bg-white/20" />
+      {/* Profile Skeleton - matches Sidebar p-3 mt-auto, p-2.5 profile box */}
+      <div className="p-3 mt-auto">
+        <div className="p-2.5 rounded-2xl bg-white/10 border border-white/10 flex items-center gap-2.5">
+          <Skeleton className="w-9 h-9 rounded-full bg-white/20" />
           <div className="space-y-1.5 flex-1">
-             <Skeleton className="h-3.5 w-24 bg-white/20" />
-             <Skeleton className="h-3 w-16 bg-white/10" />
+            <Skeleton className="h-3.5 w-24 bg-white/20" />
+            <Skeleton className="h-3 w-16 bg-white/10" />
           </div>
         </div>
       </div>

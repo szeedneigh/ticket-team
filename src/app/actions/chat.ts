@@ -10,6 +10,11 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
+import { getSystemConfig } from '@/lib/settings/actions'
+import { pickAssigneeForTicket } from '@/lib/tickets/assignment'
+import { notifyTicketAssignment } from '@/lib/email/notifications'
+import { ACTIVITY_TYPES } from '@/lib/constants/activity-types'
 import {
   createSession,
   archiveSession,
@@ -664,6 +669,21 @@ export async function createTicketFromChat(params: {
       ? `**Additional Context from User:**\n\n${params.userAdditions}\n\n---\n\n${params.description}`
       : params.description
 
+    // Resolve assigned_to: auto-assign when enabled and user did not pick someone
+    let finalAssignedTo: string | null = params.assignedTo || null
+    let isAutoAssigned = false
+    const config = await getSystemConfig()
+    if (config?.auto_assignment_enabled && !params.assignedTo) {
+      const staffId = await pickAssigneeForTicket({
+        category: params.category,
+        priority: params.priority,
+      })
+      if (staffId) {
+        finalAssignedTo = staffId
+        isAutoAssigned = true
+      }
+    }
+
     // Create the ticket with reviewed data
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
@@ -674,7 +694,7 @@ export async function createTicketFromChat(params: {
         priority: params.priority,
         status: 'open',
         user_id: user.id,
-        assigned_to: params.assignedTo || null,
+        assigned_to: finalAssignedTo,
         metadata: {
           escalated_from_chat: true,
           session_id: params.sessionId,
@@ -694,6 +714,39 @@ export async function createTicketFromChat(params: {
       return {
         success: false,
         error: 'Failed to create ticket. Please try again.',
+      }
+    }
+
+    // Log activity and notify when auto-assigned
+    if (isAutoAssigned && finalAssignedTo) {
+      try {
+        const serviceClient = createServiceClient()
+        const { data: assigneeData } = await serviceClient
+          .from('users')
+          .select('full_name')
+          .eq('id', finalAssignedTo)
+          .single()
+
+        await serviceClient.from('ticket_activities').insert({
+          ticket_id: ticket.id,
+          user_id: null,
+          action: ACTIVITY_TYPES.TICKET_ASSIGNED,
+          old_value: null,
+          new_value: finalAssignedTo,
+          metadata: {
+            auto_assigned: true,
+            assigned_to_name: assigneeData?.full_name || 'Staff',
+          },
+        })
+
+        notifyTicketAssignment(ticket.id, finalAssignedTo, 'System').catch((err) => {
+          logger.error('Auto-assignment email error', { error: err, ticketId: ticket.id })
+        })
+      } catch (activityError) {
+        logger.error('Auto-assignment activity log error', {
+          error: activityError instanceof Error ? activityError.message : 'Unknown',
+          ticketId: ticket.id,
+        })
       }
     }
 

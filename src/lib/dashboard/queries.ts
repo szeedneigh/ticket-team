@@ -10,6 +10,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUser } from '@/lib/auth/session'
 import { logger } from '@/lib/logger'
+import { getSystemConfig } from '@/lib/settings/actions'
+import { getSLAThresholds } from '@/lib/settings/sla'
 import type {
   DashboardStats,
   Activity,
@@ -18,15 +20,6 @@ import type {
   KBStats,
   DashboardData
 } from '@/lib/types/dashboard'
-
-/**
- * SLA thresholds in hours by priority
- */
-const SLA_THRESHOLDS = {
-  low: 48,      // 2 days
-  medium: 24,   // 1 day
-  high: 8,      // 8 hours
-} as const
 
 /**
  * Format duration in hours to human-readable string
@@ -197,12 +190,13 @@ async function calculateOverdueTickets(userId: string, isStaff: boolean): Promis
       return 0
     }
 
-    // Check each ticket against SLA threshold
+    // Check each ticket against SLA threshold (from system config)
+    const slaThresholds = getSLAThresholds(await getSystemConfig())
     const now = new Date().getTime()
     const overdueCount = data.filter(ticket => {
       const createdAt = new Date(ticket.created_at).getTime()
       const ageInHours = (now - createdAt) / (1000 * 60 * 60)
-      const threshold = SLA_THRESHOLDS[ticket.priority as keyof typeof SLA_THRESHOLDS]
+      const threshold = slaThresholds[ticket.priority] ?? slaThresholds.medium
       return ageInHours > threshold
     }).length
 

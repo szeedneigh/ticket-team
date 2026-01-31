@@ -34,11 +34,14 @@ const FORBIDDEN_SECRETS = [
 ]
 
 /**
- * Allowed patterns that may contain the secret names but are safe
+ * Allowed patterns that may contain the secret names but are safe.
+ * All patterns use the 'g' flag to remove every occurrence (e.g. multiple
+ * JSDoc blocks in bundled deps like @supabase/auth-js).
  */
 const ALLOWED_PATTERNS = [
-  /\/\*\*.*?\*\//s, // JSDoc comments
-  /\/\/.*$/m, // Single-line comments
+  /\/\*\*[\s\S]*?\*\//g, // JSDoc comments (multi-line)
+  /\/\*[\s\S]*?\*\//g, // Block comments (/* ... */)
+  /\/\/.*$/gm, // Single-line comments
   /['"]use (client|server)['"]/g, // React directives
   /process\.env\[['"][^'"]+['"]\]/g, // Dynamic env access (safe if handled correctly)
 ]
@@ -49,10 +52,10 @@ const ALLOWED_PATTERNS = [
 function checkForSecrets(content: string, filePath: string): SecurityIssue[] {
   const issues: SecurityIssue[] = []
 
-  // Remove allowed patterns
+  // Remove allowed patterns (use replaceAll for global patterns)
   let cleanedContent = content
   for (const pattern of ALLOWED_PATTERNS) {
-    cleanedContent = cleanedContent.replace(pattern, '')
+    cleanedContent = cleanedContent.replaceAll(pattern, '')
   }
 
   for (const secret of FORBIDDEN_SECRETS) {

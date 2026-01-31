@@ -144,12 +144,21 @@ export function CategoriesView() {
     }
   }
 
+  const findCategoryById = (cats: Category[], targetId: string): Category | null => {
+    for (const cat of cats) {
+      if (cat.id === targetId) return cat
+      if (cat.children?.length) {
+        const found = findCategoryById(cat.children, targetId)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
   const handleDeleteCategory = async (id: string) => {
     try {
-      // Check if category has children
-      const hasChildren = categories.some(cat =>
-        cat.parent_id === id || cat.children?.some(child => child.id === id)
-      )
+      const target = findCategoryById(categories, id)
+      const hasChildren = Boolean(target?.children && target.children.length > 0)
 
       if (hasChildren) {
         toast({
@@ -242,8 +251,7 @@ export function CategoriesView() {
           <Button
             size="sm"
             onClick={() => setShowAddForm(true)}
-            style={{ backgroundImage: 'linear-gradient(to right, #1f3463, #2cafdd)' }}
-            className="shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all hover:opacity-90 text-white border-0"
+            className="btn-primary-brand"
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Category

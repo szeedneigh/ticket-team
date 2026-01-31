@@ -299,25 +299,33 @@ export async function getCategories(): Promise<
  * @returns Sorted array of unique tags
  */
 export async function getAllTags(): Promise<string[]> {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from('knowledge_articles')
-    .select('tags')
-    .eq('status', 'published')
+    const { data, error } = await supabase
+      .from('knowledge_articles')
+      .select('tags')
+      .eq('status', 'published')
 
-  if (error) {
-    console.error('Error fetching tags:', error)
+    if (error) {
+      console.error('Error fetching tags:', error)
+      return []
+    }
+
+    // Flatten and deduplicate tags (guard against null/undefined tags from DB)
+    const allTags = new Set<string>()
+    data?.forEach((row) => {
+      const tags = row?.tags
+      if (Array.isArray(tags)) {
+        tags.forEach((tag: string) => allTags.add(tag))
+      }
+    })
+
+    return Array.from(allTags).sort()
+  } catch (err) {
+    console.error('getAllTags error:', err)
     return []
   }
-
-  // Flatten and deduplicate tags
-  const allTags = new Set<string>()
-  data?.forEach(({ tags }) => {
-    tags.forEach((tag: string) => allTags.add(tag))
-  })
-
-  return Array.from(allTags).sort()
 }
 
 // ============================================================================

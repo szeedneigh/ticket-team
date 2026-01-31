@@ -22,6 +22,7 @@ import { exportStaffPerformance } from '@/lib/analytics/export'
 import type { ExportFormat } from '@/lib/types/analytics'
 
 interface StaffMember {
+  userId?: string
   userName: string
   email: string
   ticketsResolved: number
@@ -30,6 +31,7 @@ interface StaffMember {
   overdueTickets: number
   avgResolutionTime: string
   satisfactionScore?: number // Optional - not shown to staff
+  feedbackCount?: number
 }
 
 interface StaffPerformanceContentProps {
@@ -71,7 +73,7 @@ export function StaffPerformanceContent({
   const handleExport = async (format: ExportFormat) => {
     exportStaffPerformance(format, {
       staff: staffPerformance.map(s => ({
-        userId: '',
+        userId: s.userId ?? '',
         userName: s.userName,
         email: s.email,
         ticketsResolved: s.ticketsResolved,
@@ -83,6 +85,7 @@ export function StaffPerformanceContent({
         satisfactionScore: s.satisfactionScore ?? 0,
         activeTickets: s.activeTickets,
         overdueTickets: s.overdueTickets,
+        feedbackCount: s.feedbackCount ?? 0,
         dailyMetrics: [],
       })),
       period: {

@@ -26,6 +26,8 @@ interface Category {
   is_active: boolean
   display_order: number
   created_at: string
+  ticket_count?: number
+  article_count?: number
 }
 
 interface ActionResult<T = void> {
@@ -93,7 +95,30 @@ export async function getCategories(filters?: {
       return { error: error.message }
     }
 
-    return { success: true, data: data || [] }
+    // Get usage counts for each category (tickets and KB use category name)
+    const categoriesWithCounts = await Promise.all(
+      (data || []).map(async (cat) => {
+        let ticketCount = 0
+        let articleCount = 0
+        try {
+          const [ticketRes, articleRes] = await Promise.all([
+            supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('category', cat.name),
+            supabase.from('knowledge_articles').select('*', { count: 'exact', head: true }).eq('category', cat.name),
+          ])
+          ticketCount = ticketRes.count ?? 0
+          articleCount = articleRes.count ?? 0
+        } catch {
+          // Counts are optional; continue with 0
+        }
+        return {
+          ...cat,
+          ticket_count: ticketCount,
+          article_count: articleCount,
+        }
+      })
+    )
+
+    return { success: true, data: categoriesWithCounts }
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : 'Failed to fetch categories',

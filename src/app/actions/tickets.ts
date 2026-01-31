@@ -13,10 +13,12 @@ import { createServiceClient } from '@/lib/supabase/service'
 import {
   createTicketSchema,
   FILE_UPLOAD,
-  isValidFileSize,
-  isValidFileType,
+  isValidFileSizeForConfig,
+  isValidFileTypeForConfig,
 } from '@/lib/validations/tickets'
+import { getAttachmentConfig, getSystemConfig } from '@/lib/settings/actions'
 import { uploadTicketAttachment } from '@/lib/tickets/storage'
+import { pickAssigneeForTicket } from '@/lib/tickets/assignment'
 import { ACTIVITY_TYPES } from '@/lib/constants/activity-types'
 import { ERROR_MESSAGES } from '@/lib/constants'
 import type { TicketStatus, TicketPriority } from '@/lib/types/database'
@@ -103,7 +105,8 @@ export async function createTicket(
       }
     }
 
-    // 3. Extract and validate files
+    // 3. Get attachment config and extract/validate files
+    const attachmentConfig = await getAttachmentConfig()
     const fileCount = parseInt(formData.get('file_count') as string) || 0
     const files: File[] = []
 
@@ -118,26 +121,26 @@ export async function createTicket(
           extension: file.name.split('.').pop(),
         })
 
-        // Validate file size
-        if (!isValidFileSize(file.size)) {
+        // Validate file size (config-aware)
+        if (!isValidFileSizeForConfig(file.size, attachmentConfig)) {
           logger.error('File size validation failed', {
             filename: file.name,
             size: file.size,
-            maxSize: FILE_UPLOAD.MAX_FILE_SIZE,
+            maxSize: attachmentConfig.maxFileSizeBytes,
           })
           return {
             success: false,
-            error: `File "${file.name}" exceeds maximum size of ${FILE_UPLOAD.MAX_FILE_SIZE / 1024 / 1024}MB`,
+            error: `File "${file.name}" exceeds maximum size of ${attachmentConfig.maxFileSizeBytes / 1024 / 1024}MB`,
           }
         }
 
-        // Validate file type (checks both MIME type and extension)
-        if (!isValidFileType(file)) {
+        // Validate file type (config-aware)
+        if (!isValidFileTypeForConfig(file, attachmentConfig)) {
           logger.error('File type validation failed', {
             filename: file.name,
             mimeType: file.type,
             extension: file.name.split('.').pop(),
-            allowedTypes: FILE_UPLOAD.ALLOWED_FILE_TYPES,
+            allowedTypes: attachmentConfig.allowedMimeTypes,
           })
           return {
             success: false,
@@ -190,6 +193,49 @@ export async function createTicket(
       return {
         success: false,
         error: 'Failed to create ticket',
+      }
+    }
+
+    // 4.5. Auto-assignment (if enabled)
+    const config = await getSystemConfig()
+    if (config?.auto_assignment_enabled) {
+      const staffId = await pickAssigneeForTicket({
+        category: validation.data.category,
+        priority: validation.data.priority,
+      })
+      if (staffId) {
+        const serviceClient = createServiceClient()
+        const { error: updateError } = await serviceClient
+          .from('tickets')
+          .update({
+            assigned_to: staffId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', ticket.id)
+
+        if (!updateError) {
+          const { data: assigneeData } = await serviceClient
+            .from('users')
+            .select('full_name')
+            .eq('id', staffId)
+            .single()
+
+          await serviceClient.from('ticket_activities').insert({
+            ticket_id: ticket.id,
+            user_id: null,
+            action: ACTIVITY_TYPES.TICKET_ASSIGNED,
+            old_value: null,
+            new_value: staffId,
+            metadata: {
+              auto_assigned: true,
+              assigned_to_name: assigneeData?.full_name || 'Staff',
+            },
+          })
+
+          notifyTicketAssignment(ticket.id, staffId, 'System').catch((err) => {
+            logger.error('Auto-assignment email error', { error: err, ticketId: ticket.id })
+          })
+        }
       }
     }
 
@@ -327,11 +373,13 @@ export async function createTicket(
  *
  * @param ticketId - The ticket ID to update
  * @param newStatus - The new status
+ * @param resolutionNotes - Optional resolution notes (required when resolving if system config requires it)
  * @returns Response indicating success or error
  */
 export async function updateTicketStatus(
   ticketId: string,
-  newStatus: TicketStatus
+  newStatus: TicketStatus,
+  resolutionNotes?: string
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient()
@@ -383,6 +431,18 @@ export async function updateTicketStatus(
       }
     }
 
+    // 2.5. When resolving, check require_resolution_notes and include resolution_notes
+    if (newStatus === 'resolved') {
+      const config = await getSystemConfig()
+      const notes = resolutionNotes?.trim() ?? ''
+      if (config?.require_resolution_notes && !notes) {
+        return {
+          success: false,
+          error: 'Resolution notes are required when resolving tickets.',
+        }
+      }
+    }
+
     // 3. Update ticket status
     const updateData: Record<string, string | null> = {
       status: newStatus,
@@ -392,6 +452,7 @@ export async function updateTicketStatus(
     // Set resolved_at or closed_at timestamps
     if (newStatus === 'resolved' && ticket.status !== 'resolved') {
       updateData.resolved_at = new Date().toISOString()
+      updateData.resolution_notes = resolutionNotes?.trim() || null
     } else if (newStatus === 'closed' && ticket.status !== 'closed') {
       updateData.closed_at = new Date().toISOString()
     }
@@ -556,6 +617,17 @@ export async function assignTicket(
     if (ticket.assigned_to === newAssignedTo) {
       return {
         success: true, // No change needed
+      }
+    }
+
+    // 3.5. Check reassignment policy (when changing from one assignee to another)
+    if (ticket.assigned_to && newAssignedTo && ticket.assigned_to !== newAssignedTo) {
+      const config = await getSystemConfig()
+      if (!config?.allow_ticket_reassignment) {
+        return {
+          success: false,
+          error: 'Ticket reassignment is disabled by system configuration.',
+        }
       }
     }
 

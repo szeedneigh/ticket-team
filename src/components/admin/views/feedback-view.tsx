@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { getFeedbackAnalytics } from '@/app/actions/feedback'
 import type { FeedbackWithDetails, FeedbackSummary } from '@/lib/types/templates'
 
 export function FeedbackView() {
@@ -39,114 +39,30 @@ export function FeedbackView() {
   const [isLoading, setIsLoading] = useState(true)
   const [ratingFilter, setRatingFilter] = useState<string>('all')
 
-  // Calculate summary
-  const calculateSummary = useCallback(async () => {
-    try {
-      const supabase = createClient()
-
-      // Get all feedback for summary
-      const { data: allFeedback, error } = await supabase
-        .from('ticket_feedback')
-        .select('rating, created_at')
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-
-      if (!allFeedback || allFeedback.length === 0) {
-        setSummary(null)
-        return
-      }
-
-      // Calculate average
-      const totalRating = allFeedback.reduce((sum, f) => sum + f.rating, 0)
-      const avgRating = totalRating / allFeedback.length
-
-      // Calculate distribution
-      const distribution = [1, 2, 3, 4, 5].map(rating => {
-        const count = allFeedback.filter(f => f.rating === rating).length
-        return {
-          rating,
-          count,
-          percentage: Math.round((count / allFeedback.length) * 100),
-        }
-      })
-
-      // Calculate recent trend (last 30 days by day)
-      const thirtyDaysAgo = new Date()
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
-      const recentFeedback = allFeedback.filter(
-        f => new Date(f.created_at) >= thirtyDaysAgo
-      )
-
-      // Group by date
-      const byDate = recentFeedback.reduce((acc, f) => {
-        const date = f.created_at.split('T')[0]
-        if (!acc[date]) {
-          acc[date] = { total: 0, count: 0 }
-        }
-        acc[date].total += f.rating
-        acc[date].count++
-        return acc
-      }, {} as Record<string, { total: number; count: number }>)
-
-      const recentTrend = Object.entries(byDate)
-        .map(([date, { total, count }]) => ({
-          date,
-          avgRating: Math.round((total / count) * 10) / 10,
-          count,
-        }))
-        .sort((a, b) => a.date.localeCompare(b.date))
-
-      setSummary({
-        totalFeedback: allFeedback.length,
-        averageRating: Math.round(avgRating * 10) / 10,
-        ratingDistribution: distribution,
-        recentTrend,
-      })
-    } catch (error) {
-      console.error('Error calculating summary:', error)
-    }
-  }, [])
-
-  // Fetch feedback
   const fetchFeedback = useCallback(async () => {
     setIsLoading(true)
     try {
-      const supabase = createClient()
+      const result = await getFeedbackAnalytics(ratingFilter)
 
-      let query = supabase
-        .from('ticket_feedback')
-        .select(`
-          *,
-          ticket:tickets(id, title, category, status, created_at),
-          user:users(id, full_name, email)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(100)
-
-      if (ratingFilter && ratingFilter !== 'all') {
-        query = query.eq('rating', parseInt(ratingFilter))
+      if (result.error) {
+        throw new Error(result.error)
       }
 
-      const { data, error } = await query
-
-      if (error) throw error
-      setFeedback(data || [])
-
-      // Calculate summary
-      await calculateSummary()
+      setFeedback(result.feedback || [])
+      setSummary(result.summary ?? null)
     } catch (error) {
       console.error('Error fetching feedback:', error)
       toast({
         title: 'Error',
-        description: 'Failed to load feedback',
+        description: error instanceof Error ? error.message : 'Failed to load feedback',
         variant: 'destructive',
       })
+      setFeedback([])
+      setSummary(null)
     } finally {
       setIsLoading(false)
     }
-  }, [ratingFilter, calculateSummary, toast])
+  }, [ratingFilter, toast])
 
   useEffect(() => {
     fetchFeedback()
@@ -209,13 +125,13 @@ export function FeedbackView() {
   }
 
   const getRatingColor = (rating: number) => {
-    if (rating >= 4) return 'bg-green-100 text-green-800'
-    if (rating >= 3) return 'bg-yellow-100 text-yellow-800'
-    return 'bg-red-100 text-red-800'
+    if (rating >= 4) return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+    if (rating >= 3) return 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+    return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -244,7 +160,7 @@ export function FeedbackView() {
       {/* Summary Cards */}
       {summary && (
         <div className="grid gap-4 md:grid-cols-4">
-          <Card>
+          <Card className="bg-card/50 backdrop-blur-sm border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium">Total Feedback</CardTitle>
             </CardHeader>
@@ -254,7 +170,7 @@ export function FeedbackView() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-card/50 backdrop-blur-sm border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
             </CardHeader>
@@ -267,7 +183,7 @@ export function FeedbackView() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-card/50 backdrop-blur-sm border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium">Positive Rate</CardTitle>
             </CardHeader>
@@ -281,7 +197,7 @@ export function FeedbackView() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-card/50 backdrop-blur-sm border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium">Recent Trend</CardTitle>
             </CardHeader>
@@ -304,14 +220,14 @@ export function FeedbackView() {
 
       {/* Rating Distribution */}
       {summary && (
-        <Card>
+        <Card className="bg-card/50 backdrop-blur-sm border-border">
           <CardHeader>
             <CardTitle>Rating Distribution</CardTitle>
             <CardDescription>Breakdown of feedback by star rating</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {summary.ratingDistribution.reverse().map((d) => (
+              {[...summary.ratingDistribution].reverse().map((d) => (
                 <div key={d.rating} className="flex items-center gap-3">
                   <div className="flex items-center gap-1 w-20">
                     <span className="text-sm font-medium">{d.rating}</span>
@@ -336,7 +252,7 @@ export function FeedbackView() {
       )}
 
       {/* Filters */}
-      <Card>
+      <Card className="bg-card/50 backdrop-blur-sm border-border">
         <CardContent className="pt-6">
           <div className="flex gap-4">
             <Select value={ratingFilter} onValueChange={setRatingFilter}>
@@ -357,7 +273,7 @@ export function FeedbackView() {
       </Card>
 
       {/* Feedback Table */}
-      <Card>
+      <Card className="bg-card/50 backdrop-blur-sm border-border">
         <CardHeader>
           <CardTitle>Recent Feedback</CardTitle>
           <CardDescription>
@@ -370,10 +286,14 @@ export function FeedbackView() {
               <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : feedback.length === 0 ? (
-            <div className="flex h-32 flex-col items-center justify-center text-muted-foreground">
+            <div className="flex h-32 flex-col items-center justify-center text-muted-foreground text-center px-4">
               <MessageSquare className="h-8 w-8 mb-2" />
-              <p>No feedback found</p>
-              <p className="text-sm">Feedback will appear here after tickets are resolved</p>
+              <p>No individual feedback to display</p>
+              <p className="text-sm">
+                {summary && summary.totalFeedback > 0
+                  ? 'Individual feedback details are visible to super admins only. Aggregate metrics are shown above.'
+                  : 'Feedback will appear here after tickets are resolved.'}
+              </p>
             </div>
           ) : (
             <Table>
