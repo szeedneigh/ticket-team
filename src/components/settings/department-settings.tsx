@@ -114,11 +114,12 @@ function SortableRow({
 // Main Component
 // ============================================================================
 
-export function DepartmentSettings() {
+export function DepartmentSettings({ initialData }: { initialData?: unknown }) {
   const { toast } = useToast()
-  const [departments, setDepartments] = useState<Department[]>([])
+  const data = Array.isArray(initialData) ? (initialData as Department[]) : null
+  const [departments, setDepartments] = useState<Department[]>(data ?? [])
   const [newDeptName, setNewDeptName] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(!data)
   const [isSaving, setIsSaving] = useState(false)
 
   // DnD sensors
@@ -158,8 +159,8 @@ export function DepartmentSettings() {
   }, [toast])
 
   useEffect(() => {
-    loadDepartments()
-  }, [loadDepartments])
+    if (!Array.isArray(initialData)) loadDepartments()
+  }, [loadDepartments, initialData])
 
   const handleAddDepartment = async () => {
     if (!newDeptName.trim()) {
