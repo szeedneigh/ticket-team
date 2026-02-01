@@ -41,6 +41,7 @@ import { DraftRecoveryDialog } from './draft-recovery-dialog'
 import type { DraftData } from './draft-recovery-dialog'
 import { useAutoSave } from '@/lib/hooks/use-auto-save'
 import { cn } from '@/lib/utils'
+import * as Sentry from '@sentry/nextjs'
 
 // Dynamic import for TiptapEditor to reduce initial bundle size
 const TiptapEditor = dynamic(() => import('./tiptap-editor').then(mod => ({ default: mod.TiptapEditor })), {
@@ -205,6 +206,13 @@ export function KBEditorForm({ article, existingTags = [], mode, createArticleAc
         }
       } catch (error) {
         console.error('Form submission error:', error)
+        Sentry.captureException(error, {
+          tags: { component: 'KBEditorForm', action: mode === 'edit' ? 'updateArticle' : 'createArticle' },
+          extra: {
+            digest: (error as Error & { digest?: string })?.digest,
+            mode
+          }
+        })
         toast.error('Failed to save article. Please try again.')
       }
     })
