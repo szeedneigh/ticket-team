@@ -23,7 +23,6 @@ import { toast } from 'sonner'
 import dynamic from 'next/dynamic'
 import { kbArticleSchema, type KBArticleInput } from '@/lib/validations/kb-articles'
 import type { KnowledgeArticleWithAuthor } from '@/lib/types/knowledge-base'
-import { createArticle, updateArticle } from '@/lib/kb/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -77,13 +76,20 @@ const CATEGORIES = [
   }
 ]
 
+type CreateArticleAction = (data: KBArticleInput) => Promise<{ error?: string; success?: boolean; data?: { id: string } }>
+type UpdateArticleAction = (id: string, data: Partial<KBArticleInput>) => Promise<{ error?: string; success?: boolean }>
+
 interface KBEditorFormProps {
   article?: KnowledgeArticleWithAuthor
   existingTags?: string[]
   mode: 'create' | 'edit'
+  /** Passed from Server Component to avoid Client import - fixes production Server Action resolution */
+  createArticleAction: CreateArticleAction
+  /** Passed from Server Component to avoid Client import - fixes production Server Action resolution */
+  updateArticleAction: UpdateArticleAction
 }
 
-export function KBEditorForm({ article, existingTags = [], mode }: KBEditorFormProps) {
+export function KBEditorForm({ article, existingTags = [], mode, createArticleAction, updateArticleAction }: KBEditorFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [selectedCategory, setSelectedCategory] = useState<string>(
@@ -162,9 +168,9 @@ export function KBEditorForm({ article, existingTags = [], mode }: KBEditorFormP
         let result
 
         if (mode === 'edit' && article) {
-          result = await updateArticle(article.id, data)
+          result = await updateArticleAction(article.id, data)
         } else {
-          result = await createArticle(data)
+          result = await createArticleAction(data)
         }
 
         // If there's an error, show it
