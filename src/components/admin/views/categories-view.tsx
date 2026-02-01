@@ -30,11 +30,30 @@ interface Category {
   article_count?: number
 }
 
-export function CategoriesView() {
+function buildCategoryHierarchy(data: Category[]): Category[] {
+  const categoryMap = new Map<string, Category>(data.map((cat: Category) => [cat.id, { ...cat, children: [] as Category[] }]))
+  const rootCategories: Category[] = []
+  data.forEach((cat: Category) => {
+    const category = categoryMap.get(cat.id)!
+    if (cat.parent_id && categoryMap.has(cat.parent_id)) {
+      const parent = categoryMap.get(cat.parent_id)!
+      if (!parent.children) parent.children = []
+      parent.children.push(category)
+    } else {
+      rootCategories.push(category)
+    }
+  })
+  return rootCategories
+}
+
+export function CategoriesView({ initialData }: { initialData?: unknown }) {
   const { toast } = useToast()
 
-  const [categories, setCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const validData = Array.isArray(initialData) ? (initialData as Category[]) : null
+  const [categories, setCategories] = useState<Category[]>(() =>
+    validData ? buildCategoryHierarchy(validData) : []
+  )
+  const [isLoading, setIsLoading] = useState(!validData)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
 
@@ -48,23 +67,7 @@ export function CategoriesView() {
       }
 
       const data = result.data || []
-
-      // Build hierarchy
-      const categoryMap = new Map<string, Category>(data.map((cat: Category) => [cat.id, { ...cat, children: [] as Category[] }]))
-      const rootCategories: Category[] = []
-
-      data.forEach((cat: Category) => {
-        const category = categoryMap.get(cat.id)!
-        if (cat.parent_id && categoryMap.has(cat.parent_id)) {
-          const parent = categoryMap.get(cat.parent_id)!
-          if (!parent.children) parent.children = []
-          parent.children.push(category)
-        } else {
-          rootCategories.push(category)
-        }
-      })
-
-      setCategories(rootCategories)
+      setCategories(buildCategoryHierarchy(data))
     } catch (error) {
       console.error('Error fetching categories:', error)
       toast({
@@ -78,8 +81,8 @@ export function CategoriesView() {
   }, [toast])
 
   useEffect(() => {
-    fetchCategories()
-  }, [fetchCategories])
+    if (!Array.isArray(initialData)) fetchCategories()
+  }, [fetchCategories, initialData])
 
   const handleAddCategory = async (categoryData: Partial<Category>) => {
     try {
