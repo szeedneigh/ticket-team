@@ -43,7 +43,7 @@ export interface UpdateDepartmentInput {
 // ============================================================================
 
 /**
- * Get all departments with optional user count
+ * Get all departments with user count (single RPC, no N+1)
  */
 export async function getDepartments(): Promise<{
   success: boolean
@@ -53,35 +53,25 @@ export async function getDepartments(): Promise<{
   try {
     const supabase = await createClient()
 
-    const { data, error } = await supabase
-      .from('departments')
-      .select('*')
-      .order('display_order', { ascending: true })
+    const { data, error } = await supabase.rpc('get_departments_with_user_counts')
 
     if (error) {
       console.error('Error fetching departments:', error)
       return { success: false, error: error.message }
     }
 
-    // Get user counts for each department
-    const departmentsWithCounts = await Promise.all(
-      (data || []).map(async (dept) => {
-        let userCount = 0
-        try {
-          const { data: countData } = await supabase.rpc(
-            'get_department_user_count',
-            { department_name: dept.name }
-          )
-          userCount = countData ?? 0
-        } catch {
-          // RPC may fail if not migrated; continue with 0
-        }
-        return {
-          ...dept,
-          user_count: userCount,
-        }
-      })
-    )
+    const departmentsWithCounts = (data || []).map((row: Record<string, unknown>) => ({
+      id: row.id,
+      name: row.name,
+      description: row.description ?? undefined,
+      is_active: row.is_active ?? true,
+      display_order: (row.display_order as number) ?? 0,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      created_by: row.created_by ?? undefined,
+      updated_by: row.updated_by ?? undefined,
+      user_count: Number(row.user_count) ?? 0,
+    }))
 
     return { success: true, data: departmentsWithCounts }
   } catch (error) {
