@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Settings2, Mail, Building2, Tag, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTabPrefetch } from '@/lib/prefetch/tab-prefetch-context'
 import { SystemConfigSettings } from '@/components/settings/system-config-settings'
 import { DepartmentSettings } from '@/components/settings/department-settings'
 import { EmailSettings } from '@/components/settings/email-settings'
@@ -51,9 +52,10 @@ const subTabs = [
 
 const VALID_SUB_IDS = ['system', 'email', 'departments', 'categories'] as const
 
-export function SettingsView() {
+export function SettingsView({ initialData: _ }: { initialData?: unknown }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { cache, prefetch } = useTabPrefetch()
   const subParam = searchParams.get('sub')
   const [activeTab, setActiveTab] = useState(
     subParam && VALID_SUB_IDS.includes(subParam as (typeof VALID_SUB_IDS)[number])
@@ -93,6 +95,7 @@ export function SettingsView() {
                 <button
                   key={tab.id}
                   onClick={() => handleSubTabChange(tab.id)}
+                  onMouseEnter={() => prefetch(tab.id)}
                   className={cn(
                     "group relative flex items-center gap-3 px-3 py-3 text-sm font-medium transition-all rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
                     isActive 
@@ -161,7 +164,7 @@ export function SettingsView() {
             
             {/* Content Card */}
             <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-              <ActiveComponent />
+              <ActiveComponent initialData={cache[activeTab]} />
             </div>
           </motion.div>
         </AnimatePresence>
