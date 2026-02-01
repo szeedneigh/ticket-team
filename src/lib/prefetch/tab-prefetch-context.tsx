@@ -47,18 +47,24 @@ const SETTINGS_SUB_FETCHERS: Record<string, () => Promise<unknown>> = {
 export function TabPrefetchProvider({ children }: { children: ReactNode }) {
   const [cache, setCache] = useState<TabPrefetchCache>({})
 
-  const prefetch = useCallback((tabId: string) => {
+  const prefetch = useCallback((tabId: string): Promise<void> => {
     const fetcher = TOP_LEVEL_FETCHERS[tabId] ?? SETTINGS_SUB_FETCHERS[tabId]
-    if (!fetcher) return
+    if (!fetcher) return Promise.resolve()
     // Defer to avoid "Cannot update component while rendering another" - never run
     // fetcher/setState during the render phase (e.g. from Strict Mode or event timing)
-    queueMicrotask(() => {
-      setCache((prev) => {
-        if (prev[tabId]) return prev
-        fetcher()
-          .then((data) => setCache((c) => ({ ...c, [tabId]: data })))
-          .catch(() => {})
-        return prev
+    return new Promise<void>((resolve) => {
+      queueMicrotask(() => {
+        setCache((prev) => {
+          if (prev[tabId]) {
+            resolve()
+            return prev
+          }
+          fetcher()
+            .then((data) => setCache((c) => ({ ...c, [tabId]: data })))
+            .catch(() => {})
+            .finally(() => resolve())
+          return prev
+        })
       })
     })
   }, [])
