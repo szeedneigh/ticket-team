@@ -199,32 +199,6 @@ export async function searchAllSources(
   }
 }
 
-export function buildContextString(
-  sources: RAGSource[],
-  maxLength: number = 4000
-): string {
-  if (sources.length === 0) {
-    return 'No relevant context found.'
-  }
-
-  let context = 'Relevant Information:\n\n'
-  let currentLength = context.length
-
-  for (let i = 0; i < sources.length; i++) {
-    const source = sources[i]
-    const sourceText = `[${i + 1}] ${source.title || source.type}\n${source.content}\n\n`
-
-    if (currentLength + sourceText.length > maxLength) {
-      break
-    }
-
-    context += sourceText
-    currentLength += sourceText.length
-  }
-
-  return context
-}
-
 export async function getTicketContext(ticketId: string): Promise<{
   ticket: Ticket | null
   comments: TicketComment[]
