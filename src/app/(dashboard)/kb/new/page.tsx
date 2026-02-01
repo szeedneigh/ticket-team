@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation'
 import { requireAuth } from '@/lib/auth/session'
 import { isStaffOrAbove } from '@/lib/types/database'
 import { getAllTags } from '@/lib/kb/queries'
+import { createArticle, updateArticle } from '@/lib/kb/actions'
 import { KBEditorForm } from '@/components/kb/kb-editor-form'
 import {
   Breadcrumb,
@@ -77,7 +78,12 @@ export default async function NewArticlePage() {
 
       {/* Form Content */}
       <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-4xl">
-        <KBEditorForm mode="create" existingTags={existingTags ?? []} />
+        <KBEditorForm
+          mode="create"
+          existingTags={existingTags ?? []}
+          createArticleAction={createArticle}
+          updateArticleAction={updateArticle}
+        />
       </div>
     </div>
   )
