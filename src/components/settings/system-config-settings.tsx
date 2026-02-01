@@ -47,10 +47,20 @@ const itemVariants = {
   show: { opacity: 1, y: 0 }
 }
 
-export function SystemConfigSettings() {
+function isSystemConfig(x: unknown): x is SystemConfig {
+  return (
+    typeof x === 'object' &&
+    x !== null &&
+    'sla_response_hours' in x &&
+    typeof (x as SystemConfig).sla_response_hours === 'number'
+  )
+}
+
+export function SystemConfigSettings({ initialData }: { initialData?: unknown }) {
   const { toast } = useToast()
-  const [config, setConfig] = useState<SystemConfig>(DEFAULT_CONFIG)
-  const [isLoading, setIsLoading] = useState(false)
+  const data = isSystemConfig(initialData) ? initialData : null
+  const [config, setConfig] = useState<SystemConfig>(data ?? DEFAULT_CONFIG)
+  const [isLoading, setIsLoading] = useState(!data)
   const [isSaving, setIsSaving] = useState(false)
 
   const loadConfig = useCallback(async () => {
@@ -73,8 +83,8 @@ export function SystemConfigSettings() {
   }, [toast])
 
   useEffect(() => {
-    loadConfig()
-  }, [loadConfig])
+    if (!isSystemConfig(initialData)) loadConfig()
+  }, [loadConfig, initialData])
 
   const handleSave = async () => {
     setIsSaving(true)
