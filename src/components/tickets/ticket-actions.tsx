@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, RotateCcw, User, Tag, CheckCircle } from 'lucide-react'
+import Link from 'next/link'
+import { Loader2, RotateCcw, User, Tag, CheckCircle, BookOpen } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -184,6 +185,10 @@ export function TicketActions({
     (isSubmitter || isStaff) &&
     (ticket.status === 'resolved' || ticket.status === 'closed')
 
+  const canCreateKB =
+    isStaff &&
+    (ticket.status === 'resolved' || ticket.status === 'closed')
+
   // ============================================================================
   // Render
   // ============================================================================
@@ -296,6 +301,19 @@ export function TicketActions({
                 </SelectContent>
               </Select>
             </div>
+          )}
+
+          {/* Create KB Article (Staff, resolved/closed only) */}
+          {canCreateKB && (
+            <>
+              <Separator />
+              <Button asChild variant="outline" className="w-full" disabled={isPending}>
+                <Link href={`/kb/new/from-ticket/${ticket.id}`}>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Create KB Article
+                </Link>
+              </Button>
+            </>
           )}
 
           {/* Reopen Button */}
