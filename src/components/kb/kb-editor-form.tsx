@@ -84,35 +84,39 @@ interface KBEditorFormProps {
   article?: KnowledgeArticleWithAuthor
   existingTags?: string[]
   mode: 'create' | 'edit'
+  /** Pre-populated draft when creating from a resolved ticket */
+  initialDraft?: Partial<KBArticleInput> & { source_ticket_id?: string | null }
   /** Passed from Server Component to avoid Client import - fixes production Server Action resolution */
   createArticleAction: CreateArticleAction
   /** Passed from Server Component to avoid Client import - fixes production Server Action resolution */
   updateArticleAction: UpdateArticleAction
 }
 
-export function KBEditorForm({ article, existingTags = [], mode, createArticleAction, updateArticleAction }: KBEditorFormProps) {
+export function KBEditorForm({ article, existingTags = [], mode, initialDraft, createArticleAction, updateArticleAction }: KBEditorFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    article?.category || ''
-  )
+  const baseCategory = article?.category ?? initialDraft?.category ?? ''
+  const [selectedCategory, setSelectedCategory] = useState<string>(baseCategory)
 
   // Storage key for auto-save
   const storageKey = `kb-draft-${article?.id || 'new'}`
 
+  // Default values: article (edit) > initialDraft (create from ticket) > empty
+  const defaultValues: KBArticleInput = {
+    title: article?.title ?? initialDraft?.title ?? '',
+    content: article?.content ?? initialDraft?.content ?? '',
+    summary: article?.summary ?? initialDraft?.summary ?? '',
+    category: article?.category ?? initialDraft?.category ?? '',
+    subcategory: article?.subcategory ?? initialDraft?.subcategory ?? '',
+    tags: article?.tags ?? initialDraft?.tags ?? [],
+    status: article?.status ?? initialDraft?.status ?? 'draft',
+    source_ticket_id: article?.source_ticket_id ?? initialDraft?.source_ticket_id ?? null
+  }
+
   // Form setup
   const form = useForm<KBArticleInput>({
     resolver: zodResolver(kbArticleSchema),
-    defaultValues: {
-      title: article?.title ?? '',
-      content: article?.content ?? '',
-      summary: article?.summary ?? '',
-      category: article?.category ?? '',
-      subcategory: article?.subcategory ?? '',
-      tags: article?.tags ?? [],
-      status: article?.status ?? 'draft',
-      source_ticket_id: article?.source_ticket_id ?? null
-    },
+    defaultValues,
     mode: 'onChange'
   })
 
