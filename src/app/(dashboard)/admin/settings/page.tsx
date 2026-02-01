@@ -7,6 +7,7 @@ import { FolderTree, FileText, Settings, MessageSquare, ArrowLeft } from 'lucide
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { TabPrefetchProvider, useTabPrefetch } from '@/lib/prefetch/tab-prefetch-context'
 import { CategoriesView } from '@/components/admin/views/categories-view'
 import { AuditLogView } from '@/components/admin/views/audit-view'
 import { FeedbackView } from '@/components/admin/views/feedback-view'
@@ -43,11 +44,12 @@ const navItems = [
   },
 ]
 
-export default function SystemSettingsPage() {
+function SystemSettingsPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
-  
+  const { cache, prefetch } = useTabPrefetch()
+
   const [activeTab, setActiveTab] = useState(tabParam || 'categories')
 
   // Sync state with URL param
@@ -59,11 +61,11 @@ export default function SystemSettingsPage() {
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId)
-    // Update URL without full reload
     router.push(`/admin/settings?tab=${tabId}`, { scroll: false })
   }
 
   const ActiveView = navItems.find(item => item.id === activeTab)?.view || CategoriesView
+  const initialData = cache[activeTab]
 
   return (
     <div className="min-h-full bg-background relative">
@@ -111,6 +113,7 @@ export default function SystemSettingsPage() {
                   <button
                     key={item.id}
                     onClick={() => handleTabChange(item.id)}
+                    onMouseEnter={() => prefetch(item.id)}
                     className={cn(
                       "relative flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       isActive
@@ -146,10 +149,18 @@ export default function SystemSettingsPage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            <ActiveView />
+            <ActiveView initialData={initialData} />
           </motion.div>
         </AnimatePresence>
       </div>
     </div>
+  )
+}
+
+export default function SystemSettingsPage() {
+  return (
+    <TabPrefetchProvider>
+      <SystemSettingsPageContent />
+    </TabPrefetchProvider>
   )
 }

@@ -23,13 +23,11 @@ import type { User } from '@/lib/types/users'
 import {
   createUserSchema,
   updateUserSchema,
-  updateUserRoleSchema,
   deactivateUserSchema,
   reactivateUserSchema,
   bulkUpdateUsersSchema,
   type CreateUserInput,
   type UpdateUserInput,
-  type UpdateUserRoleInput,
   type DeactivateUserInput,
   type ReactivateUserInput,
   type BulkUpdateUsersInput,
@@ -283,74 +281,6 @@ export async function updateUser(
     logger.error('Error in updateUser action', {
       error: error instanceof Error ? error.message : 'Unknown error',
       userId,
-    })
-
-    if (error instanceof Error && error.message.includes('Zod')) {
-      return { success: false, error: 'Invalid input data' }
-    }
-
-    return { success: false, error: 'An unexpected error occurred' }
-  }
-}
-
-/**
- * Update user role
- * Only super_admin can use this action
- *
- * @param input - User ID and new role
- * @returns ActionResult indicating success or failure
- */
-export async function updateUserRole(
-  input: UpdateUserRoleInput
-): Promise<ActionResult<User>> {
-  try {
-    const currentUser = await getUser()
-    if (!currentUser) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    // Only super_admin can change roles
-    const { role: currentRole } = await isAdmin(currentUser.id)
-    if (currentRole !== 'super_admin') {
-      return { success: false, error: 'Unauthorized: Super admin access required' }
-    }
-
-    // Validate input
-    const validated = updateUserRoleSchema.parse(input)
-
-    const supabase = await createClient()
-
-    // Update role
-    const { data, error } = await supabase
-      .from('users')
-      .update({
-        role: validated.newRole,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', validated.userId)
-      .select()
-      .single()
-
-    if (error) {
-      logger.error('Error updating user role', { error: error.message, userId: validated.userId })
-      return { success: false, error: 'Failed to update user role' }
-    }
-
-    // Log activity
-    logger.info('User role updated', {
-      updatedBy: currentUser.id,
-      targetUserId: validated.userId,
-      newRole: validated.newRole,
-    })
-
-    // Revalidate paths
-    revalidatePath('/admin/users')
-    revalidatePath(`/admin/users/${validated.userId}`)
-
-    return { success: true, data: data as User }
-  } catch (error) {
-    logger.error('Error in updateUserRole action', {
-      error: error instanceof Error ? error.message : 'Unknown error',
     })
 
     if (error instanceof Error && error.message.includes('Zod')) {

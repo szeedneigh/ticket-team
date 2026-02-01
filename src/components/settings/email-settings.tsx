@@ -47,10 +47,20 @@ const DEFAULT_CONFIG: EmailConfig = {
   ticket_resolved_subject: 'Ticket Resolved: {{ticket_id}}',
 }
 
-export function EmailSettings() {
+function isEmailConfig(x: unknown): x is EmailConfig {
+  return (
+    typeof x === 'object' &&
+    x !== null &&
+    'notifications_enabled' in x &&
+    typeof (x as EmailConfig).notifications_enabled === 'boolean'
+  )
+}
+
+export function EmailSettings({ initialData }: { initialData?: unknown }) {
   const { toast } = useToast()
-  const [config, setConfig] = useState<EmailConfig>(DEFAULT_CONFIG)
-  const [isLoading, setIsLoading] = useState(false)
+  const data = isEmailConfig(initialData) ? initialData : null
+  const [config, setConfig] = useState<EmailConfig>(data ?? DEFAULT_CONFIG)
+  const [isLoading, setIsLoading] = useState(!data)
   const [isSaving, setIsSaving] = useState(false)
 
   const loadConfig = useCallback(async () => {
@@ -73,8 +83,8 @@ export function EmailSettings() {
   }, [toast])
 
   useEffect(() => {
-    loadConfig()
-  }, [loadConfig])
+    if (!isEmailConfig(initialData)) loadConfig()
+  }, [loadConfig, initialData])
 
   const handleSave = async () => {
     setIsSaving(true)
