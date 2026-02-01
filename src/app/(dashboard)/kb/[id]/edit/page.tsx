@@ -9,6 +9,7 @@ import { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { requireAuth } from '@/lib/auth/session'
 import { getArticleById, canUserEditArticle } from '@/lib/kb/queries'
+import { createArticle, updateArticle } from '@/lib/kb/actions'
 import { KBEditorForm } from '@/components/kb/kb-editor-form'
 import { isValidUUID } from '@/lib/utils'
 import { PenLine, Sparkles } from 'lucide-react'
@@ -83,7 +84,12 @@ export default async function EditArticlePage({ params }: PageProps) {
 
       {/* Form Content */}
       <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-4xl">
-        <KBEditorForm article={article} mode="edit" />
+        <KBEditorForm
+          article={article}
+          mode="edit"
+          createArticleAction={createArticle}
+          updateArticleAction={updateArticle}
+        />
       </div>
     </div>
   )
