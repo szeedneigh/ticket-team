@@ -128,7 +128,7 @@ export default function SignInPage() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
-          className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[420px] relative z-10"
+          className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[420px] relative z-10"  
         >
           {/* Professional Card Container */}
           <div className="bg-background rounded-2xl shadow-xl shadow-[#1f3463]/5 ring-1 ring-white/10 dark:ring-white/5 p-8 sm:p-12 border border-white/10">

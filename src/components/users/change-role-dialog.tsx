@@ -27,7 +27,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { updateUserRole } from '@/app/actions/users'
+import { updateUserRole } from '@/app/actions/users-role-actions'
 import { getRoleDescription } from './role-badge'
 import type { User } from '@/lib/types/users'
 import type { UserRole } from '@/lib/types/database'

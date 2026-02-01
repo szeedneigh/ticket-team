@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Download, RefreshCw, TrendingUp, Users, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,11 +8,8 @@ import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { AuditLogTable } from '@/components/audit/audit-log-table'
 import { AuditFilters } from '@/components/audit/audit-filters'
-import {
-  getAuditLogs,
-  getAuditLogStats,
-  exportAuditLogsCSV,
-} from '@/lib/audit/queries'
+import { exportAuditLogsCSV } from '@/lib/audit/queries'
+import { getAuditLogPageData } from '@/app/actions/audit'
 import type {
   AuditLogEntry,
   AuditLogPagination,
@@ -22,82 +19,66 @@ import type {
   AuditLogSortField,
 } from '@/lib/types/audit'
 
-export function AuditLogView() {
+type AuditPageData = {
+  logs: AuditLogEntry[]
+  pagination: AuditLogPagination
+  stats: AuditLogStats
+  users: { id: string; full_name: string; email: string }[]
+}
+
+function isAuditPageData(x: unknown): x is AuditPageData {
+  return (
+    typeof x === 'object' &&
+    x !== null &&
+    'logs' in x &&
+    Array.isArray((x as AuditPageData).logs)
+  )
+}
+
+export function AuditLogView({ initialData }: { initialData?: unknown }) {
   const { toast } = useToast()
 
-  const [logs, setLogs] = useState<AuditLogEntry[]>([])
-  const [pagination, setPagination] = useState<AuditLogPagination>({
-    page: 1,
-    perPage: 50,
-    total: 0,
-    totalPages: 0,
-  })
+  const data = isAuditPageData(initialData) ? initialData : null
+  const [logs, setLogs] = useState<AuditLogEntry[]>(data?.logs ?? [])
+  const [pagination, setPagination] = useState<AuditLogPagination>(
+    data?.pagination ?? { page: 1, perPage: 50, total: 0, totalPages: 0 }
+  )
   const [filters, setFilters] = useState<AuditLogFilters>({})
   const [sort, setSort] = useState<AuditLogSort>({
     field: 'performed_at',
     order: 'desc',
   })
-  const [stats, setStats] = useState<AuditLogStats | null>(null)
-  const [users, setUsers] = useState<{ id: string; full_name: string; email: string }[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [stats, setStats] = useState<AuditLogStats | null>(data?.stats ?? null)
+  const [users, setUsers] = useState<{ id: string; full_name: string; email: string }[]>(
+    data?.users ?? []
+  )
+  const [isLoading, setIsLoading] = useState(!data)
   const [isExporting, setIsExporting] = useState(false)
-  const [currentUserRole, setCurrentUserRole] = useState<'admin' | 'super_admin' | null>(null)
 
-  // Check authorization
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        return
-      }
-
-      const { data } = await supabase.from('users').select('role').eq('id', user.id).single()
-
-      if (!data || !['admin', 'super_admin'].includes(data.role)) {
-        return
-      }
-
-      setCurrentUserRole(data.role as 'admin' | 'super_admin')
-    }
-
-    checkAuth()
-  }, [])
-
-  // Fetch users for filter
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const supabase = createClient()
-        const { data, error } = await supabase
-          .from('users')
-          .select('id, full_name, email')
-          .order('full_name')
-
-        if (error) throw error
-        setUsers(data || [])
-      } catch (error) {
-        console.error('Error fetching users:', error)
-      }
-    }
-
-    if (currentUserRole) {
-      fetchUsers()
-    }
-  }, [currentUserRole])
-
-  // Fetch audit logs
-  const fetchLogs = async () => {
+  // Single parallel fetch: logs, stats, users (layout already guards admin access)
+  const fetchPageData = useCallback(async () => {
     setIsLoading(true)
     try {
-      const supabase = createClient()
-      const result = await getAuditLogs(supabase, filters, pagination.page, pagination.perPage, sort)
+      const result = await getAuditLogPageData(
+        filters,
+        pagination.page,
+        pagination.perPage,
+        sort
+      )
 
-      setLogs(result.logs)
-      setPagination(result.pagination)
+      if (!result.success || !result.data) {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to load audit logs',
+          variant: 'destructive',
+        })
+        return
+      }
+
+      setLogs(result.data.logs)
+      setPagination(result.data.pagination)
+      setStats(result.data.stats)
+      setUsers(result.data.users)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       console.error('Error fetching audit logs:', errorMessage, error)
@@ -109,27 +90,11 @@ export function AuditLogView() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [filters, pagination.page, pagination.perPage, sort, toast])
 
-  // Fetch stats
-  const fetchStats = async () => {
-    try {
-      const supabase = createClient()
-      const statsData = await getAuditLogStats(supabase, filters)
-      setStats(statsData)
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-    }
-  }
-
-  // Fetch logs when filters, page, or sort change
   useEffect(() => {
-    if (currentUserRole) {
-      fetchLogs()
-      fetchStats()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, pagination.page, sort, currentUserRole])
+    fetchPageData()
+  }, [fetchPageData])
 
   const handleFilterChange = (newFilters: AuditLogFilters) => {
     setFilters(newFilters)
@@ -243,7 +208,7 @@ export function AuditLogView() {
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchLogs}
+            onClick={fetchPageData}
             disabled={isLoading}
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />

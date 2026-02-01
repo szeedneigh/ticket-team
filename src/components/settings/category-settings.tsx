@@ -46,15 +46,16 @@ interface Category {
   ticket_count?: number
 }
 
-export function CategorySettings() {
+export function CategorySettings({ initialData }: { initialData?: unknown }) {
   const { toast } = useToast()
-  const [categories, setCategories] = useState<Category[]>([])
+  const data = Array.isArray(initialData) ? (initialData as Category[]) : []
+  const [categories, setCategories] = useState<Category[]>(data)
   const [newCategory, setNewCategory] = useState({
     name: '',
     type: 'both' as Category['type'],
     parent_id: null as string | null,
   })
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(!Array.isArray(initialData))
 
   const loadCategories = useCallback(async () => {
     setIsLoading(true)
@@ -85,8 +86,8 @@ export function CategorySettings() {
   }, [toast])
 
   useEffect(() => {
-    loadCategories()
-  }, [loadCategories])
+    if (!Array.isArray(initialData)) loadCategories()
+  }, [loadCategories, initialData])
 
   const handleAddCategory = async () => {
     if (!newCategory.name.trim()) {

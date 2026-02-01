@@ -57,7 +57,7 @@ const updateCategorySchema = categorySchema.partial().extend({
 // ============================================================================
 
 /**
- * Get all categories
+ * Get all categories with ticket/article counts (single RPC, no N+1)
  *
  * @param filters - Optional filters (type, is_active)
  * @returns List of categories ordered by display_order
@@ -74,49 +74,26 @@ export async function getCategories(filters?: {
       return { error: 'Unauthorized' }
     }
 
-    let query = supabase
-      .from('categories')
-      .select('*')
-      .order('display_order', { ascending: true })
-      .order('name', { ascending: true })
-
-    // Apply filters
-    if (filters?.type) {
-      query = query.or(`type.eq.${filters.type},type.eq.both`)
-    }
-
-    if (filters?.is_active !== undefined) {
-      query = query.eq('is_active', filters.is_active)
-    }
-
-    const { data, error } = await query
+    const { data, error } = await supabase.rpc('get_categories_with_counts', {
+      p_filter_type: filters?.type ?? null,
+      p_filter_is_active: filters?.is_active ?? null,
+    })
 
     if (error) {
       return { error: error.message }
     }
 
-    // Get usage counts for each category (tickets and KB use category name)
-    const categoriesWithCounts = await Promise.all(
-      (data || []).map(async (cat) => {
-        let ticketCount = 0
-        let articleCount = 0
-        try {
-          const [ticketRes, articleRes] = await Promise.all([
-            supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('category', cat.name),
-            supabase.from('knowledge_articles').select('*', { count: 'exact', head: true }).eq('category', cat.name),
-          ])
-          ticketCount = ticketRes.count ?? 0
-          articleCount = articleRes.count ?? 0
-        } catch {
-          // Counts are optional; continue with 0
-        }
-        return {
-          ...cat,
-          ticket_count: ticketCount,
-          article_count: articleCount,
-        }
-      })
-    )
+    const categoriesWithCounts = (data || []).map((row: Record<string, unknown>) => ({
+      id: row.id,
+      name: row.name,
+      parent_id: row.parent_id ?? null,
+      type: row.type as 'ticket' | 'knowledge_base' | 'both',
+      is_active: row.is_active ?? true,
+      display_order: (row.display_order as number) ?? 0,
+      created_at: row.created_at,
+      ticket_count: Number(row.ticket_count) ?? 0,
+      article_count: Number(row.article_count) ?? 0,
+    }))
 
     return { success: true, data: categoriesWithCounts }
   } catch (error) {

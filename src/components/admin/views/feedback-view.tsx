@@ -31,12 +31,24 @@ import { useToast } from '@/hooks/use-toast'
 import { getFeedbackAnalytics } from '@/app/actions/feedback'
 import type { FeedbackWithDetails, FeedbackSummary } from '@/lib/types/templates'
 
-export function FeedbackView() {
+type FeedbackInitialData = { feedback: FeedbackWithDetails[]; summary: FeedbackSummary | null }
+
+function isFeedbackInitialData(x: unknown): x is FeedbackInitialData {
+  return (
+    typeof x === 'object' &&
+    x !== null &&
+    'feedback' in x &&
+    Array.isArray((x as FeedbackInitialData).feedback)
+  )
+}
+
+export function FeedbackView({ initialData }: { initialData?: unknown }) {
   const { toast } = useToast()
 
-  const [feedback, setFeedback] = useState<FeedbackWithDetails[]>([])
-  const [summary, setSummary] = useState<FeedbackSummary | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const data = isFeedbackInitialData(initialData) ? initialData : null
+  const [feedback, setFeedback] = useState<FeedbackWithDetails[]>(data?.feedback ?? [])
+  const [summary, setSummary] = useState<FeedbackSummary | null>(data?.summary ?? null)
+  const [isLoading, setIsLoading] = useState(!data)
   const [ratingFilter, setRatingFilter] = useState<string>('all')
 
   const fetchFeedback = useCallback(async () => {
@@ -65,8 +77,9 @@ export function FeedbackView() {
   }, [ratingFilter, toast])
 
   useEffect(() => {
+    if (isFeedbackInitialData(initialData) && ratingFilter === 'all') return
     fetchFeedback()
-  }, [fetchFeedback, ratingFilter])
+  }, [fetchFeedback, ratingFilter, initialData])
 
   const handleExportCSV = () => {
     if (feedback.length === 0) {
