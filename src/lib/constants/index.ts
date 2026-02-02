@@ -375,6 +375,9 @@ export const ERROR_MESSAGES = {
 export const SUCCESS_MESSAGES = {
   TICKET_CREATED: 'Ticket created successfully.',
   TICKET_UPDATED: 'Ticket updated successfully.',
+  TICKET_RESOLVED: 'Ticket resolved successfully. The submitter will be notified.',
+  TICKET_CLOSED: 'Ticket closed successfully.',
+  TICKET_CANCELED: 'Ticket canceled successfully.',
   TICKET_REOPENED: 'Ticket reopened successfully.',
   COMMENT_ADDED: 'Comment added successfully.',
   FEEDBACK_SUBMITTED: 'Thank you for your feedback!',
