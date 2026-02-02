@@ -13,6 +13,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { generateChatResponse } from '@/lib/ai/client'
 import { logger } from '@/lib/logger'
+import type { TicketPriority } from '@/lib/types/database'
 import type { RAGContext, ChatMessage } from '@/lib/types/ai'
 
 // ============================================================================
@@ -39,7 +40,7 @@ export interface TicketPreparation {
   suggestedDescription: string
   suggestedCategory: string
   categoryConfidence: number
-  suggestedPriority: 'low' | 'medium' | 'high'
+  suggestedPriority: TicketPriority
   suggestedStaff: StaffSuggestion | null
   conversationContext: ChatMessage[]
 }
@@ -246,12 +247,30 @@ Respond with ONLY the category name, nothing else.`
  * @param params - Assignment parameters
  * @returns Staff suggestion or null if none available
  */
+/** Map urgent/critical to high for workload/specialty logic */
+function mapPriorityForAssignment(priority: TicketPriority): 'low' | 'medium' | 'high' {
+  switch (priority) {
+    case 'urgent':
+    case 'critical':
+      return 'high'
+    case 'low':
+      return 'low'
+    case 'medium':
+      return 'medium'
+    case 'high':
+      return 'high'
+    default:
+      return 'medium'
+  }
+}
+
 export async function suggestStaffAssignment(params: {
   category: string
-  priority: 'low' | 'medium' | 'high'
+  priority: TicketPriority
   description: string
 }): Promise<StaffSuggestion | null> {
   const { category, priority } = params
+  const mappedPriority = mapPriorityForAssignment(priority)
 
   try {
     const supabase = await createClient()
@@ -311,7 +330,7 @@ export async function suggestStaffAssignment(params: {
     )
 
     // Sort by priority strategy
-    if (priority === 'high') {
+    if (mappedPriority === 'high') {
       // For high priority: prefer specialized staff even if busier
       workloads.sort((a, b) => {
         if (a.hasSpecialty !== b.hasSpecialty) {
@@ -673,6 +692,7 @@ function truncate(text: string, maxLength: number): string {
  * Suggest ticket priority based on conversation context
  *
  * Looks for urgency indicators in the conversation.
+ * Hierarchy: critical > urgent > high > medium > low
  *
  * @param query - User query
  * @param conversation - Conversation messages
@@ -681,21 +701,44 @@ function truncate(text: string, maxLength: number): string {
 export function suggestPriority(
   query: string,
   conversation: ChatMessage[]
-): 'low' | 'medium' | 'high' {
+): TicketPriority {
   const fullText = `${query} ${conversation.map(m => m.content).join(' ')}`.toLowerCase()
+
+  // Critical priority indicators (system-wide impact)
+  const criticalPriorityKeywords = [
+    'critical',
+    'system-wide',
+    'all users',
+    'entire department',
+    'production down',
+    'complete outage',
+    'everyone affected',
+  ]
+
+  if (criticalPriorityKeywords.some(keyword => fullText.includes(keyword))) {
+    return 'critical'
+  }
+
+  // Urgent priority indicators (immediate attention required)
+  const urgentPriorityKeywords = [
+    'urgent',
+    'emergency',
+    'asap',
+    'immediately',
+    'can\'t work',
+    'completely broken',
+    'blocking',
+  ]
+
+  if (urgentPriorityKeywords.some(keyword => fullText.includes(keyword))) {
+    return 'urgent'
+  }
 
   // High priority indicators
   const highPriorityKeywords = [
-    'urgent',
-    'critical',
-    'emergency',
-    'can\'t work',
-    'completely broken',
     'production',
-    'all users',
-    'entire department',
-    'asap',
-    'immediately',
+    'important',
+    'blocked',
   ]
 
   if (highPriorityKeywords.some(keyword => fullText.includes(keyword))) {
