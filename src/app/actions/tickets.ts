@@ -553,6 +553,121 @@ export async function updateTicketStatus(
 }
 
 // ============================================================================
+// Cancel Ticket by Submitter (Employee)
+// ============================================================================
+
+/**
+ * Cancel a ticket - employees can cancel tickets they created
+ * Only for tickets in open, in_progress, or on_hold status
+ *
+ * @param ticketId - The ticket ID to cancel
+ * @returns Response indicating success or error
+ */
+export async function cancelTicketBySubmitter(
+  ticketId: string
+): Promise<ServerActionResponse> {
+  try {
+    const supabase = await createClient()
+
+    // 1. Authenticate user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return {
+        success: false,
+        error: ERROR_MESSAGES.UNAUTHORIZED,
+      }
+    }
+
+    // 2. Get ticket and verify submitter
+    const { data: ticket, error: ticketError } = await supabase
+      .from('tickets')
+      .select('id, status, user_id')
+      .eq('id', ticketId)
+      .single()
+
+    if (ticketError || !ticket) {
+      return {
+        success: false,
+        error: ERROR_MESSAGES.TICKET_NOT_FOUND,
+      }
+    }
+
+    if (ticket.user_id !== user.id) {
+      return {
+        success: false,
+        error: ERROR_MESSAGES.UNAUTHORIZED,
+      }
+    }
+
+    const cancelableStatuses: TicketStatus[] = ['open', 'in_progress', 'on_hold']
+    if (!cancelableStatuses.includes(ticket.status as TicketStatus)) {
+      return {
+        success: false,
+        error: 'Only open, in progress, or on hold tickets can be canceled.',
+      }
+    }
+
+    // 3. Update status to canceled
+    const { error: updateError } = await supabase
+      .from('tickets')
+      .update({
+        status: 'canceled',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', ticketId)
+
+    if (updateError) {
+      logger.error('Ticket cancel error', { error: updateError.message, ticketId })
+      return {
+        success: false,
+        error: 'Failed to cancel ticket',
+      }
+    }
+
+    // 4. Log activity
+    try {
+      const serviceClient = createServiceClient()
+
+      await serviceClient.from('ticket_activities').insert({
+        ticket_id: ticketId,
+        user_id: user.id,
+        action: ACTIVITY_TYPES.STATUS_CHANGED,
+        old_value: ticket.status,
+        new_value: 'canceled',
+        metadata: {
+          from: ticket.status,
+          to: 'canceled',
+        },
+      })
+    } catch (activityError) {
+      console.error('Activity logging error:', activityError)
+    }
+
+    // 5. Revalidate paths
+    revalidatePath(`/tickets/${ticketId}`)
+    revalidatePath('/tickets')
+    revalidatePath('/dashboard')
+
+    return {
+      success: true,
+    }
+  } catch (error) {
+    logger.error('Unexpected error in cancelTicketBySubmitter', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      ticketId,
+    })
+    return {
+      success: false,
+      error: ERROR_MESSAGES.GENERIC,
+    }
+  }
+}
+
+// ============================================================================
 // Assign Ticket
 // ============================================================================
 
