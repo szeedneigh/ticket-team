@@ -80,7 +80,7 @@ export function QueuePageClient({
                   <Sparkles className="h-4 w-4 text-[#2cafdd]" />
                 </p>
               </div>
-              <Button asChild className="bg-gradient-to-r from-[#1f3463] to-[#2cafdd] hover:from-[#1f3463]/90 hover:to-[#2cafdd]/90 shadow-lg shadow-[#1f3463]/20 rounded-full px-6 transition-all hover:scale-105">
+              <Button asChild variant="gradient" className="rounded-full px-6">
                 <Link href="/tickets">
                   View All Tickets 
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -254,6 +254,7 @@ export function QueuePageClient({
                       totalPages={pagination.totalPages}
                       totalCount={pagination.totalCount}
                       className="bg-transparent"
+                      fromQueue
                     />
                   </>
                 ) : (
