@@ -47,7 +47,7 @@ export async function getSetting<T>(key: string): Promise<T | null> {
     .from('system_settings')
     .select('value')
     .eq('key', key)
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error(`Error fetching setting ${key}:`, error)
@@ -214,7 +214,7 @@ export async function updateSetting(
       .from('system_settings')
       .select('key')
       .eq('key', key)
-      .single()
+      .maybeSingle()
 
     let error
     if (existing) {
