@@ -440,7 +440,7 @@ export default function FAQPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-4">
-          <Button asChild>
+          <Button asChild variant="gradient">
             <Link href="/chat">
               <MessageSquare className="mr-2 h-4 w-4" />
               Ask AI Assistant
