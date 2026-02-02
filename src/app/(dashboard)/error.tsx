@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import * as Sentry from '@sentry/nextjs'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
@@ -16,11 +17,10 @@ interface ErrorBoundaryProps {
 
 export default function DashboardError({ error, reset }: ErrorBoundaryProps) {
   useEffect(() => {
-    // In production, this should send to an error reporting service (e.g., Sentry)
-    // For now, we only log in development to avoid exposing sensitive data
     if (process.env.NODE_ENV === 'development') {
       console.error('Dashboard error:', error)
     }
+    Sentry.captureException(error)
   }, [error])
 
   return (

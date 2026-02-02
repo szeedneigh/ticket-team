@@ -7,7 +7,8 @@
 
 'use server'
 
-import { searchAllSources, buildContextString } from '@/lib/ai/retrieval'
+import { searchAllSources } from '@/lib/ai/retrieval'
+import { buildContextString } from '@/lib/ai/context-builder'
 import { generateChatResponse } from '@/lib/ai/client'
 import { logAIEvent, logPrompt } from '@/lib/ai/events'
 import type { AiEventSurface } from '@/lib/types/ai-events'

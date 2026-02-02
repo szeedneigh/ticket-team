@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FileUpload } from './file-upload'
+import { TicketFormKBSuggestions } from './ticket-form-kb-suggestions'
 import { createTicketSchema, type CreateTicketInput } from '@/lib/validations/tickets'
 import type { AttachmentConfig } from '@/lib/validations/tickets'
 import { createTicket } from '@/app/actions/tickets'
@@ -72,6 +73,9 @@ export function TicketForm({ categories, attachmentConfig, onCancel }: TicketFor
 
   // Watch category changes to update subcategories
   const categoryValue = watch('category')
+  const titleValue = watch('title')
+  const descriptionValue = watch('description')
+  const kbSearchQuery = `${titleValue || ''} ${descriptionValue || ''}`.trim()
 
   useEffect(() => {
     if (categoryValue) {
@@ -195,6 +199,9 @@ export function TicketForm({ categories, attachmentConfig, onCancel }: TicketFor
             <p className="text-xs text-muted-foreground">
               Be as specific as possible to help us resolve your issue quickly
             </p>
+            {kbSearchQuery.length >= 15 && (
+              <TicketFormKBSuggestions query={kbSearchQuery} />
+            )}
           </div>
 
           {/* Category Field */}

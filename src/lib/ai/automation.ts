@@ -3,8 +3,11 @@
 import { generateChatResponse } from '@/lib/ai/client'
 import { getTicketContext } from '@/lib/ai/retrieval'
 import { logAutomation, updateAutomationStatus } from '@/lib/ai/events'
+import { requireAuth } from '@/lib/auth/session'
+import { isStaffOrAbove } from '@/lib/types/database'
 import type { TicketTriageSuggestion, TicketSummary } from '@/lib/types/ai-events'
 import type { TicketComment } from '@/lib/types/tickets'
+import type { KBArticleInput } from '@/lib/validations/kb-articles'
 
 /**
  * Suggest ticket priority and category based on content
@@ -240,5 +243,110 @@ Please suggest ${maxSuggestions} helpful replies.`
   } catch (error) {
     console.error('[suggestReplies] Error:', error)
     return []
+  }
+}
+
+/**
+ * Synthesize a KB article draft from a resolved ticket
+ *
+ * Uses AI to convert ticket title, description, and comments into a KB article draft.
+ * Only staff and above can use this. Ticket must be resolved or closed.
+ *
+ * @param ticketId - Ticket ID
+ * @returns KB article draft (partial KBArticleInput) or null on failure
+ */
+export async function synthesizeKBDraftFromTicket(
+  ticketId: string
+): Promise<(Partial<KBArticleInput> & { source_ticket_id: string }) | null> {
+  const user = await requireAuth()
+  if (!isStaffOrAbove(user.role)) {
+    return null
+  }
+
+  const context = await getTicketContext(ticketId)
+  if (!context.ticket) {
+    return null
+  }
+
+  const status = (context.ticket as { status?: string }).status
+  if (status !== 'resolved' && status !== 'closed') {
+    return null
+  }
+
+  const systemInstruction = `You are an IT support knowledge base author for La Verdad Christian College.
+Convert this resolved support ticket into a KB article draft that will help other users with similar issues.
+
+Output ONLY valid JSON in this exact format (no markdown code blocks, no extra text):
+{
+  "title": "Clear, descriptive article title (5-200 chars)",
+  "content": "Full article content in markdown format. Include: problem description, solution steps, tips. Min 20 chars.",
+  "summary": "Brief 1-2 sentence summary (10-500 chars)",
+  "category": "One of: Technical, Account, Enrollment, General, Financial, Academic",
+  "subcategory": "One of the subcategories for that category, or empty string",
+  "tags": ["tag1", "tag2", "tag3"]
+}
+
+Category subcategories:
+- Technical: Hardware, Software, Network, Email, Portal
+- Account: Login Issues, Password Reset, Registration, Profile
+- Enrollment: Course Registration, Schedule, Requirements, Clearance
+- General: How-To Guides, Policies, FAQs, Announcements
+- Financial: Tuition, Payment, Scholarships, Refunds
+- Academic: Grades, Curriculum, Graduation, Transcripts`
+
+  const commentsText = context.comments
+    .map((c: TicketComment) => `[${new Date(c.created_at).toLocaleDateString()}] ${c.content}`)
+    .join('\n\n')
+
+  const prompt = `Resolved Ticket: ${context.ticket.title}
+
+Description:
+${context.ticket.description}
+
+Resolution Discussion:
+${commentsText || 'No comments.'}
+
+Convert this into a helpful KB article draft. Focus on the solution and steps that resolved the issue.`
+
+  try {
+    const response = await generateChatResponse({
+      prompt,
+      systemInstruction,
+      temperature: 0.5,
+      maxOutputTokens: 2048,
+    })
+
+    const jsonMatch = response.text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      console.error('[synthesizeKBDraftFromTicket] No JSON in response')
+      return null
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]) as {
+      title?: string
+      content?: string
+      summary?: string
+      category?: string
+      subcategory?: string
+      tags?: string[]
+    }
+
+    if (!parsed.title || !parsed.content) {
+      return null
+    }
+
+    return {
+      title: parsed.title,
+      content: parsed.content,
+      summary: parsed.summary || '',
+      category: parsed.category || 'General',
+      subcategory: parsed.subcategory || '',
+      tags: Array.isArray(parsed.tags) ? parsed.tags.filter((t): t is string => typeof t === 'string').slice(0, 10) : [],
+      status: 'draft' as const,
+      source_ticket_id: ticketId,
+    }
+  } catch (error) {
+    console.error('[synthesizeKBDraftFromTicket] Error:', error)
+    return null
   }
 }
