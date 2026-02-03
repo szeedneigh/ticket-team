@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -117,12 +117,30 @@ export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrappe
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden" suppressHydrationWarning>
-      <Sidebar
-        user={user}
-        isCollapsed={isCollapsed}
-        isMobileOpen={isMobileOpen}
-        setIsMobileOpen={setIsMobileOpen}
-      />
+      <Suspense
+        fallback={
+          <aside className="hidden lg:flex flex-col flex-shrink-0 w-[280px] h-screen bg-[linear-gradient(180deg,#002C64_48.56%,#0693D2_100%)] border-r border-white/10">
+            <div className="p-4 pb-2 flex items-center gap-2.5">
+              <Skeleton className="w-10 h-10 rounded-xl bg-white/20" />
+              <Skeleton className="h-6 w-32 bg-white/20" />
+            </div>
+            <div className="flex-1 px-3 py-4 space-y-1.5">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="w-full h-10 px-3">
+                  <Skeleton className="w-full h-full rounded-xl bg-white/10" />
+                </div>
+              ))}
+            </div>
+          </aside>
+        }
+      >
+        <Sidebar
+          user={user}
+          isCollapsed={isCollapsed}
+          isMobileOpen={isMobileOpen}
+          setIsMobileOpen={setIsMobileOpen}
+        />
+      </Suspense>
       <div className="flex flex-col flex-1 min-w-0 min-h-0" suppressHydrationWarning>
         <Navbar
           user={user}
