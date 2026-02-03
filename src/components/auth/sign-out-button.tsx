@@ -55,6 +55,14 @@ export function SignOutButton({
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
+  const handleOpenClick = () => {
+    setOpen(true)
+  }
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+  }
+
   const handleSignOut = () => {
     startTransition(async () => {
       await signOut()
@@ -67,7 +75,7 @@ export function SignOutButton({
       <Button
         variant={variant}
         size={size}
-        onClick={() => setOpen(true)}
+        onClick={handleOpenClick}
         disabled={isPending}
         className={className}
       >
@@ -79,7 +87,7 @@ export function SignOutButton({
         {!isPending && <span className={showIcon ? 'ml-2' : ''}>{children}</span>}
       </Button>
 
-      <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialog open={open} onOpenChange={handleOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Sign out?</AlertDialogTitle>
