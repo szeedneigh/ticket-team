@@ -157,8 +157,9 @@ export function DepartmentSelectionForm({
 
       <div className="space-y-3 pt-2">
         <Button
+          variant="gradient"
           type="submit"
-          className="w-full h-11 font-medium bg-gradient-to-r from-[#1f3463] to-[#0693D2] hover:from-[#1a2d52] hover:to-[#057bb8] text-white shadow-lg shadow-[#1f3463]/20"
+          className="w-full h-11 font-medium"
           disabled={isPending || !selectedDepartment}
         >
           {isPending ? (
