@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { BookOpen, ExternalLink } from 'lucide-react'
+import { BookOpen, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
@@ -155,8 +155,6 @@ export function TicketFormKBSuggestions({ query }: TicketFormKBSuggestionsProps)
           <li key={article.id}>
             <Link
               href={`/kb/${article.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
               className="flex items-start gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors group"
             >
               <div className="flex-1 min-w-0">
@@ -181,7 +179,7 @@ export function TicketFormKBSuggestions({ query }: TicketFormKBSuggestionsProps)
                 >
                   {Math.round(article.similarity * 100)}%
                 </Badge>
-                <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
               </div>
             </Link>
           </li>
