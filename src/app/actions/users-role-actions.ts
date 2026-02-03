@@ -13,6 +13,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { getUser } from '@/lib/auth/session'
 import { revalidatePath } from 'next/cache'
 import { logger } from '@/lib/logger'
@@ -22,7 +23,9 @@ import { updateUserRoleSchema, type UpdateUserRoleInput } from '@/lib/validation
 
 /**
  * Update user role
- * Only super_admin can use this action
+ * Only super_admin can use this action.
+ * Authorization is checked with the cookie client; the actual update uses the
+ * service client so RLS/session issues in production cannot block the update.
  *
  * @param input - User ID and new role
  * @returns ActionResult indicating success or failure
@@ -36,7 +39,7 @@ export async function updateUserRole(
       return { success: false, error: 'Authentication required' }
     }
 
-    // Only super_admin can change roles
+    // Only super_admin can change roles (use cookie client so session is authoritative)
     const supabase = await createClient()
     const { data: roleData, error: roleError } = await supabase
       .from('users')
@@ -45,14 +48,22 @@ export async function updateUserRole(
       .single()
 
     if (roleError || !roleData || roleData.role !== 'super_admin') {
+      if (roleError) {
+        logger.warn('Role check failed in updateUserRole', {
+          userId: currentUser.id,
+          error: roleError.message,
+          code: roleError.code,
+        })
+      }
       return { success: false, error: 'Unauthorized: Super admin access required' }
     }
 
     // Validate input
     const validated = updateUserRoleSchema.parse(input)
 
-    // Update role
-    const { data, error } = await supabase
+    // Update using service client so RLS cannot block (we already verified super_admin above)
+    const serviceClient = createServiceClient()
+    const { data, error } = await serviceClient
       .from('users')
       .update({
         role: validated.newRole,
@@ -63,7 +74,11 @@ export async function updateUserRole(
       .single()
 
     if (error) {
-      logger.error('Error updating user role', { error: error.message, userId: validated.userId })
+      logger.error('Error updating user role', {
+        error: error.message,
+        code: error.code,
+        userId: validated.userId,
+      })
       return { success: false, error: 'Failed to update user role' }
     }
 

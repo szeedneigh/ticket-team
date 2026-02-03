@@ -60,9 +60,10 @@ export function isSuperAdmin(role: UserRole): boolean {
 // Status and Priority Helpers
 // ============================================================================
 
+/** Single source of truth for ticket status display across the app (tabs, badges, tables, FAQ). */
 export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
-  open: 'Pending',
-  in_progress: 'Ongoing',
+  open: 'Open',
+  in_progress: 'In Progress',
   on_hold: 'On Hold',
   resolved: 'Resolved',
   closed: 'Closed',

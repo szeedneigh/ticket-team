@@ -6,9 +6,10 @@
  * Responsive: Cards on mobile, table on desktop
  */
 
-'use client'
-
-import { useRouter } from 'next/navigation'
+ 'use client'
+ 
+ import { useMemo } from 'react'
+ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format, isToday, isYesterday, differenceInDays } from 'date-fns'
 import { Ticket as TicketIcon } from 'lucide-react'
@@ -37,12 +38,22 @@ export function TicketTable({ tickets, fromQueue = false }: TicketTableProps) {
   const ticketHref = (id: string) =>
     fromQueue ? `/tickets/${id}?from=queue` : `/tickets/${id}`
 
+  // Ensure tickets are always sorted from newest to oldest by created_at
+  const sortedTickets = useMemo(
+    () =>
+      [...tickets].sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ),
+    [tickets]
+  )
+
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ticket-table.tsx:32',message:'TicketTable: Rendering',data:{ticketsLength:tickets.length,ticketIds:tickets.map(t => t.id),hasDuplicateIds:tickets.length !== new Set(tickets.map(t => t.id)).size,duplicateIds:tickets.length !== new Set(tickets.map(t => t.id)).size ? tickets.map(t => t.id).filter((id, idx, arr) => arr.indexOf(id) !== idx) : []},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ticket-table.tsx:32',message:'TicketTable: Rendering',data:{ticketsLength:sortedTickets.length,ticketIds:sortedTickets.map(t => t.id),hasDuplicateIds:sortedTickets.length !== new Set(sortedTickets.map(t => t.id)).size,duplicateIds:sortedTickets.length !== new Set(sortedTickets.map(t => t.id)).size ? sortedTickets.map(t => t.id).filter((id, idx, arr) => arr.indexOf(id) !== idx) : []},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
   // #endregion
 
   // Enhanced empty state
-  if (tickets.length === 0) {
+  if (sortedTickets.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center bg-muted/20 rounded-2xl border border-dashed border-muted-foreground/20">
         <div className="rounded-full bg-muted/50 p-6 mb-4 ring-1 ring-white/10">
@@ -74,7 +85,7 @@ export function TicketTable({ tickets, fromQueue = false }: TicketTableProps) {
     <>
       {/* Mobile Card View */}
       <div className="block md:hidden space-y-4">
-        {tickets.map((ticket) => {
+        {sortedTickets.map((ticket) => {
           const ticketNumber = ticket.display_number || `Ticket# ${ticket.id.slice(0, 8).toUpperCase()}`
           const formattedDate = formatRelativeDate(ticket.created_at)
 
@@ -123,7 +134,7 @@ export function TicketTable({ tickets, fromQueue = false }: TicketTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tickets.map((ticket) => {
+            {sortedTickets.map((ticket) => {
               const ticketNumber = ticket.display_number || `Ticket# ${ticket.id.slice(0, 8).toUpperCase()}`
               const formattedDate = formatRelativeDate(ticket.created_at)
 

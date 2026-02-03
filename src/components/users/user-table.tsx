@@ -306,14 +306,14 @@ export const UserTable = memo(function UserTable({
       </div>
 
       {/* Pagination */}
-      {paginationInfo.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {(page - 1) * perPage + 1} to {Math.min(page * perPage, total)} of {total}{' '}
-            users
-          </div>
+      <div className="flex flex-col items-center gap-3 pb-6 pt-2">
+        <div className="text-sm text-muted-foreground">
+          Showing {(page - 1) * perPage + 1} to {Math.min(page * perPage, total)} of {total}{' '}
+          users
+        </div>
 
-          <div className="flex items-center gap-2">
+        {paginationInfo.totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -361,8 +361,8 @@ export const UserTable = memo(function UserTable({
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 })

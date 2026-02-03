@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { TicketStatus } from '@/lib/types/database'
+import { TICKET_STATUS_LABELS } from '@/lib/types/database'
 import { motion } from 'framer-motion'
 
 interface StatusTab {
@@ -29,48 +30,15 @@ interface StatusTab {
   status?: TicketStatus
 }
 
+/** Tab config; labels for status tabs come from TICKET_STATUS_LABELS for consistency. */
 const STATUS_TABS: StatusTab[] = [
-  {
-    value: 'all',
-    label: 'All',
-    icon: Inbox,
-  },
-  {
-    value: 'pending',
-    label: 'Open',
-    icon: Clock,
-    status: 'open',
-  },
-  {
-    value: 'ongoing',
-    label: 'In Progress',
-    icon: RotateCw,
-    status: 'in_progress',
-  },
-  {
-    value: 'on_hold',
-    label: 'On Hold',
-    icon: PauseCircle,
-    status: 'on_hold',
-  },
-  {
-    value: 'resolved',
-    label: 'Resolved',
-    icon: CheckCircle2,
-    status: 'resolved',
-  },
-  {
-    value: 'closed',
-    label: 'Closed',
-    icon: Archive,
-    status: 'closed',
-  },
-  {
-    value: 'cancelled',
-    label: 'Cancelled',
-    icon: XCircle,
-    status: 'canceled',
-  },
+  { value: 'all', label: 'All', icon: Inbox },
+  { value: 'open', label: TICKET_STATUS_LABELS.open, icon: Clock, status: 'open' },
+  { value: 'in_progress', label: TICKET_STATUS_LABELS.in_progress, icon: RotateCw, status: 'in_progress' },
+  { value: 'on_hold', label: TICKET_STATUS_LABELS.on_hold, icon: PauseCircle, status: 'on_hold' },
+  { value: 'resolved', label: TICKET_STATUS_LABELS.resolved, icon: CheckCircle2, status: 'resolved' },
+  { value: 'closed', label: TICKET_STATUS_LABELS.closed, icon: Archive, status: 'closed' },
+  { value: 'canceled', label: TICKET_STATUS_LABELS.canceled, icon: XCircle, status: 'canceled' },
 ]
 
 export function StatusTabs() {

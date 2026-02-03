@@ -27,7 +27,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { updateUserRole } from '@/app/actions/users-role-actions'
 import { getRoleDescription } from './role-badge'
 import type { User } from '@/lib/types/users'
 import type { UserRole } from '@/lib/types/database'
@@ -61,12 +60,15 @@ export function ChangeRoleDialog({
     setIsSubmitting(true)
 
     try {
-      const result = await updateUserRole({
-        userId: user.id,
-        newRole: selectedRole,
+      const res = await fetch(`/api/admin/users/${user.id}/role`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newRole: selectedRole }),
+        credentials: 'same-origin',
       })
+      const result = await res.json()
 
-      if (result.success) {
+      if (res.ok && result.success) {
         toast({
           title: 'Role updated',
           description: `${user.full_name}'s role has been changed to ${selectedRole}.`,
@@ -76,7 +78,7 @@ export function ChangeRoleDialog({
       } else {
         toast({
           title: 'Error',
-          description: result.error || 'Failed to update user role',
+          description: result.error ?? 'Failed to update user role',
           variant: 'destructive',
         })
       }
