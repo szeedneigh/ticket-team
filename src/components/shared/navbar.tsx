@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from './theme-toggle'
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/auth/user-avatar'
-import { SignOutButton } from '@/components/auth/sign-out-button'
 import { RoleBadge } from '@/components/users/role-badge'
 import {
   DropdownMenu,
@@ -15,8 +14,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { PanelLeft, User as UserIcon, HelpCircle } from 'lucide-react'
+import {
+  PanelLeft,
+  User as UserIcon,
+  HelpCircle,
+  LogOut
+} from 'lucide-react'
 import { NotificationBell } from '@/components/notifications/notification-bell'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
+import { Loader2 } from 'lucide-react'
+import { signOut } from '@/app/actions/auth'
 import type { User } from '@/lib/types/users'
 
 interface NavbarProps {
@@ -37,6 +53,8 @@ export function Navbar({
   transparent = false
 }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
+  const [signOutOpen, setSignOutOpen] = useState(false)
+  const [isSigningOut, startSignOutTransition] = useTransition()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -54,6 +72,17 @@ export function Navbar({
       main?.removeEventListener('scroll', handleScroll)
     }
   }, [])
+
+  const handleSignOutConfirm = () => {
+    startSignOutTransition(async () => {
+      await signOut()
+      setSignOutOpen(false)
+    })
+  }
+
+  const handleSignOutOpenChange = (nextOpen: boolean) => {
+    setSignOutOpen(nextOpen)
+  }
 
   const handleToggle = () => {
     if (window.innerWidth < 1024) {
@@ -148,13 +177,39 @@ export function Navbar({
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="p-0">
-                    <SignOutButton variant="ghost" className="w-full justify-start h-auto px-2 py-1.5">
-                      Sign Out
-                    </SignOutButton>
+                  <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault()
+                      setSignOutOpen(true)
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <LogOut className="h-4 w-4" />
+                      <span>Sign Out</span>
+                    </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <AlertDialog open={signOutOpen} onOpenChange={handleSignOutOpenChange}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Sign out?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to sign out?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isSigningOut}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleSignOutConfirm} disabled={isSigningOut}>
+                      {isSigningOut ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Sign out'
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           ) : (
             <>

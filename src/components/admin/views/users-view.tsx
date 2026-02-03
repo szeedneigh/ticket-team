@@ -29,7 +29,7 @@ export function UsersView() {
   const [isLoading, setIsLoading] = useState(true)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [page, setPage] = useState(1)
-  const [perPage] = useState(10)
+  const [perPage, setPerPage] = useState(10)
   const [search, setSearch] = useState('')
   const [role, setRole] = useState<UserRole | 'all'>('all')
   const [department, setDepartment] = useState('all')
@@ -162,6 +162,11 @@ export function UsersView() {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage)
+  }
+
+  const handlePerPageChange = (newPerPage: number) => {
+    setPerPage(newPerPage)
+    setPage(1) // Reset to first page when changing per page
   }
 
   const handleFilterChange = (filters: {
@@ -354,6 +359,8 @@ export function UsersView() {
             <UserFilters
               onFilterChange={handleFilterChange}
               departments={departments}
+              perPage={perPage}
+              onPerPageChange={handlePerPageChange}
             />
           </motion.div>
           </motion.div>

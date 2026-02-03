@@ -21,6 +21,8 @@ import {
 import type { UserRole } from '@/lib/types/database'
 import { SEARCH } from '@/lib/constants'
 
+const PER_PAGE_OPTIONS = [10, 25, 50, 100] as const
+
 interface UserFiltersProps {
   onFilterChange: (filters: {
     search?: string
@@ -29,12 +31,16 @@ interface UserFiltersProps {
     is_active?: boolean
   }) => void
   departments?: string[]
+  perPage?: number
+  onPerPageChange?: (perPage: number) => void
   className?: string
 }
 
 export function UserFilters({
   onFilterChange,
   departments = [],
+  perPage = 10,
+  onPerPageChange,
   className,
 }: UserFiltersProps) {
   const [search, setSearch] = useState('')
@@ -153,6 +159,25 @@ export function UserFilters({
               <SelectItem value="inactive">Archived</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Per Page Filter */}
+          {onPerPageChange && (
+            <Select
+              value={perPage.toString()}
+              onValueChange={(value) => onPerPageChange(Number.parseInt(value, 10))}
+            >
+              <SelectTrigger id="per-page-filter" className="min-w-[150px] w-[150px] h-10 bg-background/50 backdrop-blur-sm border-primary/10">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PER_PAGE_OPTIONS.map((n) => (
+                  <SelectItem key={n} value={n.toString()}>
+                    {n} per page
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
           {/* Reset Button */}
           {hasActiveFilters && (

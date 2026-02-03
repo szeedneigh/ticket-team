@@ -41,12 +41,28 @@ export function Providers({ children, initialPreferences }: ProvidersProps) {
       // Allow all other console errors through
       try {
         if (originalError) {
-          originalError(...args)
+          // Filter out empty objects from args to prevent logging issues
+          const filteredArgs = args.filter(arg => {
+            if (typeof arg === 'object' && arg !== null) {
+              // Only include objects that have at least one property
+              return Object.keys(arg).length > 0
+            }
+            return true
+          })
+          
+          // If we have at least one meaningful arg, log it
+          if (filteredArgs.length > 0) {
+            originalError(...filteredArgs)
+          } else if (args.length > 0) {
+            // If all args were filtered but we had args, log just the message
+            originalError(args[0])
+          }
         } else if (originalLog) {
           originalLog(...args)
         }
-      } catch {
+      } catch (err) {
         // Never let logging crash the app
+        // Silently fail - logging errors shouldn't break the application
       }
     }
 

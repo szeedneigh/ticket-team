@@ -66,6 +66,17 @@ function redactSensitiveData(data: unknown): unknown {
 }
 
 /**
+ * Check if context object has any meaningful data
+ */
+function hasContextData(context: unknown): boolean {
+  if (!context || typeof context !== 'object' || Array.isArray(context)) {
+    return false
+  }
+  const obj = context as Record<string, unknown>
+  return Object.values(obj).some(value => value !== undefined && value !== null)
+}
+
+/**
  * Base logging function
  */
 function log(level: LogLevel, message: string, context?: LogContext) {
@@ -74,20 +85,38 @@ function log(level: LogLevel, message: string, context?: LogContext) {
     return
   }
 
-  const redactedContext = context ? redactSensitiveData(context) : undefined
+  // Only process context if it has meaningful data
+  const hasData = context ? hasContextData(context) : false
+  const redactedContext = hasData ? redactSensitiveData(context!) : undefined
 
   switch (level) {
     case 'error':
-      console.error(`[ERROR] ${message}`, redactedContext || '')
+      if (redactedContext && hasContextData(redactedContext)) {
+        console.error(`[ERROR] ${message}`, redactedContext)
+      } else {
+        console.error(`[ERROR] ${message}`)
+      }
       break
     case 'warn':
-      console.warn(`[WARN] ${message}`, redactedContext || '')
+      if (redactedContext && hasContextData(redactedContext)) {
+        console.warn(`[WARN] ${message}`, redactedContext)
+      } else {
+        console.warn(`[WARN] ${message}`)
+      }
       break
     case 'info':
-      console.info(`[INFO] ${message}`, redactedContext || '')
+      if (redactedContext && hasContextData(redactedContext)) {
+        console.info(`[INFO] ${message}`, redactedContext)
+      } else {
+        console.info(`[INFO] ${message}`)
+      }
       break
     case 'debug':
-      console.debug(`[DEBUG] ${message}`, redactedContext || '')
+      if (redactedContext && hasContextData(redactedContext)) {
+        console.debug(`[DEBUG] ${message}`, redactedContext)
+      } else {
+        console.debug(`[DEBUG] ${message}`)
+      }
       break
   }
 }

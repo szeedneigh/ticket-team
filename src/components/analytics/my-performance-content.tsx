@@ -328,7 +328,11 @@ export function MyPerformanceContent({ performance }: MyPerformanceContentProps)
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">Avg Response</p>
-              <h3 className="text-3xl font-bold tracking-tight">{performance.avgResponseTimeHours}h</h3>
+              <h3 className="text-3xl font-bold tracking-tight">
+                {performance.avgResponseTime && performance.avgResponseTime !== '-'
+                  ? performance.avgResponseTime
+                  : '—'}
+              </h3>
             </div>
             <div className="h-[40px] mt-4 opacity-50 group-hover:opacity-100 transition-opacity">
               <Sparkline data={responseTimeTrend} color={COLORS.purple} />

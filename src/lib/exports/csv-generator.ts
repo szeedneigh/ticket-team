@@ -9,7 +9,12 @@
 
 import { unparse } from 'papaparse'
 import type { AnalyticsReport, AnalyticsFilters } from '@/lib/types/analytics'
+import { TICKET_STATUS_LABELS, isValidTicketStatus } from '@/lib/types/database'
 import { format } from 'date-fns'
+
+function statusLabel(status: string): string {
+  return isValidTicketStatus(status) ? TICKET_STATUS_LABELS[status] : status
+}
 
 /**
  * Generate a CSV export from analytics report data
@@ -44,7 +49,7 @@ export function generateCSVReport(
       metadata.push(['Priority:', filters.priority])
     }
     if (filters.status) {
-      metadata.push(['Status:', filters.status])
+      metadata.push(['Status:', statusLabel(String(filters.status))])
     }
     metadata.push([])
   }
@@ -103,7 +108,7 @@ export function generateCSVReport(
     statusSection.push(['Status', 'Count', 'Percentage'])
     report.statusDistribution.forEach((stat) => {
       statusSection.push([
-        stat.status,
+        statusLabel(stat.status),
         stat.count.toString(),
         `${stat.percentage.toFixed(1)}%`,
       ])
@@ -162,7 +167,7 @@ export function generateTicketListCSV(tickets: TicketExportRow[]): string {
   const data = tickets.map((ticket) => ({
     ID: ticket.id,
     Title: ticket.title,
-    Status: ticket.status,
+    Status: statusLabel(ticket.status),
     Priority: ticket.priority,
     Category: ticket.category,
     Subcategory: ticket.subcategory || '',

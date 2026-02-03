@@ -24,6 +24,12 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  TICKET_STATUS_LABELS,
+  TICKET_PRIORITY_LABELS,
+  isValidTicketStatus,
+  isValidTicketPriority,
+} from '@/lib/types/database'
 
 interface TicketActivity {
   id: string
@@ -86,13 +92,17 @@ export function UserActivityHistory({
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'open':
-        return 'bg-blue-100 text-blue-700'
+        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400'
       case 'in_progress':
-        return 'bg-yellow-100 text-yellow-700'
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400'
+      case 'on_hold':
+        return 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400'
       case 'resolved':
-        return 'bg-green-100 text-green-700'
+        return 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400'
       case 'closed':
-        return 'bg-gray-100 text-gray-700'
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400'
+      case 'canceled':
+        return 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400'
       case 'published':
         return 'bg-green-100 text-green-700'
       case 'draft':
@@ -103,6 +113,11 @@ export function UserActivityHistory({
         return 'bg-gray-100 text-gray-700'
     }
   }
+
+  const getStatusLabel = (status: string) =>
+    isValidTicketStatus(status) ? TICKET_STATUS_LABELS[status] : status.replace(/_/g, ' ')
+  const getPriorityLabel = (priority: string) =>
+    isValidTicketPriority(priority) ? TICKET_PRIORITY_LABELS[priority] : priority
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
@@ -269,13 +284,13 @@ export function UserActivityHistory({
                           variant="outline"
                           className={`h-5 px-1.5 text-xs ${getStatusColor(ticket.status)}`}
                         >
-                          {ticket.status.replace('_', ' ')}
+                          {getStatusLabel(ticket.status)}
                         </Badge>
                         <Badge
                           variant="outline"
                           className={`h-5 px-1.5 text-xs ${getPriorityColor(ticket.priority)}`}
                         >
-                          {ticket.priority}
+                          {getPriorityLabel(ticket.priority)}
                         </Badge>
                         <Badge variant="secondary" className="h-5 px-1.5 text-xs capitalize">
                           {ticket.relationship}

@@ -715,7 +715,7 @@ export async function assignTicket(
     // 2. Get current ticket
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
-      .select('id, assigned_to')
+      .select('id, assigned_to, status')
       .eq('id', ticketId)
       .single()
 
@@ -746,13 +746,24 @@ export async function assignTicket(
       }
     }
 
-    // 4. Update ticket assignment
+    // 4. Update ticket assignment (and optionally status)
+    const updateData: {
+      assigned_to: string | null
+      updated_at: string
+      status?: TicketStatus
+    } = {
+      assigned_to: newAssignedTo,
+      updated_at: new Date().toISOString(),
+    }
+
+    // When assigning an open ticket, automatically move it to in_progress
+    if (newAssignedTo && ticket.status === 'open') {
+      updateData.status = 'in_progress'
+    }
+
     const { error: updateError } = await supabase
       .from('tickets')
-      .update({
-        assigned_to: newAssignedTo,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', ticketId)
 
     if (updateError) {
