@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useMemo, useCallback, memo } from 'react'
+import { useState, useMemo, useCallback, memo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -174,6 +174,29 @@ export const NotificationList = memo(function NotificationList({
       router.push(link)
     }
   }, [router, handleMarkAsRead])
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('notifications-list')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+        },
+        () => {
+          refreshNotifications()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [refreshNotifications])
 
   // Filter change - useCallback for stable reference
   const handleFilterChange = useCallback((value: string) => {
