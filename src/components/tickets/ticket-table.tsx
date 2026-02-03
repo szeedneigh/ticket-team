@@ -28,10 +28,14 @@ import { motion } from 'framer-motion'
 
 interface TicketTableProps {
   tickets: TicketWithUser[]
+  /** When true, ticket links include ?from=queue so back button returns to queue */
+  fromQueue?: boolean
 }
 
-export function TicketTable({ tickets }: TicketTableProps) {
+export function TicketTable({ tickets, fromQueue = false }: TicketTableProps) {
   const router = useRouter()
+  const ticketHref = (id: string) =>
+    fromQueue ? `/tickets/${id}?from=queue` : `/tickets/${id}`
 
   // #region agent log
   fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ticket-table.tsx:32',message:'TicketTable: Rendering',data:{ticketsLength:tickets.length,ticketIds:tickets.map(t => t.id),hasDuplicateIds:tickets.length !== new Set(tickets.map(t => t.id)).size,duplicateIds:tickets.length !== new Set(tickets.map(t => t.id)).size ? tickets.map(t => t.id).filter((id, idx, arr) => arr.indexOf(id) !== idx) : []},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
@@ -48,7 +52,7 @@ export function TicketTable({ tickets }: TicketTableProps) {
         <p className="text-sm text-muted-foreground mb-6 max-w-sm">
           Try adjusting your filters or create a new ticket to get started
         </p>
-        <Button asChild className="rounded-full px-6 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all">
+        <Button asChild variant="gradient" className="rounded-full px-6">
           <Link href="/tickets/new">Create New Ticket</Link>
         </Button>
       </div>
@@ -81,7 +85,7 @@ export function TicketTable({ tickets }: TicketTableProps) {
               animate={{ opacity: 1, y: 0 }}
             >
               <Link
-                href={`/tickets/${ticket.id}`}
+                href={ticketHref(ticket.id)}
                 className="block p-5 rounded-2xl border border-white/10 bg-background/40 backdrop-blur-md hover:bg-[#2cafdd]/5 hover:border-[#2cafdd]/30 transition-all active:scale-[0.98] shadow-sm hover:shadow-lg hover:shadow-[#2cafdd]/10 group"
               >
                 <div className="flex items-start justify-between mb-3">
@@ -126,11 +130,11 @@ export function TicketTable({ tickets }: TicketTableProps) {
               return (
                 <TableRow
                   key={ticket.id}
-                  onClick={() => router.push(`/tickets/${ticket.id}`)}
+                  onClick={() => router.push(ticketHref(ticket.id))}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
-                      router.push(`/tickets/${ticket.id}`)
+                      router.push(ticketHref(ticket.id))
                     }
                   }}
                   tabIndex={0}
