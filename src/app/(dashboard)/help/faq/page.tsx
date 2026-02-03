@@ -147,7 +147,7 @@ export default function FAQPage() {
                   <li><strong>On Hold:</strong> Waiting for additional information or external dependency</li>
                   <li><strong>Resolved:</strong> Issue has been fixed; please provide feedback</li>
                   <li><strong>Closed:</strong> Ticket is complete and archived</li>
-                  <li><strong>Canceled:</strong> Ticket was canceled (duplicate, no longer needed, etc.)</li>
+                  <li><strong>Cancelled:</strong> Ticket was cancelled (duplicate, no longer needed, etc.)</li>
                 </ul>
               </div>
             </AccordionContent>
