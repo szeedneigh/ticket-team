@@ -89,14 +89,22 @@ export function usePresence({
             logger.debug('Auth session not ready yet, will retry on next heartbeat')
           }
         } else {
-          logger.error('Failed to update online status', {
-            error: errorMessage,
-            code: errorCode,
-            userId,
-            isOnline,
-            details: error.details || undefined,
-            hint: error.hint || undefined
-          })
+          // Only log if we have meaningful error information
+          const hasErrorInfo = errorMessage !== 'Unknown error' || errorCode !== 'UNKNOWN' || error.details || error.hint
+          
+          if (hasErrorInfo) {
+            logger.error('Failed to update online status', {
+              error: errorMessage,
+              code: errorCode,
+              userId,
+              isOnline,
+              ...(error.details && { details: error.details }),
+              ...(error.hint && { hint: error.hint })
+            })
+          } else if (debug) {
+            // In debug mode, log even empty errors for troubleshooting
+            logger.debug('Status update failed with empty error object', { userId, isOnline })
+          }
         }
       } else if (debug) {
         logger.debug(`User ${userId} is now ${isOnline ? 'online' : 'offline'}`)
@@ -155,13 +163,21 @@ export function usePresence({
             logger.debug('Auth session not ready for heartbeat, will retry')
           }
         } else {
-          logger.error('Heartbeat failed', {
-            error: errorMessage,
-            code: errorCode,
-            userId,
-            details: error.details || undefined,
-            hint: error.hint || undefined
-          })
+          // Only log if we have meaningful error information
+          const hasErrorInfo = errorMessage !== 'Unknown error' || errorCode !== 'UNKNOWN' || error.details || error.hint
+          
+          if (hasErrorInfo) {
+            logger.error('Heartbeat failed', {
+              error: errorMessage,
+              code: errorCode,
+              userId,
+              ...(error.details && { details: error.details }),
+              ...(error.hint && { hint: error.hint })
+            })
+          } else if (debug) {
+            // In debug mode, log even empty errors for troubleshooting
+            logger.debug('Heartbeat failed with empty error object', { userId })
+          }
         }
       } else if (debug) {
         logger.debug(`Heartbeat sent for user ${userId}`)
