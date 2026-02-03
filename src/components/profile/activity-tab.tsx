@@ -19,6 +19,7 @@ import {
 import { formatDistanceToNow } from 'date-fns'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@/lib/types/users'
+import { TICKET_STATUS_LABELS, isValidTicketStatus } from '@/lib/types/database'
 import Link from 'next/link'
 
 interface ActivityTabProps {
@@ -214,14 +215,21 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
         return 'bg-yellow-500/10 text-yellow-700 border-yellow-200'
       case 'in_progress':
         return 'bg-blue-500/10 text-blue-700 border-blue-200'
+      case 'on_hold':
+        return 'bg-orange-500/10 text-orange-700 border-orange-200'
       case 'resolved':
         return 'bg-green-500/10 text-green-700 border-green-200'
       case 'closed':
         return 'bg-gray-500/10 text-gray-700 border-gray-200'
+      case 'canceled':
+        return 'bg-red-500/10 text-red-700 border-red-200'
       default:
         return 'bg-gray-500/10 text-gray-700 border-gray-200'
     }
   }
+
+  const getStatusLabel = (status: string) =>
+    isValidTicketStatus(status) ? TICKET_STATUS_LABELS[status] : status
 
   if (isLoading) {
     return (
@@ -400,7 +408,7 @@ function ActivityTabComponent({ user }: ActivityTabProps) {
                                   {ticket.display_number || `#${ticket.id.slice(0, 8)}`}
                                 </Badge>
                                 <Badge className={`text-xs ${getStatusColor(ticket.status)}`}>
-                                  {ticket.status}
+                                  {getStatusLabel(ticket.status)}
                                 </Badge>
                               </div>
                               <p className="font-medium text-sm truncate group-hover:text-[var(--brand-primary)] transition-colors">
