@@ -68,13 +68,12 @@ function redactSensitiveData(data: unknown): unknown {
 /**
  * Check if context object has any meaningful data
  */
-function hasContextData(context: LogContext): boolean {
-  if (!context || typeof context !== 'object') {
+function hasContextData(context: unknown): boolean {
+  if (!context || typeof context !== 'object' || Array.isArray(context)) {
     return false
   }
-  
-  // Check if object has any non-undefined values
-  return Object.values(context).some(value => value !== undefined && value !== null)
+  const obj = context as Record<string, unknown>
+  return Object.values(obj).some(value => value !== undefined && value !== null)
 }
 
 /**
