@@ -35,6 +35,7 @@ import {
   isRetryableError,
   recordErrorOccurrence,
 } from '@/lib/monitoring/error-tracking'
+import type { TicketPriority } from '@/lib/types/database'
 import type { ChatMessage as ChatMessageType, RAGContext } from '@/lib/types/ai'
 import type { TicketPreparation } from '@/lib/chat/escalation-utils'
 
@@ -435,7 +436,7 @@ export function ChatClient({
     title: string
     description: string
     category: string
-    priority: 'low' | 'medium' | 'high'
+    priority: TicketPriority
     assignedTo?: string
     userAdditions?: string
   }) => {
@@ -571,6 +572,17 @@ export function ChatClient({
                     sources={message.sources}
                     isStreaming={message.isStreaming}
                     isLoading={message.isLoading}
+                    interactionId={
+                      message.role === 'assistant'
+                        ? (message.metadata?.interaction_id as string | undefined)
+                        : undefined
+                    }
+                    wasHelpful={
+                      message.role === 'assistant' &&
+                      message.metadata?.was_helpful !== undefined
+                        ? (message.metadata.was_helpful as boolean | null)
+                        : undefined
+                    }
                     disableLayoutAnimation
                   />
 
@@ -627,13 +639,14 @@ export function ChatClient({
       {/* Input Area */}
       <div className="p-4 md:p-6 pb-6 md:pb-8">
         <div className="mx-auto w-full max-w-4xl">
-          <ChatInput
-            onSend={handleSendMessage}
-            disabled={false}
-            isStreaming={isStreaming}
-            error={error}
-            onRetry={handleRetry}
-          />
+            <ChatInput
+              onSend={handleSendMessage}
+              disabled={false}
+              isStreaming={isStreaming}
+              error={error}
+              onRetry={handleRetry}
+              createTicketHref="/tickets/new"
+            />
         </div>
       </div>
 

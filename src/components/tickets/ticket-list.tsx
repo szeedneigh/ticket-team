@@ -8,7 +8,8 @@
 'use client'
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { useTransition, useMemo } from 'react'
+import { useTransition, useMemo, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { TicketTable } from './ticket-table'
 import type { TicketWithUser } from '@/lib/types/tickets'
@@ -21,6 +22,10 @@ interface TicketListProps {
   totalPages: number
   totalCount: number
   className?: string
+  /** When true, ticket links include ?from=queue so back button returns to queue */
+  fromQueue?: boolean
+  /** When provided (My Tickets page), subscribe to real-time updates filtered by user */
+  userId?: string
 }
 
 export function TicketList({
@@ -29,11 +34,37 @@ export function TicketList({
   totalPages,
   totalCount,
   className,
+  fromQueue = false,
+  userId,
 }: TicketListProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
+
+  // Subscribe to real-time ticket updates
+  useEffect(() => {
+    const supabase = createClient()
+    const channelName = userId ? `tickets-my-${userId}` : 'tickets-queue'
+
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tickets',
+          ...(userId ? { filter: `user_id=eq.${userId}` } : {}),
+        },
+        () => router.refresh()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [userId, router])
 
   // #region agent log
   fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ticket-list.tsx:36',message:'TicketList: Rendering',data:{ticketsLength:tickets.length,currentPage,totalPages,totalCount},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
@@ -107,7 +138,7 @@ export function TicketList({
   return (
     <div className={cn('space-y-6', className)}>
       {/* Ticket Table */}
-      <TicketTable tickets={tickets} />
+      <TicketTable tickets={tickets} fromQueue={fromQueue} />
 
       {/* Page indicator (always visible when there are results) */}
       {totalPages >= 1 && totalCount > 0 && (

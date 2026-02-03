@@ -148,10 +148,10 @@ export function SystemConfigSettings({ initialData }: { initialData?: unknown })
             Reset
           </Button>
           <Button 
+            variant="gradient"
             size="sm" 
             onClick={handleSave} 
             disabled={isSaving}
-            className="btn-primary-brand"
           >
             <Save className="mr-2 h-3.5 w-3.5" />
             {isSaving ? 'Saving...' : 'Save Changes'}

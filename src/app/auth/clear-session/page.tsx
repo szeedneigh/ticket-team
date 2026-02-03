@@ -122,8 +122,8 @@ export default function ClearSessionPage() {
                 Try Again
               </Button>
               <Button
+                variant="gradient"
                 onClick={() => router.push('/auth/sign-in')}
-                variant="default"
                 className="mt-2"
               >
                 Go to Sign In

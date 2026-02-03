@@ -1,13 +1,14 @@
 import { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
-import { ArrowLeft, Clock } from 'lucide-react'
+import { Suspense } from 'react'
+import { Clock } from 'lucide-react'
+import { TicketDetailBackButton } from '@/components/tickets/ticket-detail-back-button'
 import { formatDistanceToNow } from 'date-fns'
 import { createClient } from '@/lib/supabase/server'
 import { getTicketWithRelations } from '@/lib/tickets/queries'
 import { getStaffUsers } from '@/lib/users/queries'
+import { hasFeedback } from '@/app/actions/feedback'
 import { TicketDetail } from '@/components/tickets/ticket-detail'
-import { Button } from '@/components/ui/button'
 import { isStaffOrAbove } from '@/lib/types/database'
 import { isValidUUID } from '@/lib/utils'
 
@@ -116,6 +117,13 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
   const { data: attachmentsData } = results[0] as { data: unknown }
   const staffUsers = userIsStaff ? (results[1] as Awaited<ReturnType<typeof getStaffUsers>>) : []
 
+  // Check if submitter has already provided feedback (for resolved tickets, employee only)
+  const isSubmitter = ticket.user_id === user.id
+  const hasExistingFeedback =
+    ticket.status === 'resolved' && isSubmitter && !userIsStaff
+      ? await hasFeedback(params.id)
+      : false
+
   // Transform attachments to match expected type
   type SupabaseAttachment = {
     id: string
@@ -153,14 +161,11 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-[#2cafdd]/20 opacity-20 blur-[100px] rounded-full pointer-events-none" />
 
         <div className="container mx-auto pt-8 pb-4 px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl">
-          {/* Back Navigation */}
+          {/* Back Navigation - Client component reads from=queue from URL */}
           <div className="mb-6">
-            <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground -ml-2">
-              <Link href="/tickets">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Tickets
-              </Link>
-            </Button>
+            <Suspense fallback={<div className="h-9 w-32 animate-pulse rounded bg-muted" />}>
+              <TicketDetailBackButton />
+            </Suspense>
           </div>
 
           {/* Header Content */}
@@ -196,6 +201,7 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
           staffUsers={staffUsers}
           currentUserId={user.id}
           isStaff={userIsStaff}
+          hasExistingFeedback={hasExistingFeedback}
         />
       </div>
     </div>

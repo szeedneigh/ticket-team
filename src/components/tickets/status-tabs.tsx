@@ -37,7 +37,7 @@ const STATUS_TABS: StatusTab[] = [
   },
   {
     value: 'pending',
-    label: 'Pending',
+    label: 'Open',
     icon: Clock,
     status: 'open',
   },

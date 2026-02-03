@@ -104,9 +104,9 @@ export function FeedbackButtons({
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-muted-foreground">Was this helpful?</span>
+      <span className="text-xs text-muted-foreground">Rate this response</span>
 
-      {/* Thumbs Up Button */}
+      {/* Like (Thumbs Up) Button */}
       <Button
         variant="ghost"
         size="icon"
@@ -116,7 +116,7 @@ export function FeedbackButtons({
         )}
         onClick={handleThumbsUp}
         disabled={isSubmitting || feedback === true}
-        aria-label="Mark as helpful"
+        aria-label="Like"
       >
         {isSubmitting && feedback === null ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -204,7 +204,7 @@ export function FeedbackButtons({
       {/* Feedback State Indicator */}
       {feedback !== null && (
         <span className="text-xs text-muted-foreground">
-          {feedback ? 'Helpful' : 'Not helpful'}
+          {feedback ? 'Liked' : 'Disliked'}
         </span>
       )}
     </div>

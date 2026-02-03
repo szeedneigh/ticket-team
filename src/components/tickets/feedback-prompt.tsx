@@ -32,6 +32,8 @@ interface FeedbackPromptProps {
   isOpen: boolean
   onClose: () => void
   onSubmitted?: () => void
+  /** When true, user cannot skip or close without submitting */
+  mandatory?: boolean
 }
 
 export function FeedbackPrompt({
@@ -40,6 +42,7 @@ export function FeedbackPrompt({
   isOpen,
   onClose,
   onSubmitted,
+  mandatory = false,
 }: FeedbackPromptProps) {
   const [rating, setRating] = useState<number>(0)
   const [hoveredRating, setHoveredRating] = useState<number>(0)
@@ -87,7 +90,11 @@ export function FeedbackPrompt({
     }
   }
 
-  const handleClose = () => {
+  const handleOpenChange = (open: boolean) => {
+    if (mandatory && !open) {
+      // Prevent close - user must submit
+      return
+    }
     if (!isSubmitting) {
       setRating(0)
       setComment('')
@@ -96,8 +103,13 @@ export function FeedbackPrompt({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="sm:max-w-[500px]"
+        showCloseButton={!mandatory}
+        onInteractOutside={mandatory ? (e) => e.preventDefault() : undefined}
+        onEscapeKeyDown={mandatory ? (e) => e.preventDefault() : undefined}
+      >
         <DialogHeader>
           <DialogTitle>How was your experience?</DialogTitle>
           <DialogDescription>
@@ -169,13 +181,15 @@ export function FeedbackPrompt({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isSubmitting}
-          >
-            Skip for Now
-          </Button>
+          {!mandatory && (
+            <Button
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Skip for Now
+            </Button>
+          )}
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting || rating === 0}

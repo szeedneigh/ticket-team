@@ -88,7 +88,13 @@ export function TicketActions({
       const result = await updateTicketStatus(ticket.id, newStatus as TicketStatus)
 
       if (result.success) {
-        toast.success(SUCCESS_MESSAGES.TICKET_UPDATED)
+        const message =
+          newStatus === 'closed'
+            ? SUCCESS_MESSAGES.TICKET_CLOSED
+            : newStatus === 'canceled'
+              ? SUCCESS_MESSAGES.TICKET_CANCELED
+              : SUCCESS_MESSAGES.TICKET_UPDATED
+        toast.success(message)
         router.refresh()
       } else {
         toast.error(result.error || 'Failed to update status')
@@ -105,7 +111,7 @@ export function TicketActions({
       )
 
       if (result.success) {
-        toast.success(SUCCESS_MESSAGES.TICKET_UPDATED)
+        toast.success(SUCCESS_MESSAGES.TICKET_RESOLVED)
         setResolveDialogOpen(false)
         setResolutionNotes('')
         router.refresh()
@@ -371,6 +377,7 @@ export function TicketActions({
               Cancel
             </Button>
             <Button
+              variant="gradient"
               onClick={handleResolve}
               disabled={isPending}
             >
@@ -427,6 +434,7 @@ export function TicketActions({
               Cancel
             </Button>
             <Button
+              variant="gradient"
               onClick={handleReopen}
               disabled={isPending || reopenReason.trim().length < 10}
             >

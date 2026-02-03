@@ -4,10 +4,18 @@
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 
-export default function GlobalError({ error, reset }: { error: Error & { digest?: string }, reset: () => void }) {
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }, reset?: () => void }) {
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
+
+  const handleRetry = () => {
+    if (typeof reset === 'function') {
+      reset();
+    } else {
+      window.location.reload();
+    }
+  };
 
   return (
     <html>
@@ -27,7 +35,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             {error.message || 'An unexpected error occurred.'}
           </p>
           <button
-            onClick={() => reset()}
+            onClick={handleRetry}
             style={{
               padding: '10px 20px',
               backgroundColor: '#0070f3',

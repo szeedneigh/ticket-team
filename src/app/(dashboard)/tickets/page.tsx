@@ -174,6 +174,7 @@ export default async function TicketsPage({ searchParams }: PageProps) {
             currentPage={result.currentPage}
             totalPages={result.totalPages}
             totalCount={result.totalCount}
+            userId={user.id}
           />
         </Suspense>
 

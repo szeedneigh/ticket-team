@@ -270,8 +270,9 @@ export function CategorySettings({ initialData }: { initialData?: unknown }) {
 
           <div className="md:col-span-3">
             <Button
+              variant="gradient"
               onClick={handleAddCategory}
-              className="w-full btn-primary-brand"
+              className="w-full"
             >
         Add Category
       </Button>

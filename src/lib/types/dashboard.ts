@@ -15,6 +15,11 @@ export interface DashboardStats {
   myTickets: number
   assignedTickets: number
   overdueTickets: number
+  /** Employee-only: status counts for ticket status cards */
+  inProgressCount?: number
+  onHoldCount?: number
+  resolvedCount?: number
+  canceledCount?: number
 }
 
 export interface Activity {
