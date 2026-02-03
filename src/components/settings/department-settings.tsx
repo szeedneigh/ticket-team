@@ -340,9 +340,9 @@ export function DepartmentSettings({ initialData }: { initialData?: unknown }) {
             className="flex-1"
           />
           <Button
+            variant="gradient"
             onClick={handleAddDepartment}
             disabled={isSaving || isLoading}
-            className="btn-primary-brand"
           >
           Add Department
         </Button>
