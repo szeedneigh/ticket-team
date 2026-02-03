@@ -144,9 +144,10 @@ function ProfileViewComponent({ user, onEdit, ticketStats }: ProfileViewProps) {
                 {/* Edit Button */}
                 <div className="flex justify-end pt-4">
                   <Button
+                    variant="gradient"
                     onClick={onEdit}
                     size="lg"
-                    className="shadow-[var(--elev-2)] transition-[transform,box-shadow] duration-[var(--duration-base)] hover:translate-y-[-1px] hover:shadow-[var(--elev-3)] transform-gpu will-change-transform bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white"
+                    className="shadow-[var(--elev-2)] transition-[transform,box-shadow] duration-[var(--duration-base)] hover:translate-y-[-1px] hover:shadow-[var(--elev-3)] transform-gpu will-change-transform"
                   >
                     <Edit3 className="h-4 w-4 mr-2" />
                     Edit Profile
