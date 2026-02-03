@@ -9,7 +9,7 @@ import { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { requireAuth } from '@/lib/auth/session'
 import { getArticleById, canUserEditArticle } from '@/lib/kb/queries'
-import { createArticle, updateArticle } from '@/lib/kb/actions'
+import { createArticle, updateArticle, deleteArticle } from '@/lib/kb/actions'
 import { KBEditorForm } from '@/components/kb/kb-editor-form'
 import { isValidUUID } from '@/lib/utils'
 import { PenLine, Sparkles } from 'lucide-react'
@@ -89,6 +89,7 @@ export default async function EditArticlePage({ params }: PageProps) {
           mode="edit"
           createArticleAction={createArticle}
           updateArticleAction={updateArticle}
+          deleteArticleAction={deleteArticle}
         />
       </div>
     </div>

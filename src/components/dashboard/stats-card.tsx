@@ -12,6 +12,9 @@ import {
   TrendingDown,
   Users,
   AlertCircle,
+  RotateCw,
+  PauseCircle,
+  XCircle,
   LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -44,6 +47,9 @@ const iconMap: Record<string, LucideIcon> = {
   TrendingUp,
   Users,
   AlertCircle,
+  RotateCw,
+  PauseCircle,
+  XCircle,
 }
 
 /**
@@ -86,6 +92,50 @@ function getMetricStyles(title: string, value?: string | number, variant?: 'defa
       badgeBg: 'bg-[#10B981]/10',
       badgeIcon: 'text-[#10B981]',
       valueText: 'text-[#10B981]',
+      trendUpText: 'text-green-500',
+      trendDownText: 'text-red-500',
+    }
+  }
+
+  // In Progress → Blue #3B82F6
+  if (normalizedTitle.includes('in progress')) {
+    return {
+      badgeBg: 'bg-[#3B82F6]/10',
+      badgeIcon: 'text-[#3B82F6]',
+      valueText: 'text-[#3B82F6]',
+      trendUpText: 'text-green-500',
+      trendDownText: 'text-red-500',
+    }
+  }
+
+  // On Hold → Amber #F59E0B
+  if (normalizedTitle.includes('on hold')) {
+    return {
+      badgeBg: 'bg-[#F59E0B]/10',
+      badgeIcon: 'text-[#F59E0B]',
+      valueText: 'text-[#F59E0B]',
+      trendUpText: 'text-green-500',
+      trendDownText: 'text-red-500',
+    }
+  }
+
+  // Resolved (status card, not "Resolved Today") → Emerald #10B981
+  if (normalizedTitle === 'resolved') {
+    return {
+      badgeBg: 'bg-[#10B981]/10',
+      badgeIcon: 'text-[#10B981]',
+      valueText: 'text-[#10B981]',
+      trendUpText: 'text-green-500',
+      trendDownText: 'text-red-500',
+    }
+  }
+
+  // Cancelled → Gray #6B7280
+  if (normalizedTitle.includes('cancelled') || normalizedTitle.includes('canceled')) {
+    return {
+      badgeBg: 'bg-[#6B7280]/10',
+      badgeIcon: 'text-[#6B7280]',
+      valueText: 'text-[#6B7280]',
       trendUpText: 'text-green-500',
       trendDownText: 'text-red-500',
     }

@@ -44,7 +44,7 @@ export function EscalateButton({
   return (
     <Button
       onClick={onClick}
-      variant={variant}
+      variant={variant === 'default' ? 'gradient' : variant}
       size={size}
       disabled={disabled}
       className={cn('gap-2', className)}

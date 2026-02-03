@@ -252,9 +252,9 @@ export function CategoriesView({ initialData }: { initialData?: unknown }) {
             Refresh
           </Button>
           <Button
+            variant="gradient"
             size="sm"
             onClick={() => setShowAddForm(true)}
-            className="btn-primary-brand"
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Category

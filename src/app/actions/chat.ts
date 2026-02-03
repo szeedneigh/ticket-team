@@ -32,6 +32,7 @@ import {
   suggestPriority,
   type TicketPreparation,
 } from '@/lib/chat/escalation-utils'
+import type { TicketPriority } from '@/lib/types/database'
 import type {
   ChatSessionWithMessages,
   ChatMessage,
@@ -622,7 +623,7 @@ export async function createTicketFromChat(params: {
   title: string
   description: string
   category: string
-  priority: 'low' | 'medium' | 'high'
+  priority: TicketPriority
   assignedTo?: string
   userAdditions?: string
 }): Promise<ActionResponse<{ ticketId: string }>> {

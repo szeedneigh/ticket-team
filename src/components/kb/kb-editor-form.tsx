@@ -18,7 +18,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Save, Send, Loader2 } from 'lucide-react'
+import { Save, Send, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import dynamic from 'next/dynamic'
 import { kbArticleSchema, type KBArticleInput } from '@/lib/validations/kb-articles'
@@ -38,6 +38,8 @@ import {
 import { TagInput } from './tag-input'
 import { AutoSaveIndicator } from './auto-save-indicator'
 import { DraftRecoveryDialog } from './draft-recovery-dialog'
+import { DeleteArticleDialog } from './delete-article-dialog'
+import { UnsavedChangesDialog } from '@/components/shared/unsaved-changes-dialog'
 import type { DraftData } from './draft-recovery-dialog'
 import { useAutoSave } from '@/lib/hooks/use-auto-save'
 import { cn } from '@/lib/utils'
@@ -79,6 +81,7 @@ const CATEGORIES = [
 
 type CreateArticleAction = (data: KBArticleInput) => Promise<{ error?: string; success?: boolean; data?: { id: string } }>
 type UpdateArticleAction = (id: string, data: Partial<KBArticleInput>) => Promise<{ error?: string; success?: boolean }>
+type DeleteArticleAction = (id: string) => Promise<{ error?: string; success?: boolean }>
 
 interface KBEditorFormProps {
   article?: KnowledgeArticleWithAuthor
@@ -90,11 +93,15 @@ interface KBEditorFormProps {
   createArticleAction: CreateArticleAction
   /** Passed from Server Component to avoid Client import - fixes production Server Action resolution */
   updateArticleAction: UpdateArticleAction
+  /** Optional - only for edit mode. Passed from Server Component. */
+  deleteArticleAction?: DeleteArticleAction
 }
 
-export function KBEditorForm({ article, existingTags = [], mode, initialDraft, createArticleAction, updateArticleAction }: KBEditorFormProps) {
+export function KBEditorForm({ article, existingTags = [], mode, initialDraft, createArticleAction, updateArticleAction, deleteArticleAction }: KBEditorFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const baseCategory = article?.category ?? initialDraft?.category ?? ''
   const [selectedCategory, setSelectedCategory] = useState<string>(baseCategory)
 
@@ -236,26 +243,36 @@ export function KBEditorForm({ article, existingTags = [], mode, initialDraft, c
 
   // Handle cancel with confirmation
   const handleCancel = () => {
-    const hasUnsavedChanges = 
+    const hasUnsavedChanges =
       formData.title ||
       formData.content ||
       formData.tags.length > 0
 
     if (hasUnsavedChanges) {
-      const confirmLeave = window.confirm(
-        'You have unsaved changes. Are you sure you want to leave? Your draft will be discarded.'
-      )
-      if (confirmLeave) {
-        clearSaved()
-        router.back()
-      }
+      setCancelDialogOpen(true)
     } else {
       router.back()
     }
   }
 
+  const handleConfirmLeave = () => {
+    clearSaved()
+    router.back()
+  }
+
   return (
     <>
+      {/* Cancel / Leave Confirmation Dialog */}
+      <UnsavedChangesDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        title="Unsaved changes"
+        description="You have unsaved changes. Are you sure you want to leave? Your draft will be discarded."
+        confirmText="Leave"
+        cancelText="Stay"
+        onConfirm={handleConfirmLeave}
+      />
+
       {/* Draft Recovery Dialog */}
       {mode === 'create' && (
         <DraftRecoveryDialog
@@ -459,9 +476,9 @@ export function KBEditorForm({ article, existingTags = [], mode, initialDraft, c
             </Button>
             <Button
               type="button"
+              variant="gradient"
               onClick={publishArticle}
               disabled={isPending}
-              className="bg-gradient-to-r from-[#1f3463] to-[#0693D2] hover:from-[#1f3463]/90 hover:to-[#0693D2]/90 shadow-lg shadow-[#1f3463]/20"
             >
               {isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -472,6 +489,36 @@ export function KBEditorForm({ article, existingTags = [], mode, initialDraft, c
             </Button>
           </div>
         </div>
+
+        {/* Delete Article (edit mode only) */}
+        {mode === 'edit' && article && deleteArticleAction && (
+          <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6">
+            <h3 className="text-lg font-semibold text-destructive mb-2">Danger Zone</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Permanently delete this article. This action cannot be undone.
+            </p>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => setDeleteDialogOpen(true)}
+              disabled={isPending}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Article
+            </Button>
+          </div>
+        )}
+
+        {mode === 'edit' && article && deleteArticleAction && (
+          <DeleteArticleDialog
+            articleId={article.id}
+            articleTitle={article.title}
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            deleteArticleAction={deleteArticleAction}
+          />
+        )}
       </form>
     </>
   )

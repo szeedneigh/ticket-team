@@ -54,6 +54,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { TICKET_PRIORITY_LABELS, type TicketPriority } from '@/lib/types/database'
 import type { TicketPreparation } from '@/lib/chat/escalation-utils'
 
 // ============================================================================
@@ -69,7 +70,7 @@ export interface TicketReviewModalProps {
     title: string
     description: string
     category: string
-    priority: 'low' | 'medium' | 'high'
+    priority: TicketPriority
     assignedTo?: string
     userAdditions?: string
   }) => Promise<void>
@@ -92,7 +93,7 @@ export function TicketReviewModal({
 }: TicketReviewModalProps) {
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium')
+  const [priority, setPriority] = useState<TicketPriority>('medium')
   const [assignedTo, setAssignedTo] = useState<string>('')
   const [userAdditions, setUserAdditions] = useState('')
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
@@ -295,16 +296,18 @@ export function TicketReviewModal({
                     <Select
                       value={priority}
                       onValueChange={value =>
-                        setPriority(value as 'low' | 'medium' | 'high')
+                        setPriority(value as TicketPriority)
                       }
                     >
                       <SelectTrigger id="ticket-priority">
                         <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="low">{TICKET_PRIORITY_LABELS.low}</SelectItem>
+                        <SelectItem value="medium">{TICKET_PRIORITY_LABELS.medium}</SelectItem>
+                        <SelectItem value="high">{TICKET_PRIORITY_LABELS.high}</SelectItem>
+                        <SelectItem value="urgent">{TICKET_PRIORITY_LABELS.urgent}</SelectItem>
+                        <SelectItem value="critical">{TICKET_PRIORITY_LABELS.critical}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -455,6 +458,7 @@ export function TicketReviewModal({
             </Button>
             <Button
               type="button"
+              variant="gradient"
               onClick={handleSubmit}
               disabled={isSubmitting || isLoading || !preparation}
               aria-busy={isSubmitting}

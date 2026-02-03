@@ -23,6 +23,7 @@ import { TicketFormKBSuggestions } from './ticket-form-kb-suggestions'
 import { createTicketSchema, type CreateTicketInput } from '@/lib/validations/tickets'
 import type { AttachmentConfig } from '@/lib/validations/tickets'
 import { createTicket } from '@/app/actions/tickets'
+import { UnsavedChangesDialog } from '@/components/shared/unsaved-changes-dialog'
 import type { Category } from '@/lib/tickets/queries'
 import type { TicketPriority } from '@/lib/types/database'
 import { SUCCESS_MESSAGES } from '@/lib/constants'
@@ -50,6 +51,7 @@ interface TicketFormProps {
 export function TicketForm({ categories, attachmentConfig, onCancel }: TicketFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [files, setFiles] = useState<File[]>([])
   const [subcategories, setSubcategories] = useState<Category[]>([])
 
@@ -134,12 +136,13 @@ export function TicketForm({ categories, attachmentConfig, onCancel }: TicketFor
 
   const handleCancel = () => {
     if (isDirty || files.length > 0) {
-      const confirmed = window.confirm(
-        'You have unsaved changes. Are you sure you want to cancel?'
-      )
-      if (!confirmed) return
+      setCancelDialogOpen(true)
+    } else {
+      doCancel()
     }
+  }
 
+  const doCancel = () => {
     reset()
     setFiles([])
     if (onCancel) {
@@ -150,6 +153,16 @@ export function TicketForm({ categories, attachmentConfig, onCancel }: TicketFor
   }
 
   return (
+    <>
+      <UnsavedChangesDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        title="Unsaved changes"
+        description="You have unsaved changes. Are you sure you want to cancel?"
+        confirmText="Discard"
+        cancelText="Stay"
+        onConfirm={doCancel}
+      />
     <Card className="bg-background/60 backdrop-blur-xl border-border/50 shadow-sm relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
       <CardHeader>
@@ -313,7 +326,7 @@ export function TicketForm({ categories, attachmentConfig, onCancel }: TicketFor
               <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending} className="bg-gradient-to-r from-[#1f3463] to-[#2cafdd] text-white hover:opacity-90 transition-opacity">
+            <Button type="submit" variant="gradient" disabled={isPending}>
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -330,5 +343,6 @@ export function TicketForm({ categories, attachmentConfig, onCancel }: TicketFor
         </form>
       </CardContent>
     </Card>
+    </>
   )
 }

@@ -16,7 +16,8 @@
 
 import { useState, useRef, useEffect, KeyboardEvent } from 'react'
 
-import { Send, Loader2, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
+import { Send, Loader2, TicketPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
@@ -33,6 +34,8 @@ export interface ChatInputProps {
   maxLength?: number
   error?: string | null
   onRetry?: () => void
+  /** When set, shows a "Create Ticket" fallback when AI errors occur */
+  createTicketHref?: string
 }
 
 // ============================================================================
@@ -56,6 +59,7 @@ export function ChatInput({
   maxLength = DEFAULT_MAX_LENGTH,
   error = null,
   onRetry,
+  createTicketHref,
 }: ChatInputProps) {
   const [message, setMessage] = useState('')
   const [rows, setRows] = useState(MIN_ROWS)
@@ -131,20 +135,58 @@ export function ChatInput({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Error Message */}
+      {/* AI Unavailable Fallback - suggest Create Ticket instead of showing error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <p className="flex-1">{error}</p>
-          {onRetry && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onRetry}
-              className="h-auto px-2 py-1 text-xs"
-            >
-              Retry
-            </Button>
+        <div
+          id="chat-input-error"
+          className={cn(
+            'flex flex-col gap-3 rounded-xl px-4 py-3 shadow-sm',
+            createTicketHref
+              ? 'border border-indigo-200/60 bg-gradient-to-b from-indigo-50/80 to-white dark:border-indigo-900/40 dark:from-indigo-950/30 dark:to-slate-950'
+              : 'border border-destructive/50 bg-destructive/10 text-destructive'
+          )}
+        >
+          {createTicketHref ? (
+            <>
+              <p className="text-sm text-foreground">
+                I&apos;m having trouble right now. Create a support ticket and our team will help you.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button asChild variant="gradient" size="sm" className="font-medium">
+                  <Link
+                    href={createTicketHref}
+                    className="inline-flex items-center gap-2"
+                  >
+                    <TicketPlus className="h-4 w-4" />
+                    Create Ticket
+                  </Link>
+                </Button>
+                {onRetry && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onRetry}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Try again
+                  </Button>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <p className="flex-1 text-sm">{error}</p>
+              {onRetry && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onRetry}
+                  className="h-auto shrink-0 px-2 py-1 text-xs"
+                >
+                  Retry
+                </Button>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -189,14 +231,12 @@ export function ChatInput({
 
         {/* Send Button */}
         <Button
+          variant="gradient"
           onClick={handleSend}
           disabled={isSendDisabled}
           size="icon"
           className={cn(
             'h-10 w-10 shrink-0 rounded-full mb-1 mr-1',
-            'bg-gradient-to-br from-[#1f3463] to-[#2cafdd] shadow-md',
-            'hover:opacity-90 hover:shadow-lg hover:scale-105',
-            'transition-all duration-200',
             isSendDisabled && 'opacity-50 shadow-none hover:scale-100'
           )}
           aria-label="Send message"

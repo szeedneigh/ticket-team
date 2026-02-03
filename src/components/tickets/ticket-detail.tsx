@@ -1,10 +1,23 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useTransition } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
-import { Paperclip, Download } from 'lucide-react'
+import { Paperclip, Download, XCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { StatusBadge } from './status-badge'
@@ -14,7 +27,8 @@ import { TicketActions } from './ticket-actions'
 import { CommentBox } from './comment-box'
 import { CommentList } from './comment-list'
 import { FeedbackPrompt } from './feedback-prompt'
-import { getAttachmentDownloadUrl } from '@/app/actions/tickets'
+import { getAttachmentDownloadUrl, cancelTicketBySubmitter } from '@/app/actions/tickets'
+import { SUCCESS_MESSAGES } from '@/lib/constants'
 import { hasFeedback } from '@/app/actions/feedback'
 import type { TicketWithUser, TicketCommentWithUser, TicketActivityWithUser } from '@/lib/types/tickets'
 import type { User as UserType } from '@/lib/types/users'
@@ -54,6 +68,8 @@ interface TicketDetailProps {
   staffUsers: UserType[]
   currentUserId: string
   isStaff: boolean
+  /** When true, feedback prompt will never show (e.g. already rated). Passed from server for resolved tickets. */
+  hasExistingFeedback?: boolean
 }
 
 export function TicketDetail({
@@ -64,37 +80,113 @@ export function TicketDetail({
   staffUsers,
   currentUserId,
   isStaff,
+  hasExistingFeedback = false,
 }: TicketDetailProps) {
+  const router = useRouter()
   const isSubmitter = ticket.user_id === currentUserId
+  const canViewComments = ticket.user_id === currentUserId || ticket.assigned_to === currentUserId
   const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false)
-  const [feedbackAlreadySubmitted, setFeedbackAlreadySubmitted] = useState(false)
+  const [feedbackAlreadySubmitted, setFeedbackAlreadySubmitted] = useState(hasExistingFeedback)
+  const [resolutionConfirmed, setResolutionConfirmed] = useState(false)
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [isCancelPending, startCancelTransition] = useTransition()
 
-  // Check if feedback prompt should be shown
+  // Subscribe to real-time updates for ticket, comments, and activities
   useEffect(() => {
+    const supabase = createClient()
+    const ticketId = ticket.id
+
+    const channel = supabase
+      .channel(`ticket-detail-${ticketId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tickets',
+          filter: `id=eq.${ticketId}`,
+        },
+        () => router.refresh()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ticket_comments',
+          filter: `ticket_id=eq.${ticketId}`,
+        },
+        () => router.refresh()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ticket_activities',
+          filter: `ticket_id=eq.${ticketId}`,
+        },
+        () => router.refresh()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [ticket.id, router])
+
+  // Check if feedback has already been submitted (only when server didn't preload)
+  useEffect(() => {
+    if (hasExistingFeedback) {
+      setFeedbackAlreadySubmitted(true)
+      return
+    }
     const checkFeedback = async () => {
-      // Only show prompt for resolved tickets where user is the submitter
+      // Only for resolved tickets where user is the submitter
       if (ticket.status === 'resolved' && isSubmitter && !isStaff) {
         const hasSubmittedFeedback = await hasFeedback(ticket.id)
         setFeedbackAlreadySubmitted(hasSubmittedFeedback)
-
-        // Show prompt if feedback hasn't been submitted yet
-        if (!hasSubmittedFeedback) {
-          setShowFeedbackPrompt(true)
-        }
+        // Do NOT auto-show FeedbackPrompt - user must click "Confirm Resolution" first
       }
     }
 
     checkFeedback()
-  }, [ticket.id, ticket.status, isSubmitter, isStaff])
+  }, [ticket.id, ticket.status, isSubmitter, isStaff, hasExistingFeedback])
 
   const handleFeedbackSubmitted = () => {
     setFeedbackAlreadySubmitted(true)
     setShowFeedbackPrompt(false)
   }
 
+  const showResolutionFlow =
+    ticket.status === 'resolved' && isSubmitter && !isStaff && !feedbackAlreadySubmitted
+
+  const handleConfirmResolution = () => {
+    setResolutionConfirmed(true)
+    setShowFeedbackPrompt(true)
+  }
+
+  const canCancelTicket =
+    isSubmitter &&
+    !isStaff &&
+    (['open', 'in_progress', 'on_hold'] as readonly string[]).includes(ticket.status)
+
+  const handleCancelTicket = () => {
+    startCancelTransition(async () => {
+      const result = await cancelTicketBySubmitter(ticket.id)
+      if (result.success) {
+        toast.success(SUCCESS_MESSAGES.TICKET_CANCELED)
+        setCancelDialogOpen(false)
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to cancel ticket')
+      }
+    })
+  }
+
   return (
     <>
-      {/* Feedback Prompt Dialog */}
+      {/* Feedback Prompt Dialog - only after user confirms resolution, mandatory */}
       {showFeedbackPrompt && !feedbackAlreadySubmitted && (
         <FeedbackPrompt
           ticketId={ticket.id}
@@ -102,12 +194,31 @@ export function TicketDetail({
           isOpen={showFeedbackPrompt}
           onClose={() => setShowFeedbackPrompt(false)}
           onSubmitted={handleFeedbackSubmitted}
+          mandatory
         />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Main Content */}
       <div className="lg:col-span-2 space-y-6">
+        {/* Resolution confirmation step for employees (submitter, non-staff) */}
+        {showResolutionFlow && (
+          <Alert className="bg-[#2cafdd]/10 border-[#2cafdd]/30 text-foreground">
+            <AlertDescription className="flex flex-col gap-3">
+              {!resolutionConfirmed ? (
+                <>
+                  <span>This ticket has been resolved. Please confirm the resolution to rate your experience.</span>
+                  <Button onClick={handleConfirmResolution} size="sm" className="w-fit">
+                    Confirm Resolution
+                  </Button>
+                </>
+              ) : (
+                <span>Please rate your experience in the feedback form.</span>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Ticket Header */}
         <Card className="relative overflow-hidden bg-background/60 backdrop-blur-md border-white/10 shadow-xl">
           {/* Subtle gradient accent */}
@@ -248,27 +359,53 @@ export function TicketDetail({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Comment Input */}
-            <div className="rounded-xl bg-muted/20 p-4 border border-border/30">
-              <CommentBox ticketId={ticket.id} isStaff={isStaff} />
-            </div>
-
-            {/* Comment List */}
-            <div>
-              <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
-                All Comments
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                  {comments.length}
-                </span>
-              </h3>
-              <CommentList comments={comments} />
-            </div>
+            {canViewComments ? (
+              <>
+                <div className="rounded-xl bg-muted/20 p-4 border border-border/30">
+                  <CommentBox ticketId={ticket.id} isStaff={isStaff} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+                    All Comments
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                      {comments.length}
+                    </span>
+                  </h3>
+                  <CommentList comments={comments} emptyMessage="No comments yet. Be the first to comment!" />
+                </div>
+              </>
+            ) : (
+              <div className="rounded-xl bg-muted/20 p-6 border border-border/30 text-center text-muted-foreground">
+                <p>Comments are only visible to the ticket creator and assigned MIS staff.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* Sidebar */}
       <div className="space-y-6">
+        {/* Cancel Ticket (Employee submitter only) */}
+        {canCancelTicket && (
+          <Card className="relative overflow-hidden bg-background/60 backdrop-blur-md border-white/10 shadow-xl">
+            <CardContent className="pt-6">
+              <Button
+                variant="outline"
+                className="w-full border-red-500/50 text-red-600 hover:bg-red-500/10 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-500/20"
+                onClick={() => setCancelDialogOpen(true)}
+                disabled={isCancelPending}
+              >
+                {isCancelPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <XCircle className="mr-2 h-4 w-4" />
+                )}
+                Cancel Ticket
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Actions (Staff or Submitter for reopen) */}
         <TicketActions
           ticket={ticket}
@@ -278,6 +415,32 @@ export function TicketDetail({
           isSubmitter={isSubmitter}
         />
       </div>
+
+      {/* Cancel Ticket Confirmation Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel ticket?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this ticket? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelPending}>Keep Ticket</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={handleCancelTicket}
+              disabled={isCancelPending}
+            >
+              {isCancelPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Cancel Ticket'
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
     </>
   )

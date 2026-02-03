@@ -120,9 +120,9 @@ export function RestoreUserDialog({
             Cancel
           </Button>
           <Button
+            variant="gradient"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="bg-emerald-500 hover:bg-emerald-600"
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Restore User

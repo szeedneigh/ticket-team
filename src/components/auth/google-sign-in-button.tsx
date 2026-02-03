@@ -15,13 +15,18 @@ export function GoogleSignInButton() {
     setError(null)
     
     startTransition(async () => {
-      const result = await signInWithGoogle()
-      
-      if ('error' in result) {
-        setError(result.error)
-      } else if ('url' in result) {
-        // Redirect to Google OAuth
-        window.location.href = result.url
+      try {
+        const result = await signInWithGoogle()
+        
+        if ('error' in result) {
+          setError(result.error)
+        } else if ('url' in result) {
+          // Redirect to Google OAuth
+          window.location.href = result.url
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Sign-in failed. Please try again.'
+        setError(message)
       }
     })
   }

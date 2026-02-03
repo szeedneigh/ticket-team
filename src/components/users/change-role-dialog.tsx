@@ -170,6 +170,7 @@ export function ChangeRoleDialog({
             Cancel
           </Button>
           <Button
+            variant="gradient"
             onClick={handleSubmit}
             disabled={isSubmitting || selectedRole === user.role}
           >

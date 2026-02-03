@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   LayoutDashboard,
@@ -124,6 +124,13 @@ function useIsMobile() {
 
 export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: SidebarProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  // When viewing a ticket detail with ?from=queue, highlight Ticket Queue instead of My Tickets
+  const isTicketDetailPage =
+    pathname?.startsWith('/tickets/') &&
+    pathname.split('/').length === 3 &&
+    !['queue', 'new'].includes(pathname.split('/')[2] ?? '')
+  const viewingTicketFromQueue = isTicketDetailPage && searchParams.get('from') === 'queue'
   const [pendingHref, setPendingHref] = useState<string | null>(null)
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const isMobile = useIsMobile()
@@ -241,6 +248,10 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
             const isExactMatch = pathname === item.href
             const isChildMatch = pathname.startsWith(item.href + '/')
             
+            // When viewing ticket detail with ?from=queue, highlight Ticket Queue, not My Tickets
+            const isTicketQueueFromContext = item.href === '/tickets/queue' && viewingTicketFromQueue
+            const isMyTicketsExcludedByContext = item.href === '/tickets' && viewingTicketFromQueue
+            
             // Prevent parent routes from highlighting when a more specific child route exists
             // e.g., /tickets should NOT highlight when on /tickets/queue
             const hasMoreSpecificMatch = filteredNavItems.some(other => 
@@ -249,7 +260,9 @@ export function Sidebar({ user, isCollapsed, isMobileOpen, setIsMobileOpen }: Si
               (pathname === other.href || pathname.startsWith(other.href + '/'))
             )
             
-            const isActuallyActive = isExactMatch || (isChildMatch && !hasMoreSpecificMatch)
+            const isActuallyActive =
+              isTicketQueueFromContext ||
+              (!isMyTicketsExcludedByContext && (isExactMatch || (isChildMatch && !hasMoreSpecificMatch)))
             // Optimistic highlighting: show active state immediately on click
             const isActive = pendingHref === item.href || isActuallyActive
             

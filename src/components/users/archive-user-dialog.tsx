@@ -132,7 +132,7 @@ export function ArchiveUserDialog({
             Cancel
           </Button>
           <Button
-            variant="destructive"
+            variant="gradient"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >

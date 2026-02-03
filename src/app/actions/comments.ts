@@ -153,6 +153,15 @@ export async function createComment(
       }
     }
 
+    // 5.5. Only creator or assigned staff can add comments
+    const canComment = ticket.user_id === user.id || ticket.assigned_to === user.id
+    if (!canComment) {
+      return {
+        success: false,
+        error: 'Only the ticket creator and assigned staff can add comments',
+      }
+    }
+
     // 6. Handle file uploads (if any)
     const fileCount = parseInt(formData.get('file_count') as string) || 0
     const attachmentMetadata: AttachmentMetadata[] = []

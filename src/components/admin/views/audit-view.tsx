@@ -188,7 +188,7 @@ export function AuditLogView({ initialData }: { initialData?: unknown }) {
 
         <div className="flex gap-2">
           <Button
-            variant="outline"
+            variant="gradient"
             size="sm"
             onClick={handleExport}
             disabled={isExporting || logs.length === 0}

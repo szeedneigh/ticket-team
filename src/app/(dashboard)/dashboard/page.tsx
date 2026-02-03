@@ -130,24 +130,63 @@ export default async function DashboardPage() {
             />
           </div>
           
-          {/* Secondary Metrics Row */}
+          {/* Secondary Metrics Row - Employee: status cards; Staff: Avg Response Time + Satisfaction */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <StatsCard
-              title="Avg Response Time"
-              value={stats?.avgResponseTime || '-'}
-              icon="Clock"
-              loading={!stats && !statsError}
-              variant="warning"
-              description="Average time to first response"
-            />
-            <StatsCard
-              title="Satisfaction"
-              value={formatSatisfactionValue(stats?.satisfaction)}
-              icon="Star"
-              loading={!stats && !statsError}
-              variant="default"
-              description="Average customer rating"
-            />
+            {isStaff ? (
+              <>
+                <StatsCard
+                  title="Avg Response Time"
+                  value={stats?.avgResponseTime || '-'}
+                  icon="Clock"
+                  loading={!stats && !statsError}
+                  variant="warning"
+                  description="Average time to first response"
+                />
+                <StatsCard
+                  title="Satisfaction"
+                  value={formatSatisfactionValue(stats?.satisfaction)}
+                  icon="Star"
+                  loading={!stats && !statsError}
+                  variant="default"
+                  description="Average customer rating"
+                />
+              </>
+            ) : (
+              <>
+                <StatsCard
+                  title="In Progress"
+                  value={formatStatValue(stats?.inProgressCount)}
+                  icon="RotateCw"
+                  loading={!stats && !statsError}
+                  variant="default"
+                  description="Tickets being worked on"
+                />
+                <StatsCard
+                  title="On Hold"
+                  value={formatStatValue(stats?.onHoldCount)}
+                  icon="PauseCircle"
+                  loading={!stats && !statsError}
+                  variant="default"
+                  description="Waiting for something"
+                />
+                <StatsCard
+                  title="Resolved"
+                  value={formatStatValue(stats?.resolvedCount)}
+                  icon="CheckCircle"
+                  loading={!stats && !statsError}
+                  variant="default"
+                  description="Completed, awaiting confirmation"
+                />
+                <StatsCard
+                  title="Cancelled"
+                  value={formatStatValue(stats?.canceledCount)}
+                  icon="XCircle"
+                  loading={!stats && !statsError}
+                  variant="default"
+                  description="No longer needed"
+                />
+              </>
+            )}
           </div>
 
           {/* Ticket Volume Trend Chart */}

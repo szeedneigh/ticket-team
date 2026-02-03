@@ -304,14 +304,14 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
       }
     }
 
-    // Calculate real metrics
+    // Calculate real metrics (staff) or status counts (employees)
     const [avgResponseTime, satisfaction, overdueCount] = await Promise.all([
       calculateAvgResponseTime(userId, isStaff),
       calculateSatisfactionScore(userId, isStaff),
       calculateOverdueTickets(userId, isStaff),
     ])
 
-    return {
+    const baseStats: DashboardStats = {
       openTickets: openCount || 0,
       resolvedTickets: resolvedToday || 0,
       avgResponseTime,
@@ -321,6 +321,22 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
       assignedTickets: assignedCount,
       overdueTickets: overdueCount,
     }
+
+    // For employees, add status counts for ticket status cards
+    if (!isStaff) {
+      const { data: statusTickets } = await supabase
+        .from('tickets')
+        .select('id, status')
+        .eq('user_id', userId)
+
+      const tickets = statusTickets || []
+      baseStats.inProgressCount = tickets.filter(t => t.status === 'in_progress').length
+      baseStats.onHoldCount = tickets.filter(t => t.status === 'on_hold').length
+      baseStats.resolvedCount = tickets.filter(t => t.status === 'resolved').length
+      baseStats.canceledCount = tickets.filter(t => t.status === 'canceled').length
+    }
+
+    return baseStats
   } catch (error) {
     logger.error('Error fetching dashboard stats', {
       error: error instanceof Error ? error.message : 'Unknown error',
