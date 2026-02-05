@@ -4,8 +4,12 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function AuditLoading() {
+function AuditLoadingSkeleton() {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -50,5 +54,13 @@ export default function AuditLoading() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function AuditLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/admin/audit`}>
+      <AuditLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }
