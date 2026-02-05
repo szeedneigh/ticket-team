@@ -50,10 +50,11 @@ export function TabPrefetchProvider({ children }: { children: ReactNode }) {
   const prefetch = useCallback((tabId: string): Promise<void> => {
     const fetcher = TOP_LEVEL_FETCHERS[tabId] ?? SETTINGS_SUB_FETCHERS[tabId]
     if (!fetcher) return Promise.resolve()
-    // Defer to avoid "Cannot update component while rendering another" - never run
-    // fetcher/setState during the render phase (e.g. from Strict Mode or event timing)
+    // Use setTimeout(0) to defer to a new macrotask - queueMicrotask still runs
+    // within the same event loop tick and can trigger "Cannot update component
+    // while rendering another" errors in React Strict Mode or concurrent rendering.
     return new Promise<void>((resolve) => {
-      queueMicrotask(() => {
+      setTimeout(() => {
         setCache((prev) => {
           if (prev[tabId]) {
             resolve()
@@ -65,7 +66,7 @@ export function TabPrefetchProvider({ children }: { children: ReactNode }) {
             .finally(() => resolve())
           return prev
         })
-      })
+      }, 0)
     })
   }, [])
 
