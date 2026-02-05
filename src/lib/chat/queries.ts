@@ -433,16 +433,9 @@ export async function recordInteraction(
     .single()
 
   if (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'queries.ts:recordInteraction-error',message:'Error recording interaction',data:{sessionId,userId,error:error.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
-    // #endregion
     console.error('Error recording interaction:', error)
     throw new Error(`Failed to record interaction: ${error.message}`)
   }
-
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'queries.ts:recordInteraction-success',message:'Successfully recorded interaction',data:{sessionId,userId,interactionId:data?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
-  // #endregion
 
   return data as AIInteraction
 }
