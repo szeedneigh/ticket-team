@@ -146,19 +146,20 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/onboarding/department`)
       }
 
-      // Redirect employees to chat, others to dashboard
+      // Redirect employees and first-time users to chat, others to dashboard
       const userRole = userData?.role || 'employee'
       const isEmployee = userRole === 'employee'
-      
-      // Success - redirect based on role or requested page
-      let redirectUrl = next.startsWith('/') ? next : (isEmployee ? '/chat' : '/dashboard')
-      
-      // If next is explicitly set and not dashboard, use it
-      // Otherwise, use role-based default
-      if (next === '/dashboard' && isEmployee) {
-        redirectUrl = '/chat'
-      }
-      
+      const shouldGoToChat = isEmployee || isNewUser
+
+      // Determine the default redirect based on role or first-time status
+      const defaultRedirect = shouldGoToChat ? '/chat' : '/dashboard'
+
+      // Use next parameter only if it's explicitly set to something other than the default /dashboard
+      // This ensures employees and new users go to /chat by default, but can still be redirected elsewhere if explicitly requested
+      const redirectUrl = (next && next !== '/dashboard' && next.startsWith('/'))
+        ? next
+        : defaultRedirect
+
       return NextResponse.redirect(`${origin}${redirectUrl}`)
     }
 
