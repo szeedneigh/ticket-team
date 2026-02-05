@@ -1,16 +1,18 @@
 /**
  * Chat Page Loading State
  *
- * Displays loading skeleton mirroring the ChatPageClient layout:
- * - Left: Main Chat Area (Messages + Input)
- * - Right: History Sidebar
+ * Displays loading skeleton only on initial visit (per session).
  *
  * @module app/(dashboard)/chat/loading
  */
 
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function ChatLoading() {
+function ChatLoadingSkeleton() {
   return (
     <div className="flex h-full bg-background overflow-hidden relative">
       {/* Main Chat Area (Left) */}
@@ -77,5 +79,13 @@ export default function ChatLoading() {
          </div>
       </div>
     </div>
+  )
+}
+
+export default function ChatLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/chat`}>
+      <ChatLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }
