@@ -105,7 +105,7 @@ export function WelcomeBanner({ user }: WelcomeBannerProps) {
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">Time</p>
                     <p className="text-base font-bold text-foreground tabular-nums">
-                      {currentTime ? currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '--:--'}
+                      {currentTime ? currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '--:--'}
                     </p>
                   </div>
                 </div>
@@ -125,7 +125,7 @@ export function WelcomeBanner({ user }: WelcomeBannerProps) {
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">Date</p>
                     <p className="text-sm font-semibold text-foreground whitespace-nowrap">
-                      {currentTime ? currentTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-- --'}
+                      {currentTime ? currentTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-- --'}
                     </p>
                   </div>
                 </div>
@@ -142,7 +142,7 @@ export function WelcomeBanner({ user }: WelcomeBannerProps) {
               <Sparkles className="w-3 h-3 text-amber-500" />
               <p className="text-xs text-muted-foreground">
                 Last login: {user.last_login 
-                  ? new Date(user.last_login).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  ? new Date(user.last_login).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                   : 'First time'}
               </p>
             </motion.div>
