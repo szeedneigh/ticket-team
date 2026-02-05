@@ -56,7 +56,10 @@ export function DepartmentSelectionForm({
       const result = await updateUserDepartment(selectedDepartment)
 
       if (result.success) {
-        router.push('/dashboard')
+        // Redirect employees to AI chat, others to dashboard
+        const userRole = result.data?.role || 'employee'
+        const redirectTo = userRole === 'employee' ? '/chat' : '/dashboard'
+        router.push(redirectTo)
         router.refresh()
       } else {
         setError(result.error || 'Failed to update department')
