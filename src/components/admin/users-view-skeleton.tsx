@@ -6,6 +6,14 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 export function UsersViewSkeleton() {
   return (
@@ -36,13 +44,16 @@ export function UsersViewSkeleton() {
             </div>
           </div>
 
-          {/* Filters Section */}
+          {/* Filters Section - matches UserFilters: search (flex-1) + filter row */}
           <div className="flex flex-col gap-6 bg-background/40 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-xl shadow-[#1f3463]/5">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+              <Skeleton className="h-10 flex-1 w-full" />
+              <div className="flex flex-wrap items-center gap-2">
+                <Skeleton className="h-10 w-[140px]" />
+                <Skeleton className="h-10 w-[160px]" />
+                <Skeleton className="h-10 w-[140px]" />
+                <Skeleton className="h-10 w-[150px]" />
+              </div>
             </div>
           </div>
         </div>
@@ -65,68 +76,61 @@ export function UsersViewSkeleton() {
           ))}
         </div>
 
-        {/* Users Table Section */}
+        {/* Users Table Section - matches UserTable: p-0, space-y-4, rounded-md border Table, pagination */}
         <div className="rounded-2xl border border-white/10 bg-background/40 backdrop-blur-md shadow-lg shadow-[#1f3463]/5 overflow-hidden">
-          <div className="p-6">
-            {/* Table Header */}
-            <div className="flex items-center justify-between mb-6">
-              <Skeleton className="h-6 w-32" />
-              <div className="flex gap-2">
-                <Skeleton className="h-9 w-24" />
-                <Skeleton className="h-9 w-24" />
-              </div>
-            </div>
-
-            {/* Table Skeleton */}
+          <div className="p-0">
             <div className="space-y-4">
-              {/* Table Headers */}
-              <div className="grid grid-cols-12 gap-4 pb-3 border-b border-border/40">
-                <Skeleton className="h-4 w-full col-span-3" />
-                <Skeleton className="h-4 w-full col-span-2" />
-                <Skeleton className="h-4 w-full col-span-2" />
-                <Skeleton className="h-4 w-full col-span-2" />
-                <Skeleton className="h-4 w-full col-span-2" />
-                <Skeleton className="h-4 w-full col-span-1" />
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
+                        <Skeleton className="h-4 w-4 rounded" />
+                      </TableHead>
+                      <TableHead className="w-12" />
+                      <TableHead><Skeleton className="h-4 w-16" /></TableHead>
+                      <TableHead><Skeleton className="h-4 w-12" /></TableHead>
+                      <TableHead><Skeleton className="h-4 w-12" /></TableHead>
+                      <TableHead><Skeleton className="h-4 w-20" /></TableHead>
+                      <TableHead><Skeleton className="h-4 w-12" /></TableHead>
+                      <TableHead><Skeleton className="h-4 w-12" /></TableHead>
+                      <TableHead className="w-12">
+                        <Skeleton className="h-4 w-4 rounded ml-auto" />
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-4 rounded" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="h-3 w-20" />
+                          </div>
+                        </TableCell>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-14 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-14 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8 rounded-md" /></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-
-              {/* Table Rows */}
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-                <div key={i} className="grid grid-cols-12 gap-4 py-4 border-b border-border/20">
-                  <div className="col-span-3 flex items-center gap-3">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-40" />
-                    </div>
-                  </div>
-                  <div className="col-span-2 flex items-center">
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                  </div>
-                  <div className="col-span-2 flex items-center">
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                  <div className="col-span-2 flex items-center">
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                  <div className="col-span-2 flex items-center">
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                  </div>
-                  <div className="col-span-1 flex items-center justify-end">
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                  </div>
+              {/* Pagination - matches UserTable: flex-col items-center gap-3 pb-6 pt-2 */}
+              <div className="flex flex-col items-center gap-3 pb-6 pt-2">
+                <Skeleton className="h-4 w-48" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-8 w-20" />
+                  <Skeleton className="h-8 w-8" />
+                  <Skeleton className="h-8 w-8" />
+                  <Skeleton className="h-8 w-8" />
+                  <Skeleton className="h-8 w-16" />
                 </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            <div className="flex items-center justify-between mt-6 pt-6 border-t border-border/40">
-              <Skeleton className="h-4 w-48" />
-              <div className="flex gap-2">
-                <Skeleton className="h-9 w-24" />
-                <Skeleton className="h-9 w-9" />
-                <Skeleton className="h-9 w-9" />
-                <Skeleton className="h-9 w-9" />
-                <Skeleton className="h-9 w-24" />
               </div>
             </div>
           </div>
