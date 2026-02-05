@@ -19,6 +19,7 @@ import {
 import { TicketIcon, TrendingUpIcon, AlertCircleIcon, ClockIcon, BarChart3Icon } from 'lucide-react'
 import { exportTicketAnalytics } from '@/lib/analytics/export'
 import type { ExportFormat } from '@/lib/types/analytics'
+import { getPriorityColor, getTicketStatusColor } from '@/lib/constants/colors'
 
 interface TicketAnalyticsContentProps {
   summary: {
@@ -46,16 +47,6 @@ interface TicketAnalyticsContentProps {
     daily: Array<{ label: string; count: number }>
   }
 }
-
-// Semantic colors for priorities
-const PRIORITY_COLORS = {
-  high: '#ef4444',
-  medium: '#f59e0b', 
-  low: '#10b981',
-}
-
-// Semantic colors for statuses
-const STATUS_COLORS = ['#0693D2', '#8b5cf6', '#10b981', '#6b7280']
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -98,7 +89,7 @@ export function TicketAnalyticsContent({
         },
       },
       priorityDist: priorityDist.map(p => ({
-        priority: p.priority as 'low' | 'medium' | 'high',
+        priority: p.priority as 'low' | 'medium' | 'high' | 'urgent' | 'critical',
         count: p.count,
         percentage: p.percentage,
         avgResolutionTime: p.avgResolutionTime,
@@ -215,7 +206,7 @@ export function TicketAnalyticsContent({
           data={priorityDist.map((p) => ({
             name: p.priority.charAt(0).toUpperCase() + p.priority.slice(1),
             value: p.count,
-            color: PRIORITY_COLORS[p.priority as keyof typeof PRIORITY_COLORS] || '#6b7280',
+            color: getPriorityColor(p.priority),
           }))}
           variant="pie"
           showLegend={true}
@@ -229,7 +220,7 @@ export function TicketAnalyticsContent({
           data={statusDist.map((s, index) => ({
             name: s.status.replace('_', ' ').charAt(0).toUpperCase() + s.status.replace('_', ' ').slice(1),
             value: s.count,
-            color: STATUS_COLORS[index % STATUS_COLORS.length],
+            color: getTicketStatusColor(index),
           }))}
           variant="donut"
           showLegend={true}
@@ -269,7 +260,7 @@ export function TicketAnalyticsContent({
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           {priorityDist.map((priority) => {
-            const color = PRIORITY_COLORS[priority.priority as keyof typeof PRIORITY_COLORS] || '#6b7280'
+            const color = getPriorityColor(priority.priority)
             return (
               <div
                 key={priority.priority}
