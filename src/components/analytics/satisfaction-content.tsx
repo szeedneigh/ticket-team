@@ -2,7 +2,7 @@
  * Satisfaction Content Component (Client)
  *
  * Premium satisfaction analytics with glassmorphism styling,
- * semantic star ratings, and modern visual design.
+ * emoji-based satisfaction ratings, and modern visual design.
  */
 
 'use client'
@@ -17,11 +17,13 @@ import {
   ExportButton,
 } from '@/components/analytics'
 import type { DataTableColumn } from '@/components/analytics'
-import { StarIcon, MessageSquareIcon, TrendingUpIcon, HeartIcon, SmileIcon } from 'lucide-react'
+import { MessageSquareIcon, TrendingUpIcon, HeartIcon, SmileIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
 import { exportSatisfactionAnalytics } from '@/lib/analytics/export'
 import type { ExportFormat } from '@/lib/types/analytics'
+import { getSatisfactionRatingColor, STATUS } from '@/lib/constants/colors'
+import { getSatisfactionEmoji } from '@/lib/constants/satisfaction-emojis'
 
 interface SatisfactionContentProps {
   satisfactionData: {
@@ -56,13 +58,6 @@ const containerVariants = {
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 }
-}
-
-// Semantic colors for ratings
-const getRatingColor = (rating: number) => {
-  if (rating >= 4) return '#10b981' // Emerald for positive
-  if (rating === 3) return '#f59e0b' // Amber for neutral
-  return '#ef4444' // Red for negative
 }
 
 export function SatisfactionContent({ satisfactionData }: SatisfactionContentProps) {
@@ -108,18 +103,9 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
       sortable: true,
       align: 'center',
       render: (value) => (
-        <div className="flex items-center justify-center gap-0.5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <StarIcon
-              key={i}
-              className={`h-4 w-4 ${
-                i < (value as number)
-                  ? 'fill-yellow-400 text-yellow-400'
-                  : 'text-muted-foreground/20'
-              }`}
-            />
-          ))}
-        </div>
+        <span className="text-xl" role="img" aria-label={`Rating ${value} of 5`}>
+          {getSatisfactionEmoji(value as number)}
+        </span>
       ),
     },
     {
@@ -161,9 +147,10 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
       align: 'center',
       render: (value) => {
         const score = value as number
+        const r = Math.round(score)
         return (
           <div className="flex items-center justify-center gap-1">
-            <StarIcon className={`h-4 w-4 ${score >= 4 ? 'fill-yellow-400 text-yellow-400' : score >= 3 ? 'fill-yellow-400/50 text-yellow-400' : 'text-muted-foreground'}`} />
+            <span className="text-lg" role="img" aria-hidden="true">{getSatisfactionEmoji(r)}</span>
             <Badge
               variant={score >= 4 ? 'default' : score >= 3 ? 'secondary' : 'destructive'}
               className={score >= 4 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : ''}
@@ -215,7 +202,7 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
             title="Overall Score"
             value={`${satisfactionData.overallScore.toFixed(1)}/5.0`}
             description="Average satisfaction rating"
-            icon={<StarIcon className="h-4 w-4" />}
+            icon={<span className="text-lg" aria-hidden="true">{getSatisfactionEmoji(Math.round(satisfactionData.overallScore))}</span>}
             variant={
               satisfactionData.overallScore >= 4
                 ? 'success'
@@ -233,14 +220,14 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
           <KPICard
             title="Promoters"
             value={`${promotersScore}%`}
-            description="Rated 4-5 stars"
+            description="Rated 4-5"
             icon={<TrendingUpIcon className="h-4 w-4" />}
             variant={promotersScore >= 75 ? 'success' : promotersScore >= 50 ? 'warning' : 'danger'}
           />
           <KPICard
             title="Negative Feedback"
             value={negativeResponses.toLocaleString()}
-            description="Rated 1-2 stars"
+            description="Rated 1-2"
             icon={<SmileIcon className="h-4 w-4" />}
             variant={negativeResponses === 0 ? 'success' : negativeResponses < 5 ? 'warning' : 'danger'}
           />
@@ -254,9 +241,9 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
           title="Rating Distribution"
           description="Breakdown of satisfaction ratings"
           data={satisfactionData.distribution.map((d) => ({
-            name: `${d.rating} Star${d.rating !== 1 ? 's' : ''}`,
+            name: `${getSatisfactionEmoji(d.rating)} ${d.rating}`,
             value: d.count,
-            color: getRatingColor(d.rating),
+            color: getSatisfactionRatingColor(d.rating),
           }))}
           variant="donut"
           showLegend={true}
@@ -272,13 +259,13 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
           data={satisfactionData.byCategory.map((c) => ({
             name: c.category,
             value: c.score,
-            color: getRatingColor(Math.round(c.score)),
+            color: getSatisfactionRatingColor(Math.round(c.score)),
           }))}
           dataKey="value"
           nameKey="name"
           orientation="horizontal"
           height={320}
-          color="#8b5cf6"
+          color={STATUS.purple}
           formatTooltip={(value) => `${value.toFixed(1)}/5.0`}
         />
       </motion.div>
@@ -300,19 +287,8 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
                   <div key={dist.rating} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-3">
-                        <div className="flex gap-0.5">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <StarIcon
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < dist.rating
-                                  ? 'fill-yellow-400 text-yellow-400'
-                                  : 'text-muted-foreground/20'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="font-medium">{dist.rating} Star{dist.rating !== 1 ? 's' : ''}</span>
+                        <span className="text-xl" role="img" aria-hidden="true">{getSatisfactionEmoji(dist.rating)}</span>
+                        <span className="font-medium">Rating {dist.rating}</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="font-semibold">{dist.count}</span>
@@ -324,7 +300,7 @@ export function SatisfactionContent({ satisfactionData }: SatisfactionContentPro
                     <div className="h-2.5 overflow-hidden rounded-full bg-muted/30">
                       <motion.div
                         className="h-full rounded-full"
-                        style={{ backgroundColor: getRatingColor(dist.rating) }}
+                        style={{ backgroundColor: getSatisfactionRatingColor(dist.rating) }}
                         initial={{ width: 0 }}
                         animate={{ width: `${dist.percentage}%` }}
                         transition={{ duration: 0.8, ease: 'easeOut' }}
