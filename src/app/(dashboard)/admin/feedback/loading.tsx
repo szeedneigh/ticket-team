@@ -4,8 +4,12 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function FeedbackLoading() {
+function FeedbackLoadingSkeleton() {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -50,5 +54,13 @@ export default function FeedbackLoading() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function FeedbackLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/admin/feedback`}>
+      <FeedbackLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }

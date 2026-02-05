@@ -8,6 +8,7 @@ import { StatsCard } from '@/components/dashboard/stats-card'
 import { RecentActivity } from '@/components/dashboard/recent-activity'
 import { TrendChart } from '@/components/analytics/trend-chart'
 import { CategoryChart } from '@/components/analytics/category-chart'
+import { STATUS } from '@/lib/constants/colors'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle, AlertTriangle } from 'lucide-react'
 import { logger } from '@/lib/logger'
@@ -96,7 +97,7 @@ export default async function DashboardPage() {
               You have {stats.overdueTickets} ticket{stats.overdueTickets > 1 ? 's' : ''} past
               {stats.overdueTickets > 1 ? ' their' : ' its'} SLA deadline.
               <Link
-                href="/tickets?status=open&status=in_progress&timePeriod=all"
+                href="/tickets/queue"
                 className="ml-2 underline font-medium hover:text-orange-900 dark:hover:text-orange-100"
               >
                 Review now →
@@ -197,7 +198,7 @@ export default async function DashboardPage() {
             dataKey="value"
             nameKey="name"
             variant="area"
-            color="#3b82f6"
+            color={STATUS.info}
             height={300}
             className="bg-card/40 backdrop-blur-xl border-white/10 shadow-lg rounded-[24px]"
           />

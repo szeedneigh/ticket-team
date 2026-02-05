@@ -4,8 +4,12 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function GettingStartedLoading() {
+function GettingStartedLoadingSkeleton() {
   return (
     <div className="container max-w-4xl py-8 space-y-8">
       {/* Back Button Skeleton */}
@@ -39,5 +43,13 @@ export default function GettingStartedLoading() {
         </div>
       ))}
     </div>
+  )
+}
+
+export default function GettingStartedLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/help/getting-started`}>
+      <GettingStartedLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }

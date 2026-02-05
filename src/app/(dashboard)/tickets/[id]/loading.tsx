@@ -6,8 +6,12 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function TicketDetailLoading() {
+function TicketDetailLoadingSkeleton() {
   return (
     <div className="min-h-full bg-background relative">
       {/* Hero Section Skeleton */}
@@ -175,5 +179,13 @@ export default function TicketDetailLoading() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function TicketDetailLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/tickets/detail`}>
+      <TicketDetailLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }

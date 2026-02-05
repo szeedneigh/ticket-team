@@ -10,30 +10,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { cache } from 'react'
 import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
 import { logger } from '@/lib/logger'
 import type { User } from '@/lib/types/users'
 import type { UserRole } from '@/lib/types/database'
 import { hasPermission } from '@/lib/types/database'
-
-/** E2E test bypass: mock user returned when x-e2e-test-auth header matches E2E_BYPASS_SECRET. Configurable via env. */
-const E2E_MOCK_USER: User = {
-  id: process.env.E2E_TEST_USER_ID ?? '49a84551-f65c-420a-b5f1-97e1b814e41b',
-  email: process.env.E2E_TEST_USER_EMAIL ?? 'test@laverdad.edu.ph',
-  full_name: process.env.E2E_TEST_USER_NAME ?? 'Test User',
-  role: (process.env.E2E_TEST_USER_ROLE as User['role']) ?? 'admin',
-  department: null,
-  position: null,
-  phone: null,
-  avatar_url: null,
-  is_online: false,
-  last_seen: null,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-  last_login: null,
-  deactivated_at: null,
-  deactivated_by: null,
-}
 
 /**
  * Get the current authenticated user from Supabase Auth
@@ -89,21 +69,6 @@ export const getUser = cache(async (): Promise<User | null> => {
  * @returns The authenticated user
  */
 export async function requireAuth(): Promise<User> {
-  // E2E Test Bypass Mode - ONLY FOR DEVELOPMENT/TEST
-  // SECURITY: Production never allows bypass
-  if (process.env.NODE_ENV !== 'production') {
-    const headersList = await headers()
-    const bypassHeader = headersList.get('x-e2e-test-auth')
-    const bypassSecret = process.env.E2E_BYPASS_SECRET
-
-    if (bypassHeader && bypassSecret && bypassHeader === bypassSecret) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[E2E Test Mode] Auth bypass enabled in requireAuth()')
-      }
-      return E2E_MOCK_USER
-    }
-  }
-
   const user = await getUser()
 
   if (!user) {

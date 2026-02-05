@@ -571,22 +571,23 @@ export async function getPriorityDistribution(
       throw new Error(`Failed to fetch priority distribution: ${error.message}`)
     }
 
-    // Group by priority
-    const priorityMap: Map<
-      'low' | 'medium' | 'high',
+    // Group by priority (all five: low, medium, high, urgent, critical)
+    const priorityOrder: Array<'low' | 'medium' | 'high' | 'urgent' | 'critical'> = [
+      'low',
+      'medium',
+      'high',
+      'urgent',
+      'critical',
+    ]
+    const priorityMap = new Map<
+      'low' | 'medium' | 'high' | 'urgent' | 'critical',
       { count: number; resolutionTimes: number[] }
-    > = new Map([
-      ['low', { count: 0, resolutionTimes: [] }],
-      ['medium', { count: 0, resolutionTimes: [] }],
-      ['high', { count: 0, resolutionTimes: [] }],
-    ])
+    >(priorityOrder.map((p) => [p, { count: 0, resolutionTimes: [] }]))
 
     const total = tickets?.length || 0
 
     tickets?.forEach((ticket) => {
-      const priority = ticket.priority as 'low' | 'medium' | 'high'
-      
-      // Skip if priority is not one of the expected values
+      const priority = ticket.priority as 'low' | 'medium' | 'high' | 'urgent' | 'critical'
       if (!priorityMap.has(priority)) {
         logger.warn('Unexpected priority value in ticket', {
           priority: ticket.priority,
@@ -594,7 +595,6 @@ export async function getPriorityDistribution(
         })
         return
       }
-      
       const existing = priorityMap.get(priority)!
       existing.count++
 
@@ -1261,25 +1261,38 @@ export async function getSLACompliance(
     let withinSLA = 0
     let breachedSLA = 0
     const breachTimes: number[] = []
-    const byPriority = { low: 0, medium: 0, high: 0 }
-    const totalByPriority = { low: 0, medium: 0, high: 0 }
+    type P = 'low' | 'medium' | 'high' | 'urgent' | 'critical'
+    const byPriority: Record<P, number> = {
+      low: 0,
+      medium: 0,
+      high: 0,
+      urgent: 0,
+      critical: 0,
+    }
+    const totalByPriority: Record<P, number> = {
+      low: 0,
+      medium: 0,
+      high: 0,
+      urgent: 0,
+      critical: 0,
+    }
 
     tickets?.forEach((ticket) => {
       if (!ticket.resolved_at) return
 
-      const priority = ticket.priority as 'low' | 'medium' | 'high'
+      const priority = ticket.priority as P
       const created = new Date(ticket.created_at).getTime()
       const resolved = new Date(ticket.resolved_at).getTime()
       const resolutionTimeHours = (resolved - created) / (1000 * 60 * 60)
       const threshold = slaThresholds[priority] ?? slaThresholds.medium
 
-      if (['low', 'medium', 'high'].includes(priority)) {
+      if (priority in totalByPriority) {
         totalByPriority[priority]++
       }
 
       if (resolutionTimeHours <= threshold) {
         withinSLA++
-        if (['low', 'medium', 'high'].includes(priority)) {
+        if (priority in byPriority) {
           byPriority[priority]++
         }
       } else {
@@ -1296,16 +1309,17 @@ export async function getSLACompliance(
         ? breachTimes.reduce((sum, t) => sum + t, 0) / breachTimes.length
         : 0
 
+    const perc = (p: P) =>
+      totalByPriority[p] > 0 ? Math.round((byPriority[p] / totalByPriority[p]) * 100) : 0
+
     return {
       overall,
       byPriority: {
-        low: totalByPriority.low > 0 ? Math.round((byPriority.low / totalByPriority.low) * 100) : 0,
-        medium:
-          totalByPriority.medium > 0
-            ? Math.round((byPriority.medium / totalByPriority.medium) * 100)
-            : 0,
-        high:
-          totalByPriority.high > 0 ? Math.round((byPriority.high / totalByPriority.high) * 100) : 0,
+        low: perc('low'),
+        medium: perc('medium'),
+        high: perc('high'),
+        urgent: perc('urgent'),
+        critical: perc('critical'),
       },
       withinSLA,
       breachedSLA,

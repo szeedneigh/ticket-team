@@ -1,6 +1,10 @@
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function StaffQueueLoading() {
+function StaffQueueLoadingSkeleton() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Header Skeleton */}
@@ -113,5 +117,13 @@ export default function StaffQueueLoading() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function StaffQueueLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/tickets/queue`}>
+      <StaffQueueLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }

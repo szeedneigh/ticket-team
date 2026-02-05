@@ -4,8 +4,12 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function HelpLoading() {
+function HelpLoadingSkeleton() {
   return (
     <div className="container max-w-6xl py-8 space-y-8">
       {/* Header Skeleton */}
@@ -54,5 +58,13 @@ export default function HelpLoading() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function HelpLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/help`}>
+      <HelpLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }

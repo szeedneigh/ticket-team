@@ -7,48 +7,19 @@
 
 import { Badge } from '@/components/ui/badge'
 import type { UserRole } from '@/lib/types/database'
+import { ROLE_BADGE_STYLES } from '@/lib/constants/colors'
 
 interface RoleBadgeProps {
   role: UserRole
   className?: string
 }
 
-const roleConfig: Record<
-  UserRole,
-  {
-    label: string
-    variant: 'default' | 'secondary' | 'destructive' | 'outline'
-    className: string
-  }
-> = {
-  employee: {
-    label: 'Employee',
-    variant: 'outline',
-    className: 'bg-gray-50 text-gray-700 border-gray-300',
-  },
-  staff: {
-    label: 'Staff',
-    variant: 'secondary',
-    className: 'bg-blue-50 text-blue-700 border-blue-300',
-  },
-  admin: {
-    label: 'Admin',
-    variant: 'default',
-    className: 'bg-purple-50 text-purple-700 border-purple-300',
-  },
-  super_admin: {
-    label: 'Super Admin',
-    variant: 'destructive',
-    className: 'bg-red-50 text-red-700 border-red-300',
-  },
-}
-
 export function RoleBadge({ role, className }: RoleBadgeProps) {
-  const config = roleConfig[role]
+  const config = ROLE_BADGE_STYLES[role]
 
   return (
     <Badge
-      variant={config.variant}
+      variant="outline"
       className={`${config.className} ${className || ''} font-medium`}
     >
       {config.label}

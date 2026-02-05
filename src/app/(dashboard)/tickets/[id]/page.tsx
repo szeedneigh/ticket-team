@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { Clock } from 'lucide-react'
 import { TicketDetailBackButton } from '@/components/tickets/ticket-detail-back-button'
+import { KBErrorToast } from '@/components/tickets/kb-error-toast'
 import { formatDistanceToNow } from 'date-fns'
 import { createClient } from '@/lib/supabase/server'
 import { getTicketWithRelations } from '@/lib/tickets/queries'
@@ -149,6 +150,10 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
 
   return (
     <div className="min-h-full bg-background relative">
+      {/* KB Error Toast - displays error when KB article creation fails */}
+      <Suspense fallback={null}>
+        <KBErrorToast />
+      </Suspense>
       {/* Hero Section with Gradient Background */}
       <div className="relative overflow-hidden bg-background border-b border-border/40 pb-8">
         {/* Dot Grid Pattern */}

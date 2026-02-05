@@ -1,4 +1,9 @@
-export default function KBBrowseLoading() {
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
+
+function KBBrowseLoadingSkeleton() {
   return (
     <div className="min-h-full bg-background animate-pulse">
       {/* Hero Section with Gradient Background - Matches page.tsx */}
@@ -83,5 +88,13 @@ export default function KBBrowseLoading() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function KBBrowseLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/kb`}>
+      <KBBrowseLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }

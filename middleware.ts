@@ -1,7 +1,75 @@
 import { updateSession } from '@/lib/supabase/middleware'
-import { type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
+import { rateLimitSlidingWindow } from '@/lib/security/rate-limit'
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  const method = request.method.toUpperCase()
+
+  // ---------------------------------------------------------------------------
+  // Best-effort rate limiting (in-memory, per instance)
+  // ---------------------------------------------------------------------------
+  const ip =
+    request.headers
+      .get('x-forwarded-for')
+      ?.split(',')[0]
+      ?.trim() ??
+    request.headers.get('x-real-ip') ??
+    'unknown'
+
+  const isWriteMethod = method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE'
+
+  const buckets: Array<{ match: boolean; key: string; limit: number; windowMs: number }> = [
+    {
+      // Client AI event ingestion (can be spammed)
+      match: pathname === '/api/ai/events' && method === 'POST',
+      key: `ip:${ip}:api:ai:events:post`,
+      limit: 20,
+      windowMs: 60_000,
+    },
+    {
+      // AI embedding ingestion pipeline (expensive; admin-only but still protect)
+      match: pathname === '/api/ai/ingest',
+      key: `ip:${ip}:api:ai:ingest:any`,
+      limit: 5,
+      windowMs: 60_000,
+    },
+    {
+      // Admin operations (especially mutations)
+      match: pathname.startsWith('/api/admin/') && isWriteMethod,
+      key: `ip:${ip}:api:admin:write`,
+      limit: 5,
+      windowMs: 60_000,
+    },
+    {
+      // Versioned API writes (best-effort generic throttle)
+      match: pathname.startsWith('/api/v1/') && isWriteMethod,
+      key: `ip:${ip}:api:v1:write`,
+      limit: 60,
+      windowMs: 60_000,
+    },
+  ]
+
+  const activeBucket = buckets.find((b) => b.match)
+  if (activeBucket) {
+    const result = rateLimitSlidingWindow({
+      key: activeBucket.key,
+      limit: activeBucket.limit,
+      windowMs: activeBucket.windowMs,
+    })
+
+    if (!result.allowed) {
+      const res = NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429 }
+      )
+      res.headers.set('Retry-After', String(result.retryAfterSeconds))
+      res.headers.set('X-RateLimit-Limit', String(result.limit))
+      res.headers.set('X-RateLimit-Remaining', String(result.remaining))
+      return res
+    }
+  }
+
   // Handle authentication and session
   const response = await updateSession(request)
 

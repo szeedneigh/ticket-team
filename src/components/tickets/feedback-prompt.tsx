@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Star } from 'lucide-react'
 import { toast } from 'sonner'
+import { SATISFACTION_EMOJIS } from '@/lib/constants/satisfaction-emojis'
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import { submitTicketFeedback } from '@/app/actions/feedback'
  *
  * Displays a dialog prompting users to rate their satisfaction
  * after a ticket is resolved. Features:
- * - 5-star rating system
+ * - 5-level emoji rating (😢 → 😍)
  * - Optional comment field
  * - Prevents duplicate submissions
  */
@@ -123,30 +123,30 @@ export function FeedbackPrompt({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Star Rating */}
+          {/* Emoji Rating */}
           <div className="space-y-2">
             <Label className="text-center block">Rate your satisfaction</Label>
             <div className="flex items-center justify-center gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  onMouseEnter={() => setHoveredRating(star)}
-                  onMouseLeave={() => setHoveredRating(0)}
-                  className="transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
-                  disabled={isSubmitting}
-                >
-                  <Star
-                    className={`h-10 w-10 ${
-                      star <= (hoveredRating || rating)
-                        ? 'fill-yellow-400 text-yellow-400'
-                        : 'text-gray-300'
-                    } transition-colors`}
-                  />
-                  <span className="sr-only">{star} star{star !== 1 ? 's' : ''}</span>
-                </button>
-              ))}
+              {([1, 2, 3, 4, 5] as const).map((level) => {
+                const emoji = SATISFACTION_EMOJIS[level]
+                const active = level <= (hoveredRating || rating)
+                return (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setRating(level)}
+                    onMouseEnter={() => setHoveredRating(level)}
+                    onMouseLeave={() => setHoveredRating(0)}
+                    className={`text-4xl transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded p-1 ${
+                      active ? 'opacity-100 scale-100' : 'opacity-40'
+                    }`}
+                    disabled={isSubmitting}
+                  >
+                    {emoji}
+                    <span className="sr-only">Rating {level} of 5</span>
+                  </button>
+                )
+              })}
             </div>
             {rating > 0 && (
               <p className="text-center text-sm text-muted-foreground">
