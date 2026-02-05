@@ -25,34 +25,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clientEnv } from '@/lib/env/client'
 
 export async function updateSession(request: NextRequest) {
-  // E2E Test Bypass Mode - ONLY FOR DEVELOPMENT/TEST ENVIRONMENTS
-  // SECURITY: Reject all bypass attempts in production
-  if (process.env.NODE_ENV === 'production') {
-    const bypassHeader = request.headers.get('x-e2e-test-auth')
-    if (bypassHeader) {
-      // Log security violation attempt
-      console.error('[SECURITY] E2E bypass attempt in production rejected')
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
-    }
-  }
-
-  // Only allow E2E bypass in development/test with secret token
-  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
-    const bypassHeader = request.headers.get('x-e2e-test-auth')
-    const bypassSecret = process.env.E2E_BYPASS_SECRET
-
-    if (bypassHeader && bypassHeader === bypassSecret) {
-      // Only log in development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[E2E Test Mode] Auth bypass enabled')
-      }
-      return NextResponse.next({ request })
-    }
-  }
-
   let supabaseResponse = NextResponse.next({
     request,
   })
