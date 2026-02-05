@@ -15,7 +15,6 @@ import { motion } from 'framer-motion'
 import {
   CheckCircle,
   Clock,
-  Star,
   Zap,
   Ticket,
   TrendingUp,
@@ -23,6 +22,7 @@ import {
   Activity,
   Calendar as CalendarIcon,
 } from 'lucide-react'
+import { getSatisfactionEmoji } from '@/lib/constants/satisfaction-emojis'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   AreaChart,
@@ -277,7 +277,9 @@ export function MyPerformanceContent({ performance }: MyPerformanceContentProps)
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
               <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <Star className="w-5 h-5" />
+                <span className="text-lg" aria-hidden="true">
+                  {getSatisfactionEmoji(Math.round(performance.satisfactionScore || 3))}
+                </span>
               </div>
               {feedbackCount > 0 ? (
                 <div className="flex items-center gap-1 text-amber-600 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-full">
