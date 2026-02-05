@@ -18,6 +18,7 @@ import {
   Legend
 } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { BRAND } from '@/lib/constants/colors'
 
 interface ViewsData {
   date: string
@@ -43,7 +44,7 @@ export function ViewsOverTimeChart({ data, days = 30 }: ViewsOverTimeChartProps)
         <div className="rounded-lg border bg-background p-3 shadow-md">
           <p className="text-sm font-medium">{formatDate(payload[0].payload.date)}</p>
           <p className="text-sm text-muted-foreground">
-            Views: <span className="font-semibold text-[#0693D2]">{payload[0].value}</span>
+            Views: <span className="font-semibold" style={{ color: BRAND.chartPrimary }}>{payload[0].value}</span>
           </p>
         </div>
       )
@@ -80,9 +81,9 @@ export function ViewsOverTimeChart({ data, days = 30 }: ViewsOverTimeChartProps)
             <Line
               type="monotone"
               dataKey="views"
-              stroke="#0693D2"
+              stroke={BRAND.chartPrimary}
               strokeWidth={2}
-              dot={{ fill: '#0693D2', r: 3 }}
+              dot={{ fill: BRAND.chartPrimary, r: 3 }}
               activeDot={{ r: 5 }}
               name="Views"
             />
