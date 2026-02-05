@@ -4,8 +4,12 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function ProfileLoading() {
+function ProfileLoadingSkeleton() {
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -49,5 +53,13 @@ export default function ProfileLoading() {
         ))}
       </div>
     </div>
+  )
+}
+
+export default function ProfileLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/profile`}>
+      <ProfileLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }

@@ -4,8 +4,12 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Bell } from 'lucide-react'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function NotificationsLoading() {
+function NotificationsLoadingSkeleton() {
   return (
     <div className="container max-w-4xl py-8">
       {/* Header */}
@@ -37,5 +41,13 @@ export default function NotificationsLoading() {
         ))}
       </div>
     </div>
+  )
+}
+
+export default function NotificationsLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/notifications`}>
+      <NotificationsLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }

@@ -257,19 +257,11 @@ export async function getTicketsPaged(
     .order('created_at', { ascending: false })
     .range(from, to)
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'queries.ts:254',message:'getTicketsPaged: Query execution START',data:{filters,page,safeLimit,from,to},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,D'})}).catch(()=>{});
-  // #endregion
-
   // Execute both queries
   const [{ count, error: countError }, { data, error: dataError }] = await Promise.all([
     countQuery,
     dataQuery,
   ])
-
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'queries.ts:259',message:'getTicketsPaged: Query results received',data:{count,dataLength:data?.length,ticketIds:data?.map(t => t.id),hasDuplicateIds:data ? data.length !== new Set(data.map(t => t.id)).size : false},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,D'})}).catch(()=>{});
-  // #endregion
 
   if (countError) {
     throw new Error(`Failed to count tickets: ${countError.message}`)
@@ -281,10 +273,6 @@ export async function getTicketsPaged(
 
   const totalCount = count || 0
   const totalPages = Math.ceil(totalCount / safeLimit)
-
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'queries.ts:276',message:'getTicketsPaged: Returning results',data:{totalCount,totalPages,currentPage:page,ticketsLength:(data || []).length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,D'})}).catch(()=>{});
-  // #endregion
 
   return {
     tickets: (data || []) as TicketWithUser[],

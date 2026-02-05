@@ -81,7 +81,7 @@ export interface CategoryDistribution {
  * Priority distribution data
  */
 export interface PriorityDistribution {
-  priority: 'low' | 'medium' | 'high'
+  priority: 'low' | 'medium' | 'high' | 'urgent' | 'critical'
   count: number
   percentage: number
   avgResolutionTime: string
@@ -148,6 +148,8 @@ export interface SLACompliance {
     low: number
     medium: number
     high: number
+    urgent: number
+    critical: number
   }
   withinSLA: number
   breachedSLA: number

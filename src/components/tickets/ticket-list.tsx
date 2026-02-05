@@ -66,10 +66,6 @@ export function TicketList({
     }
   }, [userId, router])
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ticket-list.tsx:36',message:'TicketList: Rendering',data:{ticketsLength:tickets.length,currentPage,totalPages,totalCount},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
-
   /**
    * Navigate to specific page
    */

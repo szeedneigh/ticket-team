@@ -2,10 +2,16 @@
  * Loading state for System Settings page
  */
 
+'use client'
+
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function SettingsLoading() {
+function SettingsLoadingSkeleton() {
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -45,5 +51,13 @@ export default function SettingsLoading() {
         ))}
       </div>
     </div>
+  )
+}
+
+export default function SettingsLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/admin/settings`}>
+      <SettingsLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }

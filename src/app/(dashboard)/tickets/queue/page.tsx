@@ -103,6 +103,7 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
     urgentCountResult,
     highCountResult,
     mediumCountResult,
+    lowCountResult,
     oldestTicketResult,
   ] = await Promise.all([
     baseQueueQuery(),
@@ -110,6 +111,7 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
     priorityCountQuery('urgent'),
     priorityCountQuery('high'),
     priorityCountQuery('medium'),
+    priorityCountQuery('low'),
     supabase
       .from('tickets')
       .select('created_at')
@@ -125,6 +127,7 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
   const urgentPriorityCount = urgentCountResult.count || 0
   const highPriorityCount = highCountResult.count || 0
   const mediumPriorityCount = mediumCountResult.count || 0
+  const lowPriorityCount = lowCountResult.count || 0
 
   let oldestTicketDays = 0
   const oldestCreatedAt = oldestTicketResult.data?.created_at
@@ -143,6 +146,7 @@ export default async function StaffQueuePage({ searchParams }: PageProps) {
         urgent: urgentPriorityCount,
         high: highPriorityCount,
         medium: mediumPriorityCount,
+        low: lowPriorityCount,
         oldestDays: oldestTicketDays
       }}
       pagination={{

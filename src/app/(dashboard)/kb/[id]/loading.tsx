@@ -4,8 +4,12 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function ArticleDetailLoading() {
+function ArticleDetailLoadingSkeleton() {
   return (
     <div className="min-h-full bg-background relative selection:bg-primary/20 selection:text-primary">
       {/* Enhanced Header Background */}
@@ -208,5 +212,13 @@ export default function ArticleDetailLoading() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ArticleDetailLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/kb/article`}>
+      <ArticleDetailLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }

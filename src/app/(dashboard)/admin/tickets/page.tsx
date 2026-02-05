@@ -18,7 +18,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getTicketsPaged } from '@/lib/tickets/queries'
 import type { TicketFilters as TTicketFilters, TimePeriod } from '@/lib/types/tickets'
 import type { TicketStatus } from '@/lib/types/database'
-import { isAdmin } from '@/lib/types/database'
+import { isStaffOrAbove } from '@/lib/types/database'
 import { PAGINATION } from '@/lib/constants'
 import { Sparkles } from 'lucide-react'
 
@@ -66,8 +66,8 @@ export default async function AdminTicketsPage({ searchParams }: PageProps) {
     redirect('/auth/sign-in')
   }
 
-  // Only admins can access this page
-  if (!isAdmin(user.role)) {
+  // Staff and above can access this page
+  if (!isStaffOrAbove(user.role)) {
     redirect('/tickets')
   }
 

@@ -7,6 +7,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
 import type { ChartDataPoint } from '@/lib/types/dashboard'
+import { PRIORITY_COLORS } from '@/lib/constants/colors'
 
 /**
  * Get ticket volume trend (last 7 days)
@@ -97,10 +98,10 @@ export async function getTicketsByPriority(userId: string, isStaff: boolean): Pr
         })
 
         return [
-            { name: 'Low', value: counts.low, color: '#10b981' }, // Emerald
-            { name: 'Medium', value: counts.medium, color: '#3b82f6' }, // Blue
-            { name: 'High', value: counts.high, color: '#f59e0b' }, // Amber
-            { name: 'Critical', value: counts.critical, color: '#ef4444' }, // Red
+            { name: 'Low', value: counts.low, color: PRIORITY_COLORS.low },
+            { name: 'Medium', value: counts.medium, color: PRIORITY_COLORS.medium },
+            { name: 'High', value: counts.high, color: PRIORITY_COLORS.high },
+            { name: 'Critical', value: counts.critical, color: PRIORITY_COLORS.critical },
         ].filter(item => item.value > 0)
 
     } catch (error) {

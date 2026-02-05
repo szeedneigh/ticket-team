@@ -4,8 +4,12 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card } from '@/components/ui/card'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function NewArticleLoading() {
+function NewArticleLoadingSkeleton() {
   return (
     <div className="container mx-auto py-8 max-w-5xl space-y-6">
       {/* Header */}
@@ -68,6 +72,14 @@ export default function NewArticleLoading() {
         <Skeleton className="h-4 w-32" />
       </div>
     </div>
+  )
+}
+
+export default function NewArticleLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/kb/new`}>
+      <NewArticleLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }
 

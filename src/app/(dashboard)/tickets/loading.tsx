@@ -3,8 +3,12 @@
  */
 
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function TicketsLoading() {
+function TicketsLoadingSkeleton() {
   return (
     <div className="min-h-full bg-background relative selection:bg-primary/20 selection:text-primary">
        {/* Hero Section with Skeleton Background - Matches page.tsx */}
@@ -106,5 +110,13 @@ export default function TicketsLoading() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function TicketsLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/tickets`}>
+      <TicketsLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }

@@ -21,7 +21,7 @@ import {
   Legend,
 } from 'recharts'
 import { cn } from '@/lib/utils'
-
+import { BRAND } from '@/lib/constants/colors'
 
 export interface TrendChartDataPoint {
   date?: string
@@ -57,7 +57,7 @@ export function TrendChart({
   dataKey = 'value',
   nameKey = 'date',
   variant = 'line',
-  color = '#0693D2',
+  color = BRAND.chartPrimary,
   gradientFrom,
   gradientTo,
   showGrid = true,

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Navbar } from './navbar'
 import { BackToTop } from './back-to-top'
+import { MarkRouteVisited } from './mark-route-visited'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { User } from '@/lib/types/users'
 import { usePreferences } from '@/providers/preferences-provider'
@@ -177,6 +178,7 @@ export function DashboardLayoutWrapper({ user, children }: DashboardLayoutWrappe
             )}
           >
             {children}
+            <MarkRouteVisited />
           </main>
 
           {/* Bottom scroll shadow (disabled on chat page where shell doesn't scroll) */}

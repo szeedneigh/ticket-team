@@ -48,10 +48,6 @@ export function TicketTable({ tickets, fromQueue = false }: TicketTableProps) {
     [tickets]
   )
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ticket-table.tsx:32',message:'TicketTable: Rendering',data:{ticketsLength:sortedTickets.length,ticketIds:sortedTickets.map(t => t.id),hasDuplicateIds:sortedTickets.length !== new Set(sortedTickets.map(t => t.id)).size,duplicateIds:sortedTickets.length !== new Set(sortedTickets.map(t => t.id)).size ? sortedTickets.map(t => t.id).filter((id, idx, arr) => arr.indexOf(id) !== idx) : []},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
-
   // Enhanced empty state
   if (sortedTickets.length === 0) {
     return (
@@ -125,7 +121,7 @@ export function TicketTable({ tickets, fromQueue = false }: TicketTableProps) {
           <TableHeader>
             <TableRow className="bg-white/5 hover:bg-white/5 border-b border-white/10">
               <TableHead className="font-semibold w-[140px] h-14 text-muted-foreground">Ticket No.</TableHead>
-              <TableHead className="font-semibold min-w-[200px] h-14 text-muted-foreground">Concern</TableHead>
+              <TableHead className="font-semibold min-w-[200px] max-w-[300px] h-14 text-muted-foreground">Concern</TableHead>
               <TableHead className="font-semibold w-[120px] h-14 text-muted-foreground">Priority</TableHead>
               <TableHead className="font-semibold w-[140px] h-14 text-muted-foreground">Department</TableHead>
               <TableHead className="font-semibold w-[140px] h-14 text-muted-foreground">Category</TableHead>
@@ -158,8 +154,8 @@ export function TicketTable({ tickets, fromQueue = false }: TicketTableProps) {
                       {ticketNumber}
                     </span>
                   </TableCell>
-                  <TableCell className="font-medium py-5">
-                    <span className="line-clamp-1 group-hover:text-foreground transition-colors text-base">
+                  <TableCell className="font-medium py-5 max-w-[300px]">
+                    <span className="block truncate group-hover:text-foreground transition-colors text-base">
                       {ticket.title}
                     </span>
                   </TableCell>

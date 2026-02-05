@@ -62,10 +62,6 @@ interface AttachmentRecord {
 export async function createTicket(
   formData: FormData
 ): Promise<ServerActionResponse<{ id: string; title: string }>> {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tickets.ts:60',message:'createTicket: Called',data:{title:formData.get('title')},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B,E'})}).catch(()=>{});
-  // #endregion
-
   try {
     const supabase = await createClient()
 
@@ -166,10 +162,6 @@ export async function createTicket(
     }
 
     // 4. Create ticket record
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tickets.ts:162',message:'createTicket: About to INSERT ticket',data:{title:validation.data.title,userId:user.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B,E'})}).catch(()=>{});
-    // #endregion
-
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .insert({
@@ -183,10 +175,6 @@ export async function createTicket(
       })
       .select('id, title')
       .single()
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3464a267-808d-4502-a9a0-ad5cbc96dbd9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tickets.ts:178',message:'createTicket: INSERT completed',data:{ticketId:ticket?.id,hasError:!!ticketError,errorMsg:ticketError?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B,E'})}).catch(()=>{});
-    // #endregion
 
     if (ticketError || !ticket) {
       logger.error('Ticket creation error', { error: ticketError?.message })

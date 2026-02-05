@@ -11,6 +11,7 @@ import { useMemo, memo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 import { cn } from '@/lib/utils'
+import { CHART_PALETTE } from '@/lib/constants/colors'
 
 export interface CategoryChartDataPoint {
   name: string
@@ -33,20 +34,6 @@ export interface CategoryChartProps {
   centerValue?: string | number
 }
 
-// Premium color palette with semantic meaning
-const DEFAULT_COLORS = [
-  '#0693D2', // Primary blue
-  '#10b981', // Emerald (success)
-  '#8b5cf6', // Violet
-  '#f59e0b', // Amber (warning)
-  '#ef4444', // Red (danger)
-  '#06b6d4', // Cyan
-  '#ec4899', // Pink
-  '#84cc16', // Lime
-  '#14b8a6', // Teal
-  '#6366f1', // Indigo
-]
-
 export const CategoryChart = memo(function CategoryChart({
   title,
   description,
@@ -57,7 +44,7 @@ export const CategoryChart = memo(function CategoryChart({
   showPercentage = true,
   className,
   loading = false,
-  colors = DEFAULT_COLORS,
+  colors = [...CHART_PALETTE],
   centerLabel,
   centerValue,
 }: CategoryChartProps) {
@@ -233,7 +220,7 @@ export const CategoryLegend = memo(function CategoryLegend({ data, className }: 
             <div className="flex items-center gap-2">
               <div
                 className="h-3 w-3 rounded-full shadow-sm"
-                style={{ backgroundColor: item.color || DEFAULT_COLORS[index % DEFAULT_COLORS.length] }}
+                style={{ backgroundColor: item.color || CHART_PALETTE[index % CHART_PALETTE.length] }}
               />
               <span className="text-muted-foreground">{item.name}</span>
             </div>

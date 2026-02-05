@@ -4,8 +4,12 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function KBAnalyticsLoading() {
+function KBAnalyticsLoadingSkeleton() {
   return (
     <div className="container mx-auto py-8 space-y-6">
       {/* Header */}
@@ -92,6 +96,14 @@ export default function KBAnalyticsLoading() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function KBAnalyticsLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/kb/analytics`}>
+      <KBAnalyticsLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }
 

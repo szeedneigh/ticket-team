@@ -4,8 +4,12 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function CategoriesLoading() {
+function CategoriesLoadingSkeleton() {
   return (
     <div className="space-y-6">
       {/* Header with Action */}
@@ -48,5 +52,13 @@ export default function CategoriesLoading() {
         ))}
       </div>
     </div>
+  )
+}
+
+export default function CategoriesLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/admin/categories`}>
+      <CategoriesLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }

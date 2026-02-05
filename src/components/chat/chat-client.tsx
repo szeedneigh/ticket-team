@@ -88,6 +88,7 @@ export function ChatClient({
   const virtuosoRef = useRef<VirtuosoHandle>(null)
   const streamingContentRef = useRef<string>('')
   const currentInteractionIdRef = useRef<string | null>(null)
+  const lastQueryRef = useRef<string | null>(null)
   const atBottomRef = useRef(true)
   const atBottomStableRef = useRef(true)
   const atBottomTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -137,6 +138,9 @@ export function ChatClient({
     // Clear any previous errors
     setError(null)
     setShouldShowEscalate(false)
+
+    // Store query for retry before adding optimistically (in case it gets removed on error)
+    lastQueryRef.current = message
 
     // Add user message optimistically
     const userMessage: ChatMessageType = {
@@ -268,11 +272,8 @@ export function ChatClient({
                                    serverMessage.toLowerCase().includes('wait')
                 
                 // Update UI state without throwing (avoids noisy console errors)
+                // The ChatInput component will display a fallback UI with a "Create Ticket" option
                 setError(serverMessage)
-                toast.error(isRateLimit ? 'Message Limit Reached' : 'Chat Error', {
-                  description: serverMessage,
-                  duration: isRateLimit ? 8000 : 5000,
-                })
                 
                 // Cancel further streaming and clear transient state
                 await reader.cancel().catch(() => null)
@@ -356,13 +357,8 @@ export function ChatClient({
         }
       }
       
+      // The ChatInput component will display a fallback UI with retry and "Create Ticket" options
       setError(errorMessage)
-      
-      // Show toast notification for better visibility
-      toast.error('Chat Error', {
-        description: errorMessage,
-        duration: 5000,
-      })
 
       // Remove optimistic user message on error
       setMessages(prev => prev.slice(0, -1))
@@ -378,18 +374,15 @@ export function ChatClient({
   }, [messages, sessionId, currentSources])
 
   // Handle retry after error
+  // Uses lastQueryRef because the optimistic user message is removed on error
   const handleRetry = useCallback(() => {
-    if (messages.length > 0) {
-      const lastUserMessage = messages
-        .slice()
-        .reverse()
-        .find(m => m.role === 'user')
-
-      if (lastUserMessage) {
-        handleSendMessage(lastUserMessage.content)
-      }
+    // Clear current error before retrying
+    setError(null)
+    
+    if (lastQueryRef.current) {
+      handleSendMessage(lastQueryRef.current)
     }
-  }, [messages, handleSendMessage])
+  }, [handleSendMessage])
 
   // Handle escalation button click
   const handleEscalateClick = async () => {

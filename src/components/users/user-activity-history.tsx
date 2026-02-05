@@ -27,9 +27,19 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   TICKET_STATUS_LABELS,
   TICKET_PRIORITY_LABELS,
+  ARTICLE_STATUS_LABELS,
   isValidTicketStatus,
   isValidTicketPriority,
+  isValidArticleStatus,
+  type TicketStatus,
+  type TicketPriority,
+  type ArticleStatus,
 } from '@/lib/types/database'
+import {
+  getStatusBadgeStyle,
+  getPriorityBadgeStyle,
+  getArticleStatusStyle,
+} from '@/lib/constants/colors'
 
 interface TicketActivity {
   id: string
@@ -89,47 +99,33 @@ export function UserActivityHistory({
     })
   }
 
+  /** Get color classes for ticket status badge */
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'open':
-        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400'
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400'
-      case 'on_hold':
-        return 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400'
-      case 'resolved':
-        return 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400'
-      case 'closed':
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400'
-      case 'canceled':
-        return 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400'
-      case 'published':
-        return 'bg-green-100 text-green-700'
-      case 'draft':
-        return 'bg-yellow-100 text-yellow-700'
-      case 'archived':
-        return 'bg-gray-100 text-gray-700'
-      default:
-        return 'bg-gray-100 text-gray-700'
+    if (isValidTicketStatus(status)) {
+      return getStatusBadgeStyle(status as TicketStatus)
     }
+    // Handle KB article statuses
+    if (isValidArticleStatus(status)) {
+      return getArticleStatusStyle(status as ArticleStatus)
+    }
+    return 'bg-gray-100 text-gray-700 dark:bg-gray-950/30 dark:text-gray-400'
   }
 
-  const getStatusLabel = (status: string) =>
-    isValidTicketStatus(status) ? TICKET_STATUS_LABELS[status] : status.replace(/_/g, ' ')
+  const getStatusLabel = (status: string) => {
+    if (isValidTicketStatus(status)) return TICKET_STATUS_LABELS[status]
+    if (isValidArticleStatus(status)) return ARTICLE_STATUS_LABELS[status]
+    return status.replace(/_/g, ' ')
+  }
+
   const getPriorityLabel = (priority: string) =>
     isValidTicketPriority(priority) ? TICKET_PRIORITY_LABELS[priority] : priority
 
+  /** Get color classes for priority badge */
   const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case 'high':
-        return 'bg-red-100 text-red-700'
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-700'
-      case 'low':
-        return 'bg-green-100 text-green-700'
-      default:
-        return 'bg-gray-100 text-gray-700'
+    if (isValidTicketPriority(priority)) {
+      return getPriorityBadgeStyle(priority as TicketPriority)
     }
+    return 'bg-gray-100 text-gray-700 dark:bg-gray-950/30 dark:text-gray-400'
   }
 
   return (

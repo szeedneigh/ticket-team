@@ -1,6 +1,10 @@
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  SkeletonOnlyOnFirstVisit,
+  SKELETON_VISITED_PREFIX,
+} from '@/components/shared/skeleton-only-on-first-visit'
 
-export default function AIObservabilityLoading() {
+function AIObservabilityLoadingSkeleton() {
   return (
     <div className="space-y-6">
       {/* KPI Cards skeleton */}
@@ -33,6 +37,14 @@ export default function AIObservabilityLoading() {
         ))}
       </div>
     </div>
+  )
+}
+
+export default function AIObservabilityLoading() {
+  return (
+    <SkeletonOnlyOnFirstVisit storageKey={`${SKELETON_VISITED_PREFIX}/ai-observability`}>
+      <AIObservabilityLoadingSkeleton />
+    </SkeletonOnlyOnFirstVisit>
   )
 }
 
