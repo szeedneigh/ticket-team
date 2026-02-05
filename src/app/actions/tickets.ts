@@ -269,8 +269,8 @@ export async function createTicket(
           attachmentRecords.push(attachment)
         }
       } catch (uploadError) {
-        logger.error('File upload process error', { 
-          error: uploadError instanceof Error ? uploadError.message : 'Unknown error' 
+        logger.error('File upload process error', {
+          error: uploadError instanceof Error ? uploadError.message : 'Unknown error'
         })
         // Don't fail ticket creation if uploads fail
       }
@@ -308,8 +308,8 @@ export async function createTicket(
       }
     } catch (activityError) {
       // Log error but don't fail ticket creation
-      logger.error('Activity logging error', { 
-        error: activityError instanceof Error ? activityError.message : 'Unknown error' 
+      logger.error('Activity logging error', {
+        error: activityError instanceof Error ? activityError.message : 'Unknown error'
       })
     }
 
@@ -342,8 +342,8 @@ export async function createTicket(
       },
     }
   } catch (error) {
-    logger.error('Unexpected error in createTicket', { 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    logger.error('Unexpected error in createTicket', {
+      error: error instanceof Error ? error.message : 'Unknown error'
     })
     return {
       success: false,
@@ -480,7 +480,7 @@ export async function updateTicketStatus(
       await notifyTicketStatusChange(ticketId, newStatus, changedByName, message)
     } catch (emailError) {
       // Log error but don't fail the status update
-      logger.error('Email notification error', { 
+      logger.error('Email notification error', {
         error: emailError instanceof Error ? emailError.message : 'Unknown error',
         ticketId
       })
@@ -529,7 +529,7 @@ export async function updateTicketStatus(
       success: true,
     }
   } catch (error) {
-    logger.error('Unexpected error in updateTicketStatus', { 
+    logger.error('Unexpected error in updateTicketStatus', {
       error: error instanceof Error ? error.message : 'Unknown error',
       ticketId
     })
@@ -600,7 +600,9 @@ export async function cancelTicketBySubmitter(
     }
 
     // 3. Update status to canceled
-    const { error: updateError } = await supabase
+    // Use service client to bypass RLS - we've already validated user owns this ticket
+    const serviceClient = createServiceClient()
+    const { error: updateError } = await serviceClient
       .from('tickets')
       .update({
         status: 'canceled',
@@ -618,8 +620,6 @@ export async function cancelTicketBySubmitter(
 
     // 4. Log activity
     try {
-      const serviceClient = createServiceClient()
-
       await serviceClient.from('ticket_activities').insert({
         ticket_id: ticketId,
         user_id: user.id,
@@ -790,7 +790,7 @@ export async function assignTicket(
         await notifyTicketAssignment(ticketId, newAssignedTo, assignedByName)
       } catch (emailError) {
         // Log error but don't fail the assignment
-        logger.error('Email notification error', { 
+        logger.error('Email notification error', {
           error: emailError instanceof Error ? emailError.message : 'Unknown error',
           ticketId
         })
@@ -818,7 +818,7 @@ export async function assignTicket(
         },
       })
     } catch (activityError) {
-      logger.error('Activity logging error', { 
+      logger.error('Activity logging error', {
         error: activityError instanceof Error ? activityError.message : 'Unknown error',
         ticketId
       })
@@ -850,7 +850,7 @@ export async function assignTicket(
       success: true,
     }
   } catch (error) {
-    logger.error('Unexpected error in assignTicket', { 
+    logger.error('Unexpected error in assignTicket', {
       error: error instanceof Error ? error.message : 'Unknown error',
       ticketId
     })
@@ -972,7 +972,7 @@ export async function updateTicketPriority(
       success: true,
     }
   } catch (error) {
-    logger.error('Unexpected error in updateTicketPriority', { 
+    logger.error('Unexpected error in updateTicketPriority', {
       error: error instanceof Error ? error.message : 'Unknown error',
       ticketId
     })
@@ -1098,7 +1098,7 @@ export async function reopenTicket(
         },
       })
     } catch (activityError) {
-      logger.error('Activity logging error', { 
+      logger.error('Activity logging error', {
         error: activityError instanceof Error ? activityError.message : 'Unknown error',
         ticketId
       })
@@ -1114,7 +1114,7 @@ export async function reopenTicket(
       success: true,
     }
   } catch (error) {
-    logger.error('Unexpected error in reopenTicket', { 
+    logger.error('Unexpected error in reopenTicket', {
       error: error instanceof Error ? error.message : 'Unknown error',
       ticketId
     })
@@ -1195,7 +1195,7 @@ export async function getAttachmentDownloadUrl(
       data: { url: signedData.signedUrl },
     }
   } catch (error) {
-    logger.error('Download attachment error', { 
+    logger.error('Download attachment error', {
       error: error instanceof Error ? error.message : 'Unknown error',
       attachmentId
     })
