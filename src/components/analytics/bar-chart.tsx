@@ -20,6 +20,7 @@ import {
   Cell,
 } from 'recharts'
 import { cn } from '@/lib/utils'
+import { CHART_PALETTE, BRAND } from '@/lib/constants/colors'
 
 export interface BarChartDataPoint {
   name?: string
@@ -47,17 +48,6 @@ export interface BarChartProps {
   formatTooltip?: (value: number) => string
 }
 
-// Semantic color palette for charts
-const CHART_COLORS = [
-  '#0693D2', // Primary blue
-  '#10b981', // Emerald
-  '#8b5cf6', // Violet
-  '#f59e0b', // Amber
-  '#ef4444', // Red
-  '#06b6d4', // Cyan
-  '#ec4899', // Pink
-]
-
 export function BarChart({
   title,
   description,
@@ -65,7 +55,7 @@ export function BarChart({
   dataKey = 'value',
   nameKey = 'name',
   orientation = 'vertical',
-  color = '#0693D2',
+  color = BRAND.chartPrimary,
   useGradient = true,
   showGrid = true,
   showLegend = false,
@@ -190,7 +180,7 @@ export function BarChart({
                 {data.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
-                    fill={entry.color || (useGradient ? `url(#${chartId})` : CHART_COLORS[index % CHART_COLORS.length])} 
+                    fill={entry.color || (useGradient ? `url(#${chartId})` : CHART_PALETTE[index % CHART_PALETTE.length])} 
                   />
                 ))}
               </Bar>
