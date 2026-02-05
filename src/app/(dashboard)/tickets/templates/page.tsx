@@ -46,6 +46,7 @@ import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import type { TicketTemplate, TemplateInput } from '@/lib/types/templates'
 import type { TicketPriority } from '@/lib/types/database'
+import { getPriorityBadgeStyle } from '@/lib/constants/colors'
 
 export default function TicketTemplatesPage() {
   const router = useRouter()
@@ -278,12 +279,7 @@ export default function TicketTemplatesPage() {
   }
 
   const getPriorityColor = (priority: TicketPriority) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800'
-      case 'medium': return 'bg-yellow-100 text-yellow-800'
-      case 'low': return 'bg-green-100 text-green-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
+    return getPriorityBadgeStyle(priority)
   }
 
   // Show loading state while checking authentication and role
