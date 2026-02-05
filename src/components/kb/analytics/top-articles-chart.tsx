@@ -18,6 +18,7 @@ import {
   Legend
 } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { BRAND } from '@/lib/constants/colors'
 
 interface TopArticle {
   id: string
@@ -53,7 +54,7 @@ export function TopArticlesChart({ data, limit = 10 }: TopArticlesChartProps) {
           <p className="text-sm font-medium line-clamp-2">{data.title}</p>
           <p className="text-xs text-muted-foreground mt-1">{data.category}</p>
           <p className="text-sm text-muted-foreground mt-2">
-            Views: <span className="font-semibold text-[#0693D2]">{data.view_count}</span>
+            Views: <span className="font-semibold" style={{ color: BRAND.chartPrimary }}>{data.view_count}</span>
           </p>
         </div>
       )
@@ -111,7 +112,7 @@ export function TopArticlesChart({ data, limit = 10 }: TopArticlesChartProps) {
             <Legend />
             <Bar
               dataKey="view_count"
-              fill="#0693D2"
+              fill={BRAND.chartPrimary}
               radius={[0, 4, 4, 0]}
               name="Views"
             />
