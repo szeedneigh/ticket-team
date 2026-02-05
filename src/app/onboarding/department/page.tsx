@@ -21,13 +21,14 @@ export default async function DepartmentOnboardingPage() {
   // Check if user already has a department
   const { data: userData } = await supabase
     .from('users')
-    .select('department')
+    .select('department, role')
     .eq('id', user.id)
     .single()
 
-  // If user already has a department, redirect to dashboard
+  // If user already has a department, redirect based on role
   if (userData?.department) {
-    redirect('/dashboard')
+    const redirectTo = userData.role === 'employee' ? '/chat' : '/dashboard'
+    redirect(redirectTo)
   }
 
   // Fetch active departments

@@ -15,6 +15,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -71,6 +81,12 @@ export function TicketActions({
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false)
   const [resolutionNotes, setResolutionNotes] = useState('')
 
+  // Confirmation States
+  const [confirmStatusDialogOpen, setConfirmStatusDialogOpen] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null)
+  const [confirmAssignDialogOpen, setConfirmAssignDialogOpen] = useState(false)
+  const [pendingAssignee, setPendingAssignee] = useState<string | null>(null)
+
   // ============================================================================
   // Status Change Handler
   // ============================================================================
@@ -84,14 +100,21 @@ export function TicketActions({
       return
     }
 
+    setPendingStatus(newStatus)
+    setConfirmStatusDialogOpen(true)
+  }
+
+  const confirmStatusChange = () => {
+    if (!pendingStatus) return
+
     startTransition(async () => {
-      const result = await updateTicketStatus(ticket.id, newStatus as TicketStatus)
+      const result = await updateTicketStatus(ticket.id, pendingStatus as TicketStatus)
 
       if (result.success) {
         const message =
-          newStatus === 'closed'
+          pendingStatus === 'closed'
             ? SUCCESS_MESSAGES.TICKET_CLOSED
-            : newStatus === 'canceled'
+            : pendingStatus === 'canceled'
               ? SUCCESS_MESSAGES.TICKET_CANCELED
               : SUCCESS_MESSAGES.TICKET_UPDATED
         toast.success(message)
@@ -99,6 +122,8 @@ export function TicketActions({
       } else {
         toast.error(result.error || 'Failed to update status')
       }
+      setConfirmStatusDialogOpen(false)
+      setPendingStatus(null)
     })
   }
 
@@ -127,9 +152,16 @@ export function TicketActions({
 
   const handleAssignment = (userId: string) => {
     if (userId === (ticket.assigned_to || '')) return
+    
+    setPendingAssignee(userId)
+    setConfirmAssignDialogOpen(true)
+  }
+
+  const confirmAssignment = () => {
+    if (!pendingAssignee) return
 
     startTransition(async () => {
-      const result = await assignTicket(ticket.id, userId)
+      const result = await assignTicket(ticket.id, pendingAssignee)
 
       if (result.success) {
         toast.success('Ticket assigned successfully')
@@ -137,6 +169,8 @@ export function TicketActions({
       } else {
         toast.error(result.error || 'Failed to assign ticket')
       }
+      setConfirmAssignDialogOpen(false)
+      setPendingAssignee(null)
     })
   }
 
@@ -453,6 +487,106 @@ export function TicketActions({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Status Change Confirmation Dialog */}
+      <AlertDialog
+        open={confirmStatusDialogOpen}
+        onOpenChange={setConfirmStatusDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to change the ticket status from{' '}
+              <span className="font-semibold text-foreground">
+                {TICKET_STATUS_LABELS[ticket.status]}
+              </span>{' '}
+              to{' '}
+              <span className="font-semibold text-foreground">
+                {pendingStatus && TICKET_STATUS_LABELS[pendingStatus as TicketStatus]}
+              </span>
+              ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setConfirmStatusDialogOpen(false)
+                setPendingStatus(null)
+              }}
+              disabled={isPending}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                confirmStatusChange()
+              }}
+              disabled={isPending}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Confirm Change'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Assignment Confirmation Dialog */}
+      <AlertDialog
+        open={confirmAssignDialogOpen}
+        onOpenChange={setConfirmAssignDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Assignment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to assign this ticket to{' '}
+              <span className="font-semibold text-foreground">
+                {pendingAssignee === currentUserId
+                  ? 'yourself'
+                  : staffUsers.find((u) => u.id === pendingAssignee)?.full_name ||
+                    'Unknown User'}
+              </span>
+              ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setConfirmAssignDialogOpen(false)
+                setPendingAssignee(null)
+              }}
+              disabled={isPending}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                confirmAssignment()
+              }}
+              disabled={isPending}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Assigning...
+                </>
+              ) : (
+                'Confirm Assignment'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

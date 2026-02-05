@@ -13,6 +13,10 @@ export type ActionResponse<T = unknown> =
   | { success: true; data: T }
   | { success: false; error: string }
 
+export type DepartmentUpdateResult = {
+  role?: string
+}
+
 /**
  * Update user's department (one-time only)
  *
@@ -21,7 +25,7 @@ export type ActionResponse<T = unknown> =
  */
 export async function updateUserDepartment(
   department: string
-): Promise<ActionResponse<void>> {
+): Promise<ActionResponse<DepartmentUpdateResult>> {
   try {
     const supabase = await createClient()
 
@@ -38,10 +42,10 @@ export async function updateUserDepartment(
       }
     }
 
-    // Check if user already has a department
+    // Check if user already has a department and get their role
     const { data: existingUser } = await supabase
       .from('users')
-      .select('department')
+      .select('department, role')
       .eq('id', authUser.id)
       .single()
 
@@ -55,7 +59,7 @@ export async function updateUserDepartment(
     // Update user's department
     const { error: updateError } = await supabase
       .from('users')
-      .update({ 
+      .update({
         department,
         updated_at: new Date().toISOString(),
       })
@@ -72,10 +76,13 @@ export async function updateUserDepartment(
     // Revalidate relevant paths
     revalidatePath('/profile')
     revalidatePath('/dashboard')
+    revalidatePath('/chat')
 
     return {
       success: true,
-      data: undefined,
+      data: {
+        role: existingUser?.role || 'employee',
+      },
     }
   } catch (error) {
     console.error('Error in updateUserDepartment:', error)
