@@ -179,17 +179,37 @@ export async function hasFeedback(ticketId: string): Promise<boolean> {
       .maybeSingle()
 
     if (error) {
-      logger.error('Error checking feedback', { error: error.message, ticketId })
-      return false
+      /**
+       * IMPORTANT:
+       * In some environments, RLS for `ticket_feedback` intentionally restricts
+       * employees from selecting from this table directly (to keep feedback
+       * analytics staff-only), which can cause "permission denied" errors here.
+       *
+       * When that happens, returning `false` would cause the UI to think the
+       * user has not submitted feedback yet and keep re-opening the feedback
+       * prompt, even though the submit action itself correctly prevents
+       * duplicates.
+       *
+       * To avoid repeatedly nagging the user (and to keep the UX consistent
+       * with the server-side duplicate check), we treat any unexpected error
+       * as "feedback already exists" for the purpose of showing the prompt.
+       */
+      logger.error('Error checking feedback; assuming feedback exists', {
+        error: error.message,
+        ticketId,
+      })
+      return true
     }
 
     return !!data
   } catch (error) {
-    logger.error('Error in hasFeedback', { 
+    logger.error('Error in hasFeedback; assuming feedback exists', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      ticketId
+      ticketId,
     })
-    return false
+    // Fail closed for the prompt: if we can't reliably check,
+    // prefer to NOT show the feedback modal again.
+    return true
   }
 }
 
