@@ -7,6 +7,7 @@
 
 import type { TicketStatus } from '@/lib/types/database'
 import { TICKET_STATUS_LABELS } from '@/lib/types/database'
+import { STATUS_DOT_COLORS } from '@/lib/constants/colors'
 import { cn } from '@/lib/utils'
 
 interface StatusCellProps {
@@ -14,36 +15,8 @@ interface StatusCellProps {
   className?: string
 }
 
-// Status color mapping
-const STATUS_COLORS: Record<TicketStatus, { dot: string; text: string }> = {
-  open: {
-    dot: 'bg-yellow-500',
-    text: 'text-yellow-700 dark:text-yellow-300',
-  },
-  in_progress: {
-    dot: 'bg-blue-500',
-    text: 'text-blue-700 dark:text-blue-300',
-  },
-  on_hold: {
-    dot: 'bg-orange-500',
-    text: 'text-orange-700 dark:text-orange-300',
-  },
-  resolved: {
-    dot: 'bg-green-500',
-    text: 'text-green-700 dark:text-green-300',
-  },
-  closed: {
-    dot: 'bg-gray-600',
-    text: 'text-gray-700 dark:text-gray-400',
-  },
-  canceled: {
-    dot: 'bg-red-500',
-    text: 'text-red-700 dark:text-red-300',
-  },
-}
-
 export function StatusCell({ status, className }: StatusCellProps) {
-  const colors = STATUS_COLORS[status]
+  const colors = STATUS_DOT_COLORS[status]
   const label = TICKET_STATUS_LABELS[status]
 
   return (
