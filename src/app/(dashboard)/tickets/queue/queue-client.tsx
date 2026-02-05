@@ -17,6 +17,7 @@ interface QueuePageClientProps {
     urgent: number
     high: number
     medium: number
+    low: number
     oldestDays: number
   }
   pagination: {
@@ -81,7 +82,7 @@ export function QueuePageClient({
                 </p>
               </div>
               <Button asChild variant="gradient" className="rounded-full px-6">
-                <Link href="/tickets">
+                <Link href="/admin/tickets">
                   View All Tickets 
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -112,15 +113,26 @@ export function QueuePageClient({
                 <p className="text-xs text-red-600/70 dark:text-red-400/70 mt-1">System-wide impact</p>
               </div>
 
+              <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/20 rounded-2xl border border-red-200/50 dark:border-red-800/30 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-red-500/20">
+                    <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <span className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">Urgent</span>
+                </div>
+                <div className="text-3xl font-bold text-red-700 dark:text-red-300">{stats.urgent}</div>
+                <p className="text-xs text-red-600/70 dark:text-red-400/70 mt-1">Immediate attention</p>
+              </div>
+
               <div className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/20 rounded-2xl border border-orange-200/50 dark:border-orange-800/30 shadow-sm hover:shadow-md transition-all">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 rounded-lg bg-orange-500/20">
                     <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                   </div>
-                  <span className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wider">Urgent</span>
+                  <span className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wider">High</span>
                 </div>
-                <div className="text-3xl font-bold text-orange-700 dark:text-orange-300">{stats.urgent}</div>
-                <p className="text-xs text-orange-600/70 dark:text-orange-400/70 mt-1">Immediate attention</p>
+                <div className="text-3xl font-bold text-orange-700 dark:text-orange-300">{stats.high}</div>
+                <p className="text-xs text-orange-600/70 dark:text-orange-400/70 mt-1">Important issues</p>
               </div>
 
               <div className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950/30 dark:to-yellow-900/20 rounded-2xl border border-yellow-200/50 dark:border-yellow-800/30 shadow-sm hover:shadow-md transition-all">
@@ -128,21 +140,10 @@ export function QueuePageClient({
                   <div className="p-2 rounded-lg bg-yellow-500/20">
                     <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                   </div>
-                  <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400 uppercase tracking-wider">High</span>
+                  <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400 uppercase tracking-wider">Medium</span>
                 </div>
-                <div className="text-3xl font-bold text-yellow-700 dark:text-yellow-300">{stats.high}</div>
-                <p className="text-xs text-yellow-600/70 dark:text-yellow-400/70 mt-1">Important issues</p>
-              </div>
-
-              <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/20 rounded-2xl border border-green-200/50 dark:border-green-800/30 shadow-sm hover:shadow-md transition-all">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-green-500/20">
-                    <AlertCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">Medium</span>
-                </div>
-                <div className="text-3xl font-bold text-green-700 dark:text-green-300">{stats.medium}</div>
-                <p className="text-xs text-green-600/70 dark:text-green-400/70 mt-1">Normal priority</p>
+                <div className="text-3xl font-bold text-yellow-700 dark:text-yellow-300">{stats.medium}</div>
+                <p className="text-xs text-yellow-600/70 dark:text-yellow-400/70 mt-1">Normal priority</p>
               </div>
 
               <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950/30 dark:to-gray-900/20 rounded-2xl border border-gray-200/50 dark:border-gray-800/30 shadow-sm hover:shadow-md transition-all">
@@ -203,14 +204,38 @@ export function QueuePageClient({
                       All
                     </Button>
                   </Link>
+                  <Link href="/tickets/queue?priority=critical" className="flex-shrink-0">
+                    <Button 
+                      variant={currentPriority === 'critical' ? 'secondary' : 'ghost'} 
+                      size="sm"
+                      className={`rounded-md transition-all gap-2 ${currentPriority === 'critical' ? 'bg-red-600/20 text-red-700 hover:bg-red-600/30 animate-pulse' : 'text-muted-foreground hover:text-red-600'}`}
+                    >
+                      🚨 Critical
+                      <span className="bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-200 py-0.5 px-1.5 rounded-full text-[10px] font-bold">
+                        {stats.critical}
+                      </span>
+                    </Button>
+                  </Link>
+                  <Link href="/tickets/queue?priority=urgent" className="flex-shrink-0">
+                    <Button 
+                      variant={currentPriority === 'urgent' ? 'secondary' : 'ghost'} 
+                      size="sm"
+                      className={`rounded-md transition-all gap-2 ${currentPriority === 'urgent' ? 'bg-red-500/20 text-red-700 hover:bg-red-500/30' : 'text-muted-foreground hover:text-red-600'}`}
+                    >
+                      ⚠ Urgent
+                      <span className="bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200 py-0.5 px-1.5 rounded-full text-[10px] font-bold">
+                        {stats.urgent}
+                      </span>
+                    </Button>
+                  </Link>
                   <Link href="/tickets/queue?priority=high" className="flex-shrink-0">
                     <Button 
                       variant={currentPriority === 'high' ? 'secondary' : 'ghost'} 
                       size="sm"
-                      className={`rounded-md transition-all gap-2 ${currentPriority === 'high' ? 'bg-red-500/10 text-red-600 hover:bg-red-500/20' : 'text-muted-foreground hover:text-red-500'}`}
+                      className={`rounded-md transition-all gap-2 ${currentPriority === 'high' ? 'bg-orange-500/20 text-orange-700 hover:bg-orange-500/30' : 'text-muted-foreground hover:text-orange-600'}`}
                     >
                       High
-                      <span className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 py-0.5 px-1.5 rounded-full text-[10px] font-bold">
+                      <span className="bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 py-0.5 px-1.5 rounded-full text-[10px] font-bold">
                         {stats.high}
                       </span>
                     </Button>
@@ -219,10 +244,10 @@ export function QueuePageClient({
                     <Button 
                       variant={currentPriority === 'medium' ? 'secondary' : 'ghost'} 
                       size="sm"
-                      className={`rounded-md transition-all ${currentPriority === 'medium' ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20' : 'text-muted-foreground hover:text-amber-500'}`}
+                      className={`rounded-md transition-all gap-2 ${currentPriority === 'medium' ? 'bg-yellow-500/20 text-yellow-700 hover:bg-yellow-500/30' : 'text-muted-foreground hover:text-yellow-600'}`}
                     >
                       Medium
-                      <span className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 py-0.5 px-1.5 rounded-full text-[10px] font-bold">
+                      <span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 py-0.5 px-1.5 rounded-full text-[10px] font-bold">
                         {stats.medium}
                       </span>
                     </Button>
@@ -231,9 +256,12 @@ export function QueuePageClient({
                     <Button 
                       variant={currentPriority === 'low' ? 'secondary' : 'ghost'} 
                       size="sm"
-                      className={`rounded-md transition-all ${currentPriority === 'low' ? 'bg-green-500/10 text-green-600 hover:bg-green-500/20' : 'text-muted-foreground hover:text-green-500'}`}
+                      className={`rounded-md transition-all gap-2 ${currentPriority === 'low' ? 'bg-gray-500/20 text-gray-700 hover:bg-gray-500/30' : 'text-muted-foreground hover:text-gray-600'}`}
                     >
                       Low
+                      <span className="bg-gray-100 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300 py-0.5 px-1.5 rounded-full text-[10px] font-bold">
+                        {stats.low}
+                      </span>
                     </Button>
                   </Link>
                 </div>
@@ -267,7 +295,7 @@ export function QueuePageClient({
                         There are no unassigned tickets matching your criteria. Great job keeping the queue moving.
                       </p>
                       <Button variant="outline" className="mt-6" asChild>
-                        <Link href="/tickets">View All Tickets</Link>
+                        <Link href="/admin/tickets">View All Tickets</Link>
                       </Button>
                     </div>
                 )}
