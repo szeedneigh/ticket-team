@@ -16,6 +16,7 @@ import {
   Tooltip
 } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { KB_CATEGORY_COLORS } from '@/lib/constants/colors'
 
 interface CategoryData {
   category: string
@@ -28,21 +29,10 @@ interface CategoryDistributionChartProps {
   data: CategoryData[]
 }
 
-// Color palette for categories (matching KB browse page)
-const CATEGORY_COLORS: Record<string, string> = {
-  'Technical': '#3B82F6',      // Blue
-  'Account': '#A855F7',         // Purple
-  'Enrollment': '#10B981',      // Green
-  'General': '#6B7280',         // Gray
-  'Financial': '#F59E0B',       // Amber
-  'Academic': '#EF4444'         // Red
-}
+const FALLBACK_CATEGORY_COLOR = '#6b7280'
 
 export function CategoryDistributionChart({ data }: CategoryDistributionChartProps) {
-  // Get color for category
-  const getColor = (category: string) => {
-    return CATEGORY_COLORS[category] || '#6B7280'
-  }
+  const getColor = (category: string) => KB_CATEGORY_COLORS[category] ?? FALLBACK_CATEGORY_COLOR
 
   // Custom label for pie slices
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
