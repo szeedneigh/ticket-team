@@ -19,28 +19,19 @@ import {
   TicketIcon,
   CheckCircleIcon,
   ClockIcon,
-  StarIcon,
   TrendingUpIcon,
   AlertTriangleIcon,
   BarChart3Icon,
   Sparkles,
 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getChartColor } from '@/lib/constants/colors'
+import { getSatisfactionEmoji } from '@/lib/constants/satisfaction-emojis'
 
 export const metadata = {
   title: 'Analytics - Overview',
   description: 'Analytics and reporting dashboard',
 }
-
-// Semantic colors for category performance cards
-const CATEGORY_COLORS = [
-  '#0693D2',
-  '#10b981',
-  '#8b5cf6',
-  '#f59e0b',
-  '#ef4444',
-  '#06b6d4',
-]
 
 async function AnalyticsContent() {
   const supabase = await createClient()
@@ -127,7 +118,7 @@ async function AnalyticsContent() {
           title="Satisfaction Score"
           value={`${summary.satisfactionScore.toFixed(1)}/5.0`}
           description="Customer satisfaction rating"
-          icon={<StarIcon className="h-4 w-4" />}
+          icon={<span className="text-lg" aria-hidden="true">{getSatisfactionEmoji(Math.round(summary.satisfactionScore))}</span>}
           variant={summary.satisfactionScore >= 4 ? 'success' : summary.satisfactionScore >= 3 ? 'warning' : 'danger'}
         />
       </KPICardGrid>
@@ -208,25 +199,25 @@ async function AnalyticsContent() {
               {/* Accent bar */}
               <div 
                 className="absolute top-0 left-0 right-0 h-1 opacity-80"
-                style={{ backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }}
+                style={{ backgroundColor: getChartColor(index) }}
               />
               
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div 
                     className="flex items-center justify-center w-10 h-10 rounded-xl shadow-sm"
-                    style={{ backgroundColor: `${CATEGORY_COLORS[index % CATEGORY_COLORS.length]}15` }}
+                    style={{ backgroundColor: `${getChartColor(index)}15` }}
                   >
                     <BarChart3Icon 
                       className="h-5 w-5" 
-                      style={{ color: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }}
+                      style={{ color: getChartColor(index) }}
                     />
                   </div>
                   <span className="font-semibold text-foreground">{cat.category}</span>
                 </div>
                 <span 
                   className="text-2xl font-bold"
-                  style={{ color: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }}
+                  style={{ color: getChartColor(index) }}
                 >
                   {cat.percentage}%
                 </span>
@@ -249,7 +240,7 @@ async function AnalyticsContent() {
                   className="h-full rounded-full transition-all duration-500"
                   style={{ 
                     width: `${cat.percentage}%`,
-                    backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length]
+                    backgroundColor: getChartColor(index)
                   }}
                 />
               </div>
