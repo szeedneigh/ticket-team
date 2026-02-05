@@ -8,7 +8,8 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { RefreshCw, Download, Star, TrendingUp, MessageSquare } from 'lucide-react'
+import { RefreshCw, Download, TrendingUp, MessageSquare } from 'lucide-react'
+import { getSatisfactionEmoji } from '@/lib/constants/satisfaction-emojis'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -28,6 +29,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
+import { getSatisfactionRatingColor } from '@/lib/constants/colors'
 import { getFeedbackAnalytics } from '@/app/actions/feedback'
 import type { FeedbackWithDetails, FeedbackSummary } from '@/lib/types/templates'
 
@@ -122,26 +124,11 @@ export function FeedbackView({ initialData }: { initialData?: unknown }) {
     })
   }
 
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex gap-0.5">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`h-4 w-4 ${
-              star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-            }`}
-          />
-        ))}
-      </div>
-    )
-  }
-
-  const getRatingColor = (rating: number) => {
-    if (rating >= 4) return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
-    if (rating >= 3) return 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-    return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
-  }
+  const renderRatingEmoji = (rating: number) => (
+    <span className="text-xl" role="img" aria-label={`Rating ${rating} of 5`}>
+      {getSatisfactionEmoji(rating)}
+    </span>
+  )
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -190,9 +177,9 @@ export function FeedbackView({ initialData }: { initialData?: unknown }) {
             <CardContent>
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold">{summary.averageRating}</span>
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                <span className="text-2xl" role="img" aria-hidden="true">{getSatisfactionEmoji(Math.round(summary.averageRating))}</span>
               </div>
-              <p className="text-xs text-muted-foreground">Out of 5 stars</p>
+              <p className="text-xs text-muted-foreground">Out of 5</p>
             </CardContent>
           </Card>
 
@@ -206,7 +193,7 @@ export function FeedbackView({ initialData }: { initialData?: unknown }) {
                   .filter((d) => d.rating >= 4)
                   .reduce((sum, d) => sum + d.percentage, 0)}%
               </div>
-              <p className="text-xs text-muted-foreground">4+ star ratings</p>
+              <p className="text-xs text-muted-foreground">Rated 4-5</p>
             </CardContent>
           </Card>
 
@@ -236,15 +223,15 @@ export function FeedbackView({ initialData }: { initialData?: unknown }) {
         <Card className="bg-card/50 backdrop-blur-sm border-border">
           <CardHeader>
             <CardTitle>Rating Distribution</CardTitle>
-            <CardDescription>Breakdown of feedback by star rating</CardDescription>
+            <CardDescription>Breakdown of feedback by rating</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {[...summary.ratingDistribution].reverse().map((d) => (
                 <div key={d.rating} className="flex items-center gap-3">
                   <div className="flex items-center gap-1 w-20">
+                    <span className="text-lg" role="img" aria-hidden="true">{getSatisfactionEmoji(d.rating)}</span>
                     <span className="text-sm font-medium">{d.rating}</span>
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                   </div>
                   <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
                     <div
@@ -274,11 +261,11 @@ export function FeedbackView({ initialData }: { initialData?: unknown }) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Ratings</SelectItem>
-                <SelectItem value="5">5 Stars</SelectItem>
-                <SelectItem value="4">4 Stars</SelectItem>
-                <SelectItem value="3">3 Stars</SelectItem>
-                <SelectItem value="2">2 Stars</SelectItem>
-                <SelectItem value="1">1 Star</SelectItem>
+                <SelectItem value="5">5 😍</SelectItem>
+                <SelectItem value="4">4 🙂</SelectItem>
+                <SelectItem value="3">3 😐</SelectItem>
+                <SelectItem value="2">2 😞</SelectItem>
+                <SelectItem value="1">1 😢</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -342,8 +329,16 @@ export function FeedbackView({ initialData }: { initialData?: unknown }) {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {renderStars(f.rating)}
-                        <Badge className={getRatingColor(f.rating)}>{f.rating}</Badge>
+                        {renderRatingEmoji(f.rating)}
+                        <Badge
+                          className="border-0 font-medium"
+                          style={{
+                            backgroundColor: `${getSatisfactionRatingColor(f.rating)}20`,
+                            color: getSatisfactionRatingColor(f.rating),
+                          }}
+                        >
+                          {f.rating}
+                        </Badge>
                       </div>
                     </TableCell>
                     <TableCell className="max-w-xs">
