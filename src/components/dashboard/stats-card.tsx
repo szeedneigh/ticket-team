@@ -18,6 +18,7 @@ import {
   LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { STATUS, SATISFACTION_ACCENT } from '@/lib/constants/colors'
 
 interface StatsCardProps {
   title: string
@@ -86,100 +87,68 @@ function getMetricStyles(title: string, value?: string | number, variant?: 'defa
   const numericValue = typeof value === 'number' ? value : (value ? parseFloat(value.replace(/[^0-9.-]/g, '')) : 0)
   const hasValue = !isNaN(numericValue) && numericValue > 0
 
-  // Open Tickets → Emerald #10B981
-  if (normalizedTitle.includes('open') && normalizedTitle.includes('ticket')) {
+  // Open Tickets / Resolved → success
+  if ((normalizedTitle.includes('open') && normalizedTitle.includes('ticket')) || normalizedTitle === 'resolved') {
     return {
-      badgeBg: 'bg-[#10B981]/10',
-      badgeIcon: 'text-[#10B981]',
-      valueText: 'text-[#10B981]',
+      badgeBg: `bg-[${STATUS.success}]/10`,
+      badgeIcon: `text-[${STATUS.success}]`,
+      valueText: `text-[${STATUS.success}]`,
       trendUpText: 'text-green-500',
       trendDownText: 'text-red-500',
     }
   }
 
-  // In Progress → Blue #3B82F6
-  if (normalizedTitle.includes('in progress')) {
+  // In Progress / Resolved Today (with value) → info
+  if (normalizedTitle.includes('in progress') || (normalizedTitle.includes('resolved') && normalizedTitle.includes('today') && hasValue)) {
     return {
-      badgeBg: 'bg-[#3B82F6]/10',
-      badgeIcon: 'text-[#3B82F6]',
-      valueText: 'text-[#3B82F6]',
+      badgeBg: `bg-[${STATUS.info}]/10`,
+      badgeIcon: `text-[${STATUS.info}]`,
+      valueText: `text-[${STATUS.info}]`,
       trendUpText: 'text-green-500',
       trendDownText: 'text-red-500',
     }
   }
 
-  // On Hold → Amber #F59E0B
-  if (normalizedTitle.includes('on hold')) {
+  // Resolved Today (no value) → muted gray
+  if (normalizedTitle.includes('resolved') && normalizedTitle.includes('today')) {
     return {
-      badgeBg: 'bg-[#F59E0B]/10',
-      badgeIcon: 'text-[#F59E0B]',
-      valueText: 'text-[#F59E0B]',
+      badgeBg: 'bg-[#9ca3af]/10',
+      badgeIcon: 'text-[#9ca3af]',
+      valueText: 'text-[#9ca3af]',
       trendUpText: 'text-green-500',
       trendDownText: 'text-red-500',
     }
   }
 
-  // Resolved (status card, not "Resolved Today") → Emerald #10B981
-  if (normalizedTitle === 'resolved') {
+  // On Hold / Avg Response Time → warning
+  if (normalizedTitle.includes('on hold') || normalizedTitle.includes('response') || normalizedTitle.includes('avg')) {
     return {
-      badgeBg: 'bg-[#10B981]/10',
-      badgeIcon: 'text-[#10B981]',
-      valueText: 'text-[#10B981]',
+      badgeBg: `bg-[${STATUS.warning}]/10`,
+      badgeIcon: `text-[${STATUS.warning}]`,
+      valueText: `text-[${STATUS.warning}]`,
       trendUpText: 'text-green-500',
       trendDownText: 'text-red-500',
     }
   }
 
-  // Cancelled → Gray #6B7280
+  // Cancelled → gray
   if (normalizedTitle.includes('cancelled') || normalizedTitle.includes('canceled')) {
     return {
-      badgeBg: 'bg-[#6B7280]/10',
-      badgeIcon: 'text-[#6B7280]',
-      valueText: 'text-[#6B7280]',
+      badgeBg: 'bg-[#6b7280]/10',
+      badgeIcon: 'text-[#6b7280]',
+      valueText: 'text-[#6b7280]',
       trendUpText: 'text-green-500',
       trendDownText: 'text-red-500',
     }
   }
 
-  // Resolved Today → Gray #9CA3AF base, Blue #3B82F6 emphasis when value > 0
-  if (normalizedTitle.includes('resolved') && normalizedTitle.includes('today')) {
-    if (hasValue) {
-      return {
-        badgeBg: 'bg-[#3B82F6]/10',
-        badgeIcon: 'text-[#3B82F6]',
-        valueText: 'text-[#3B82F6]',
-        trendUpText: 'text-green-500',
-        trendDownText: 'text-red-500',
-      }
-    }
-    // Gray when no value
-    return {
-      badgeBg: 'bg-[#9CA3AF]/10',
-      badgeIcon: 'text-[#9CA3AF]',
-      valueText: 'text-[#9CA3AF]',
-      trendUpText: 'text-green-500',
-      trendDownText: 'text-red-500',
-    }
-  }
-
-  // Avg Response Time → Amber #F59E0B
-  if (normalizedTitle.includes('response') || normalizedTitle.includes('avg')) {
-    return {
-      badgeBg: 'bg-[#F59E0B]/10',
-      badgeIcon: 'text-[#F59E0B]',
-      valueText: 'text-[#F59E0B]',
-      trendUpText: 'text-green-500',
-      trendDownText: 'text-red-500',
-    }
-  }
-
-  // Satisfaction → Indigo #6366F1 primary, Gold #FACC15 accent for trend up
+  // Satisfaction → central satisfaction accent
   if (normalizedTitle.includes('satisfaction') || normalizedTitle.includes('rating')) {
     return {
-      badgeBg: 'bg-[#6366F1]/10',
-      badgeIcon: 'text-[#6366F1]',
-      valueText: 'text-[#6366F1]',
-      trendUpText: 'text-[#FACC15]', // Gold accent for satisfaction trending up
+      badgeBg: `bg-[${SATISFACTION_ACCENT.primary}]/10`,
+      badgeIcon: `text-[${SATISFACTION_ACCENT.primary}]`,
+      valueText: `text-[${SATISFACTION_ACCENT.primary}]`,
+      trendUpText: `text-[${SATISFACTION_ACCENT.trendUp}]`,
       trendDownText: 'text-red-500',
     }
   }
