@@ -56,12 +56,9 @@ export function TicketTable({ tickets, fromQueue = false }: TicketTableProps) {
           <TicketIcon className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
         </div>
         <h3 className="text-xl font-semibold mb-2">No tickets found</h3>
-        <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+        <p className="text-sm text-muted-foreground max-w-sm">
           Try adjusting your filters or create a new ticket to get started
         </p>
-        <Button asChild variant="gradient" className="rounded-full px-6">
-          <Link href="/tickets/new">Create New Ticket</Link>
-        </Button>
       </div>
     )
   }
