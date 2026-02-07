@@ -84,7 +84,7 @@ Please analyze this ticket and provide triage suggestions in JSON format.`
     return suggestion
   } catch (error) {
     console.error('[autoTriageTicket] Error:', error)
-    
+
     await updateAutomationStatus(
       runId,
       'failed',
@@ -178,7 +178,7 @@ Please provide a structured summary in JSON format.`
     return summary
   } catch (error) {
     console.error('[autoSummarizeTicket] Error:', error)
-    
+
     await updateAutomationStatus(
       runId,
       'failed',
@@ -247,9 +247,48 @@ Please suggest ${maxSuggestions} helpful replies.`
 }
 
 /**
+ * Create a fallback KB draft when AI synthesis fails
+ * Uses the raw ticket data to create a basic article structure
+ */
+function createFallbackKBDraft(
+  ticketId: string,
+  ticket: { title: string; description: string },
+  comments: TicketComment[]
+): Partial<KBArticleInput> & { source_ticket_id: string } {
+  // Build resolution steps from comments
+  const resolutionSteps = comments
+    .map((c, index) => `${index + 1}. ${c.content.split('\n')[0]}`)
+    .join('\n')
+
+  const content = `## Problem Description
+
+${ticket.description}
+
+## Resolution Steps
+
+${resolutionSteps || 'No resolution steps documented.'}
+
+## Additional Notes
+
+*This article was created from a resolved support ticket. Please review and enhance the content as needed.*`
+
+  return {
+    title: ticket.title,
+    content,
+    summary: `Resolution for: ${ticket.title.substring(0, 100)}`,
+    category: 'General',
+    subcategory: '',
+    tags: [],
+    status: 'draft' as const,
+    source_ticket_id: ticketId,
+  }
+}
+
+/**
  * Synthesize a KB article draft from a resolved ticket
  *
  * Uses AI to convert ticket title, description, and comments into a KB article draft.
+ * Falls back to a basic template if AI synthesis fails.
  * Only staff and above can use this. Ticket must be resolved or closed.
  *
  * @param ticketId - Ticket ID
@@ -316,10 +355,31 @@ Convert this into a helpful KB article draft. Focus on the solution and steps th
       maxOutputTokens: 2048,
     })
 
-    const jsonMatch = response.text.match(/\{[\s\S]*\}/)
+    // Log raw response for debugging (truncate to avoid log spam)
+    const rawText = response.text || ''
+    console.log('[synthesizeKBDraftFromTicket] Raw response length:', rawText.length)
+    if (rawText.length === 0) {
+      console.error('[synthesizeKBDraftFromTicket] Empty response from AI')
+      console.error('[synthesizeKBDraftFromTicket] Finish reason:', response.finishReason)
+      console.log('[synthesizeKBDraftFromTicket] Using fallback draft')
+      return createFallbackKBDraft(ticketId, context.ticket as { title: string; description: string }, context.comments)
+    }
+
+    // Try to extract JSON, handling markdown code blocks
+    let jsonText = rawText
+
+    // Remove markdown code blocks if present (```json ... ``` or ``` ... ```)
+    const codeBlockMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/)
+    if (codeBlockMatch) {
+      jsonText = codeBlockMatch[1].trim()
+    }
+
+    const jsonMatch = jsonText.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
       console.error('[synthesizeKBDraftFromTicket] No JSON in response')
-      return null
+      console.error('[synthesizeKBDraftFromTicket] Response preview:', rawText.substring(0, 500))
+      console.log('[synthesizeKBDraftFromTicket] Using fallback draft')
+      return createFallbackKBDraft(ticketId, context.ticket as { title: string; description: string }, context.comments)
     }
 
     const parsed = JSON.parse(jsonMatch[0]) as {
@@ -332,7 +392,9 @@ Convert this into a helpful KB article draft. Focus on the solution and steps th
     }
 
     if (!parsed.title || !parsed.content) {
-      return null
+      console.error('[synthesizeKBDraftFromTicket] Invalid parsed response - missing title or content')
+      console.log('[synthesizeKBDraftFromTicket] Using fallback draft')
+      return createFallbackKBDraft(ticketId, context.ticket as { title: string; description: string }, context.comments)
     }
 
     return {
@@ -347,6 +409,7 @@ Convert this into a helpful KB article draft. Focus on the solution and steps th
     }
   } catch (error) {
     console.error('[synthesizeKBDraftFromTicket] Error:', error)
-    return null
+    console.log('[synthesizeKBDraftFromTicket] Using fallback draft')
+    return createFallbackKBDraft(ticketId, context.ticket as { title: string; description: string }, context.comments)
   }
 }

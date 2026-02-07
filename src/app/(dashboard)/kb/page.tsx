@@ -128,7 +128,7 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
         {/* Top Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-[#2cafdd]/20 opacity-20 blur-[100px] rounded-full pointer-events-none" />
 
-        <div className="container mx-auto py-20 md:py-32 px-4 relative z-10">
+        <div className="container mx-auto py-10 md:py-16 px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="space-y-4">
               <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1f3463] to-[#2cafdd] pb-2">
@@ -138,21 +138,12 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
                 Everything you need to know about using the platform. Find answers, guides, and best practices.
               </p>
             </div>
-            
-            {/* Search is now part of the hero */}
-            <div className="pt-4 max-w-2xl mx-auto">
-               {/* Client Wrapper handles the search state */}
-            </div>
           </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto py-12 px-4">
-        <div className="flex flex-col gap-8">
-          {/* Action Bar */}
+          
+          {/* New Article Button - Right side */}
           {canCreate && (
-            <div className="flex justify-end">
-              <Button asChild className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-300">
+            <div className="flex justify-end mt-6">
+              <Button asChild className="bg-gradient-to-r from-[#1f3463] to-[#2cafdd] hover:from-[#1f3463]/90 hover:to-[#2cafdd]/90 text-white shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-300">
                 <Link href="/kb/new">
                   <Plus className="h-4 w-4 mr-2" />
                   New Article
@@ -160,6 +151,12 @@ export default async function KBBrowsePage({ searchParams }: PageProps) {
               </Button>
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="container mx-auto py-12 px-4">
+        <div className="flex flex-col gap-8">
+
 
           {/* Client Wrapper for Search and Results */}
           {total === 0 && !hasFilters ? (
