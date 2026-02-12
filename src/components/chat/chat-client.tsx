@@ -23,7 +23,8 @@ import { ChatWelcome } from './chat-welcome'
 import { ChatSources } from './chat-sources'
 import { EscalateButton } from './escalate-button'
 import { TicketReviewModal } from './ticket-review-modal'
-import { Headset } from 'lucide-react'
+import { Download, Headset } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   prepareTicketFromChat,
   createTicketFromChat,
@@ -267,10 +268,6 @@ export function ChatClient({
                 // Server signaled an error; surface to the user and stop streaming gracefully
                 const serverMessage = chunk.error || 'An error occurred while processing your request'
                 
-                // Friendly error handling based on error type
-                const isRateLimit = serverMessage.toLowerCase().includes('limit') || 
-                                   serverMessage.toLowerCase().includes('wait')
-                
                 // Update UI state without throwing (avoids noisy console errors)
                 // The ChatInput component will display a fallback UI with a "Create Ticket" option
                 setError(serverMessage)
@@ -474,6 +471,42 @@ export function ChatClient({
     handleSendMessage(prompt)
   }, [handleSendMessage])
 
+  // Export the current conversation as a JSON file
+  const handleExportConversation = useCallback(() => {
+    if (messages.length === 0) {
+      toast.info('No messages to export yet.')
+      return
+    }
+
+    const exportPayload = {
+      sessionId,
+      exportedAt: new Date().toISOString(),
+      messages: messages.map(message => ({
+        role: message.role,
+        content: message.content,
+        timestamp: message.timestamp,
+        sources: message.sources,
+        metadata: message.metadata,
+      })),
+    }
+
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(blob)
+
+    try {
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `chat-session-${sessionId}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } finally {
+      URL.revokeObjectURL(url)
+    }
+  }, [messages, sessionId])
+
   // Prepare items for virtualized list (messages + streaming + escalation)
   const displayItems = [...messages]
 
@@ -631,15 +664,28 @@ export function ChatClient({
 
       {/* Input Area */}
       <div className="p-4 md:p-6 pb-6 md:pb-8">
-        <div className="mx-auto w-full max-w-4xl">
-            <ChatInput
-              onSend={handleSendMessage}
-              disabled={false}
-              isStreaming={isStreaming}
-              error={error}
-              onRetry={handleRetry}
-              createTicketHref="/tickets/new"
-            />
+        <div className="mx-auto w-full max-w-4xl space-y-3">
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleExportConversation}
+              disabled={messages.length === 0}
+              className="text-xs"
+            >
+              <Download className="mr-2 h-3 w-3" />
+              Export conversation
+            </Button>
+          </div>
+          <ChatInput
+            onSend={handleSendMessage}
+            disabled={false}
+            isStreaming={isStreaming}
+            error={error}
+            onRetry={handleRetry}
+            createTicketHref="/tickets/new"
+          />
         </div>
       </div>
 
