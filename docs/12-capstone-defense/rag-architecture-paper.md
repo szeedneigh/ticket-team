@@ -1,0 +1,360 @@
+# Retrieval-Augmented Generation Architecture
+
+## 1. Introduction
+
+A central challenge in deploying AI-powered support systems within educational institutions is ensuring that the assistant's responses are accurate, verifiable, and specific to the organization. General-purpose large language models (LLMs), while powerful, have no awareness of institutional policies, procedures, or internal systems. When asked a question they cannot answer from their training data, they tend to fabricate plausible-sounding but incorrect information -- a well-documented phenomenon known as *hallucination* (Huang et al., 2023).
+
+To address this, the Ticket Team helpdesk platform implements a **Retrieval-Augmented Generation (RAG)** architecture. RAG is a design pattern in which the AI model does not generate answers from memory alone. Instead, before producing a response, the system first searches an institutional knowledge base for articles relevant to the user's question, and then provides those articles as context to the language model. The model is instructed to base its answer strictly on the provided material and to cite its sources.
+
+This chapter describes the design, components, and data flow of the RAG pipeline as implemented in Ticket Team's AI assistant, named **Timi**.
+
+---
+
+## 2. Rationale for Choosing RAG
+
+Three architectural approaches were evaluated for the AI intelligence layer:
+
+**Table 1.** Comparison of AI architecture approaches for institutional helpdesk systems.
+
+| Approach | Description | Advantages | Limitations |
+|----------|-------------|------------|-------------|
+| Pure LLM | Send user queries directly to a general-purpose language model with no additional context. | Simple implementation; no infrastructure overhead. | Produces hallucinated responses; has no institutional knowledge; cannot cite sources. |
+| Fine-Tuned LLM | Train or fine-tune a language model on institutional data so it internalizes the knowledge. | Can produce highly accurate answers for well-covered topics. | Expensive to train and maintain; knowledge becomes stale as policies change; difficult to update incrementally. |
+| RAG | Retrieve relevant documents at query time and provide them as context to the language model. | Grounded, verifiable answers with source citations; knowledge base can be updated independently without retraining; cost-effective. | Requires vector database infrastructure; answer quality depends on the completeness of the knowledge base. |
+
+RAG was selected because it provides the best balance of accuracy, maintainability, and cost for an educational institution's helpdesk. When a new IT policy is introduced or an existing procedure changes, staff simply update the relevant knowledge base article. The AI assistant immediately incorporates the updated information in its next response, without any model retraining, fine-tuning, or redeployment. Furthermore, every response can be traced back to specific source articles, providing an audit trail and building user trust.
+
+---
+
+## 3. System Overview
+
+The RAG architecture operates across three layers: the client application (the user's web browser), the application server, and external services (the AI model provider and the database). Figure 1 illustrates the high-level flow.
+
+**Figure 1.** High-level architecture of the RAG pipeline.
+
+```
+  ┌──────────┐          ┌─────────────────────────────┐          ┌──────────────┐
+  │          │  Query   │      Application Server      │  Search  │   Database   │
+  │   User   │────────► │                              │────────► │  (Knowledge  │
+  │ (Browser)│          │  1. Authenticate & validate  │          │   Articles   │
+  │          │◄──────── │  2. Convert query to vector  │◄──────── │   + Vector   │
+  │          │ Streamed │  3. Search knowledge base    │ Matching │    Index)    │
+  │          │ Response │  4. Assemble context          │ Articles │              │
+  └──────────┘          │  5. Generate AI response     │          └──────────────┘
+                        │  6. Stream to user           │
+                        │  7. Log interaction          │          ┌──────────────┐
+                        │                              │────────► │   AI Model   │
+                        └─────────────────────────────┘ Generate  │   (Google    │
+                                                        Response  │   Gemini)    │
+                                                                  └──────────────┘
+```
+
+When a user submits a question through the chat interface, the server authenticates the request, converts the question into a mathematical representation (a vector embedding), searches the knowledge base for semantically similar articles, assembles the retrieved articles into a structured prompt, and sends the augmented prompt to the AI model for response generation. The response is streamed back to the user in real time, and the entire interaction is logged for analytics and quality assurance.
+
+---
+
+## 4. Core Concepts
+
+### 4.1 Vector Embeddings
+
+At the heart of the retrieval mechanism is the concept of **vector embeddings**. An embedding is a mathematical representation of text as a list of numbers (a vector) in a high-dimensional space. Texts that are semantically similar -- that is, they discuss related topics or answer related questions -- are represented by vectors that are close together in this space, even if they use different words.
+
+For example, the question *"How do I reset my password?"* and the knowledge base article titled *"Password Reset Guide"* would produce vectors that are close together, because they are about the same topic. In contrast, the vector for an article about *"Printer Setup Instructions"* would be far away from both.
+
+The system uses Google's Gemini embedding model to generate 768-dimensional vectors. This means each piece of text is represented as a list of 768 numbers. While this is difficult to visualize, the mathematical properties of the space allow the system to efficiently compute how similar any two pieces of text are.
+
+Importantly, the system uses an **asymmetric embedding strategy**: user questions and knowledge base articles are embedded with different optimization objectives. Questions are embedded to be good at *finding* relevant documents, while articles are embedded to be good at *being found* by relevant questions. This distinction improves retrieval accuracy compared to a symmetric approach where both are treated identically.
+
+### 4.2 Cosine Similarity
+
+To measure how related a user's question is to a knowledge base article, the system computes the **cosine similarity** between their vector embeddings. Cosine similarity measures the angle between two vectors, producing a score between 0 and 1:
+
+- A score of **1.0** means the texts are semantically identical.
+- A score of **0.0** means the texts are completely unrelated.
+- The system uses a **threshold of 0.7**, meaning only articles with a similarity score above 70% are considered relevant enough to include in the AI's context.
+
+This approach -- often called **semantic search** -- is fundamentally different from traditional keyword search. A keyword search for "can't log in" would miss an article titled "Authentication Troubleshooting," but semantic search recognizes that these texts discuss the same concept and returns the article as a match.
+
+### 4.3 The RAG Pipeline
+
+RAG stands for **Retrieval-Augmented Generation**, and the name describes the three phases of the pipeline:
+
+1. **Retrieval** -- The system searches the knowledge base for articles relevant to the user's question, using vector similarity.
+2. **Augmentation** -- The retrieved articles are assembled into a structured prompt alongside the user's question and conversation history.
+3. **Generation** -- The augmented prompt is sent to a large language model, which generates a response grounded in the provided context.
+
+This three-phase approach ensures that the AI model always has access to the most current institutional knowledge, without requiring the model itself to be retrained or updated.
+
+---
+
+## 5. Detailed Pipeline Walkthrough
+
+This section traces the journey of a single user question through every stage of the RAG pipeline.
+
+### 5.1 User Input and Validation
+
+When a user types a question into the chat interface and presses send, the message is transmitted to the application server along with a session identifier and any prior conversation history. Before any AI processing begins, the server performs several validation checks:
+
+- **Authentication** -- The user's identity is verified through their browser session. Unauthenticated requests are rejected.
+- **Rate Limiting** -- Each user is limited to 10 messages per minute to prevent abuse and control costs. The system uses a token bucket algorithm that allows short bursts of activity while enforcing a sustainable average rate.
+- **Input Validation** -- The message must be a non-empty string of no more than 2,000 characters.
+- **Scope Checking** -- The query is screened for topics outside the IT support domain (such as academic inquiries about grades, tuition, or enrollment). Out-of-scope queries receive a polite redirect to the appropriate department, bypassing the retrieval pipeline entirely.
+
+### 5.2 Embedding Generation
+
+If the query passes all validation checks, it is converted into a 768-dimensional vector embedding using Google's Gemini embedding model. This vector captures the semantic meaning of the question in numerical form.
+
+To reduce latency and minimize API costs, the system maintains an in-memory cache of recently generated embeddings. If a user asks the same question (or a question that normalizes to the same text after lowercasing and whitespace removal), the cached embedding is reused instead of making a new API call. The embedding cache holds up to 500 entries and retains them for one hour.
+
+If the API call fails due to a transient network error, the system automatically retries up to three times with increasing wait intervals between attempts (a strategy known as exponential backoff).
+
+### 5.3 Knowledge Base Search
+
+The embedding vector is used to search the knowledge base through a specialized database function that performs **approximate nearest neighbor (ANN)** search. The database uses the pgvector extension for PostgreSQL, which enables efficient vector similarity operations.
+
+The search function applies the following criteria:
+
+- Only **published** articles are included (drafts and archived articles are excluded).
+- Articles must have a valid embedding (articles that failed embedding generation are skipped).
+- Articles must contain a minimum of 50 characters of content (filtering out incomplete stubs).
+- Only articles with a **similarity score above 0.7** (70%) are returned.
+- Results are ordered by relevance, with the most similar articles first.
+- A maximum of **5 articles** are returned per query.
+
+To accelerate this search, the database maintains an **HNSW (Hierarchical Navigable Small World) index** on the embedding column. HNSW is a graph-based indexing algorithm specifically designed for fast approximate nearest neighbor search in high-dimensional spaces. It provides query times that are orders of magnitude faster than a brute-force comparison of every article, with minimal loss in accuracy.
+
+Similar to the embedding cache, retrieval results are also cached in memory for five minutes. This means that if multiple users ask similar questions within a short time window, the database query is executed only once.
+
+### 5.4 Confidence Scoring
+
+After retrieval, the system computes a **confidence score** that estimates how well the knowledge base can answer the user's question. The score is calculated as the average similarity of the retrieved articles, plus a small bonus for having multiple relevant articles (up to a maximum of 0.2 additional points). The confidence score ranges from 0 to 1:
+
+- A confidence of **0** means no relevant articles were found.
+- A confidence between **0.3 and 0.5** indicates marginal coverage -- the system will attempt an answer but may suggest escalation.
+- A confidence above **0.7** indicates strong coverage -- the knowledge base has highly relevant articles for this question.
+- A confidence above **0.9** indicates excellent coverage, typically when multiple highly relevant articles are available.
+
+This score is used later to determine whether the system should suggest that the user create a human-managed support ticket.
+
+### 5.5 Prompt Assembly
+
+The retrieved articles, the user's question, and any prior conversation history are assembled into a structured prompt. The prompt has four sections:
+
+1. **Conversation history** (if this is a follow-up question) -- the last 10 messages from the current session are included, giving the AI model context about what has already been discussed.
+
+2. **Knowledge base articles** -- each retrieved article is presented with its title, category, full content, and relevance score. The articles are formatted so the AI model can clearly distinguish between different sources.
+
+3. **The current question** -- the user's actual question, presented separately from the context material.
+
+4. **Task instructions** -- explicit directives telling the AI model to base its answer on the provided articles, to cite sources using a specific format, and to acknowledge when the knowledge base does not fully cover the question.
+
+In addition to this per-query prompt, the AI model receives a **system instruction** that defines its persona and behavioral guidelines. The system instruction establishes the assistant's identity as "Timi," an IT support assistant for La Verdad Christian College, and provides detailed guidelines for tone, response structure, citation format, and escalation criteria.
+
+### 5.6 Response Generation
+
+The assembled prompt is sent to Google's Gemini language model for response generation. The system uses Gemini 2.5 Flash as its primary model, chosen for its balance of speed, quality, and cost-effectiveness.
+
+To ensure high availability, the system implements a **cascading fallback strategy**. If the primary model's daily usage quota is exhausted, the system automatically switches to an alternative model (Gemini 2.0 Flash), which has its own separate quota. This effectively doubles the system's daily capacity without additional cost.
+
+The response is generated with carefully tuned parameters:
+
+- **Temperature (0.7)** -- Controls the randomness of the output. A value of 0.7 provides a balance between creative, natural-sounding language and consistent, factual responses.
+- **Maximum output length (1,024 tokens)** -- Sufficient for detailed step-by-step troubleshooting instructions while preventing excessively long responses.
+
+### 5.7 Real-Time Streaming
+
+Rather than waiting for the entire response to be generated before displaying it, the system streams the response to the user's browser in real time using **Server-Sent Events (SSE)**. As the AI model produces each word or phrase, it is immediately transmitted to the browser and appended to the displayed message.
+
+This approach provides several user experience benefits:
+
+- **Perceived responsiveness** -- Users begin seeing the response within one to two seconds, even though the full response may take several seconds to generate.
+- **Progressive disclosure** -- Users can begin reading the answer while it is still being composed, reducing the perception of waiting.
+- **Early exit** -- If the first few words indicate the response is not relevant, the user can cancel and rephrase their question without waiting for completion.
+
+The streaming protocol transmits different types of data at different stages:
+
+1. First, the retrieved knowledge base articles and confidence score are sent, allowing the interface to display source indicators immediately.
+2. Then, the AI-generated text is sent incrementally as it is produced.
+3. Finally, a completion signal is sent with metadata including the total response time, extracted citations, and an escalation recommendation.
+
+### 5.8 Citation Extraction and Source Attribution
+
+After the full response has been generated, the system extracts all source citations. The AI model is instructed to cite knowledge base articles using bracketed titles (for example, "[Password Reset Guide]"), and the system identifies these patterns in the response text.
+
+Each extracted citation is matched back to the corresponding knowledge base article, enabling the user interface to display clickable source links alongside the response. This provides transparency: users can verify the AI's answer by reading the original source material, building trust in the system's accuracy.
+
+### 5.9 Interaction Logging
+
+Every query-response exchange is recorded in the database, capturing:
+
+- The user's original question and the AI's response
+- Which knowledge base articles were used as context
+- The confidence score and response time
+- Which articles were cited in the response
+
+This interaction log serves multiple purposes: it enables quality analysis of the AI's performance, provides data for identifying knowledge gaps in the knowledge base, and supports the escalation feature by preserving the full conversation context when a ticket is created.
+
+### 5.10 Session Title Generation
+
+For the first message in a new conversation, the system automatically generates a descriptive session title (such as "Password Reset Help" or "WiFi Connection Issue") using the AI model. This title appears in the user's conversation history, making it easy to locate and revisit past interactions. If the AI model is temporarily unavailable, the system falls back to using a truncated version of the first message as the title.
+
+---
+
+## 6. Intelligent Escalation
+
+Not every IT issue can be resolved through an AI chatbot. Some problems require hands-on technical support, involve sensitive account security matters, or are simply too complex for automated assistance. The system includes an intelligent escalation mechanism that recognizes these situations and facilitates a smooth handoff to human support staff.
+
+### 6.1 Escalation Triggers
+
+The system evaluates two conditions to determine whether escalation should be suggested:
+
+**Table 2.** Conditions that trigger an escalation recommendation.
+
+| Condition | Threshold | Rationale |
+|-----------|-----------|-----------|
+| Low confidence score | Below 0.5 | The knowledge base does not contain sufficiently relevant articles for this issue, indicating it may require specialized human expertise. |
+| Extended conversation | More than 6 messages | A prolonged conversation suggests that the AI's troubleshooting steps have not resolved the issue, and human intervention may be needed. |
+
+When either condition is met, the chat interface displays a prominent option to create a support ticket.
+
+### 6.2 AI-Assisted Ticket Creation
+
+When a user chooses to escalate, the system uses the AI model to analyze the conversation and extract structured information for the support ticket:
+
+- A concise, descriptive **title** summarizing the issue
+- A brief **summary** of the problem and what has been tried
+- A suggested **category** (e.g., Hardware, Software, Network, Account)
+- A suggested **priority** level (Low, Medium, High)
+
+The user is presented with this pre-filled ticket for review and can modify any field before submitting. This two-step process (AI preparation followed by user review) ensures that tickets are well-structured while keeping the user in control of the final submission.
+
+---
+
+## 7. Performance Optimization
+
+### 7.1 Multi-Layer Caching
+
+To minimize response latency and reduce external API costs, the system implements a three-tier caching strategy:
+
+**Table 3.** Cache layers in the RAG pipeline.
+
+| Cache Layer | What It Stores | Maximum Size | Duration | Purpose |
+|-------------|---------------|--------------|----------|---------|
+| Embedding Cache | Vector representations of user queries | 500 entries | 1 hour | Avoids redundant calls to the embedding API for repeated or similar questions. |
+| Retrieval Cache | Search results (matched articles and scores) | 200 entries | 5 minutes | Avoids redundant database queries when the same question is asked within a short window. |
+| FAQ Cache | Complete AI responses for common questions | 100 entries | 10 minutes | Provides instant responses for frequently asked questions without invoking the AI model. |
+
+All caches use a **Least Recently Used (LRU)** eviction policy: when a cache reaches its maximum size, the entry that has gone the longest without being accessed is removed to make room for new entries.
+
+When knowledge base articles are created, updated, or deleted, the retrieval and FAQ caches are automatically invalidated to prevent stale results. The embedding cache is preserved, as query embeddings are independent of knowledge base content.
+
+### 7.2 Database Indexing
+
+The knowledge base uses an HNSW (Hierarchical Navigable Small World) vector index to accelerate similarity searches. Without this index, each search would require comparing the query vector against every article in the database -- a process that becomes increasingly slow as the knowledge base grows. The HNSW index organizes vectors into a navigable graph structure, enabling the database to find the most similar articles by traversing a small subset of the data, typically answering queries in milliseconds regardless of the total number of articles.
+
+In addition to the vector index, the system maintains a full-text search index using PostgreSQL's built-in text search capabilities. This provides a complementary keyword-based search that can be combined with semantic search for comprehensive retrieval.
+
+### 7.3 Circuit Breaker Pattern
+
+To protect the system from cascading failures when the external AI service is experiencing problems, the system implements a **circuit breaker** pattern. If the AI service fails five consecutive times, the circuit breaker "opens" and all subsequent requests receive an immediate, user-friendly error message instead of waiting for another timeout. After one minute, the circuit breaker allows a single test request through. If that request succeeds, normal operation resumes; if it fails, the circuit breaker remains open for another minute.
+
+This pattern prevents the system from overwhelming a struggling external service with retry attempts, allows the service time to recover, and ensures users receive fast feedback instead of experiencing long timeouts.
+
+---
+
+## 8. Security Architecture
+
+### 8.1 Server-Side Execution
+
+All AI-related operations -- embedding generation, knowledge base search, prompt assembly, and response generation -- execute exclusively on the application server. No AI processing occurs in the user's browser. This design ensures that sensitive API credentials and service keys are never exposed to the client.
+
+The system enforces this boundary through multiple layers:
+
+- **Runtime protection** -- Server-only modules throw an error if they are accidentally imported in browser-facing code.
+- **Build-time scanning** -- An automated security check scans the application's client-side bundle for any inadvertently exposed secrets before deployment.
+- **Static analysis** -- Code quality rules prevent developers from importing server-only modules in client-facing components.
+
+### 8.2 Access Control
+
+The database enforces **Row Level Security (RLS)** policies that control access to both knowledge base articles and AI interaction logs:
+
+- All authenticated users can search published knowledge base articles, but only staff members can view or create draft articles.
+- Users can only access their own conversation history. Staff and administrators can access all interaction logs for support and quality assurance purposes.
+- Only staff, administrators, and super-administrators can create or modify knowledge base articles.
+
+### 8.3 Input Protection
+
+User inputs are validated and sanitized at multiple levels:
+
+- Message length is capped at 2,000 characters to prevent excessively large inputs.
+- Rate limiting restricts each user to 10 messages per minute, preventing automated abuse.
+- Scope checking filters out queries unrelated to IT support, preventing misuse of the AI system for unintended purposes.
+
+---
+
+## 9. Knowledge Base Integration
+
+The RAG pipeline is deeply integrated with the platform's knowledge base management system. When staff members create or update a knowledge base article, the system automatically generates a vector embedding for the article's content and stores it alongside the article in the database. This means newly published articles become immediately searchable by the AI assistant without any manual intervention.
+
+If embedding generation fails (for example, due to a temporary API outage), the article is saved without an embedding and remains browsable through the traditional category-based interface. A background process can later regenerate missing embeddings when the API becomes available.
+
+The knowledge base also supports a **dual search** approach: semantic search (using vector embeddings) for meaning-based queries, and full-text search (using PostgreSQL's text search capabilities) for keyword-based queries. This combination ensures comprehensive coverage, as some queries are better served by semantic understanding while others benefit from exact keyword matching.
+
+---
+
+## 10. Conversation Management
+
+The system supports multi-turn conversations, allowing users to ask follow-up questions that build on previous exchanges. Each conversation session stores the complete history of questions and responses, and the most recent exchanges (up to 10 messages) are included in the AI model's context for each new question.
+
+This conversational memory enables natural interactions such as:
+
+- **Clarification**: "What do you mean by step 3?" -- The AI can reference the specific step it mentioned previously.
+- **Follow-up**: "What if that doesn't work?" -- The AI understands the context of what was already suggested.
+- **Refinement**: "Can you explain that in simpler terms?" -- The AI can rephrase its previous response.
+
+Conversations can be archived when they are no longer needed, and users can review their past interactions through a conversation history interface. Each session is automatically titled based on the first message, making it easy to locate specific conversations.
+
+---
+
+## 11. Monitoring and Quality Assurance
+
+Every AI interaction is logged with comprehensive metadata, enabling ongoing quality monitoring:
+
+- **Response time tracking** -- Measures the end-to-end latency from question submission to response completion, helping identify performance bottlenecks.
+- **Confidence score recording** -- Tracks how well the knowledge base covers the questions being asked, revealing content gaps that should be addressed.
+- **Citation tracking** -- Records which knowledge base articles are most frequently cited, indicating which articles provide the most value.
+- **User feedback** -- Users can mark responses as helpful or unhelpful, providing direct quality signals.
+- **Escalation tracking** -- Records which conversations are escalated to human support, identifying topics where the AI consistently struggles.
+- **Error monitoring** -- Classifies and tracks errors at each pipeline stage (embedding, retrieval, generation), enabling targeted reliability improvements.
+
+This data enables administrators to continuously improve the system by identifying frequently asked questions that lack knowledge base coverage, articles that need updating, and patterns in escalated conversations that could inform new article creation.
+
+---
+
+## 12. Summary
+
+The Retrieval-Augmented Generation architecture implemented in Ticket Team addresses the fundamental challenge of deploying AI in an institutional context: ensuring that responses are accurate, current, and verifiable. By separating the knowledge source (the knowledge base) from the reasoning engine (the language model), the system achieves several key properties:
+
+1. **Accuracy** -- Responses are grounded in institutional knowledge base articles rather than the model's general training data, eliminating hallucination for covered topics.
+
+2. **Transparency** -- Every response includes citations to the source articles used, allowing users to verify the information and building trust in the system.
+
+3. **Maintainability** -- The knowledge base can be updated by staff at any time, and changes are immediately reflected in AI responses without model retraining or system redeployment.
+
+4. **Resilience** -- Multiple layers of caching, model fallback, circuit breaking, and graceful degradation ensure that the system remains responsive even under adverse conditions.
+
+5. **Security** -- All AI operations execute server-side, with role-based access control enforced at the database level and multiple layers of protection against credential exposure.
+
+6. **Scalability** -- Vector indexing, multi-layer caching, and streaming responses ensure that the system performs well as both the knowledge base and user base grow.
+
+The RAG architecture represents a practical, production-ready approach to institutional AI that balances the capabilities of modern language models with the need for accuracy, accountability, and ease of maintenance in an educational environment.
+
+---
+
+### References
+
+Huang, L., Yu, W., Ma, W., Zhong, W., Feng, Z., Wang, H., Chen, Q., Peng, W., Feng, X., Qin, B., & Liu, T. (2023). A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions. *arXiv preprint arXiv:2311.05232*.
+
+Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., Kuttler, H., Lewis, M., Yih, W., Rocktaschel, T., Riedel, S., & Kiela, D. (2020). Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks. *Advances in Neural Information Processing Systems (NeurIPS)*, 33, 9459-9474.
+
+Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y., Sun, J., & Wang, H. (2024). Retrieval-Augmented Generation for Large Language Models: A Survey. *arXiv preprint arXiv:2312.10997*.
