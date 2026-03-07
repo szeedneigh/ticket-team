@@ -153,12 +153,12 @@ export async function createComment(
       }
     }
 
-    // 5.5. Only creator or assigned staff can add comments
-    const canComment = ticket.user_id === user.id || ticket.assigned_to === user.id
+    // 5.5. Creator, assigned staff, or any staff can add comments
+    const canComment = ticket.user_id === user.id || ticket.assigned_to === user.id || isStaff
     if (!canComment) {
       return {
         success: false,
-        error: 'Only the ticket creator and assigned staff can add comments',
+        error: 'Only the ticket creator and staff can add comments',
       }
     }
 
