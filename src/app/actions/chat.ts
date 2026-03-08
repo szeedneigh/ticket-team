@@ -151,7 +151,6 @@ export async function getArchivedChatSessions(params?: {
   try {
     const supabase = await createClient()
 
-    // Verify user authentication
     const {
       data: { user },
       error: authError,
@@ -164,77 +163,49 @@ export async function getArchivedChatSessions(params?: {
       }
     }
 
-    // Query for archived sessions only (sessions where all interactions are archived)
-    // We get sessions that have at least one archived interaction
-    const { data: archivedInteractions, error: queryError } = await supabase
-      .from('ai_interactions')
-      .select('session_id, query, created_at, escalated_to_ticket, metadata, archived_at')
-      .eq('user_id', user.id)
-      .not('archived_at', 'is', null) // Only archived interactions (IS NOT NULL)
-      .order('created_at', { ascending: false })
+    const limit = params?.limit ?? 50
+    const offset = params?.offset ?? 0
 
-    logger.info('[getArchivedChatSessions] Query result:', {
-      userId: user.id,
-      count: archivedInteractions?.length ?? 0,
-      error: queryError?.message,
-      hasData: !!archivedInteractions,
-    })
+    const { data, error: queryError } = await supabase.rpc(
+      'get_archived_chat_sessions',
+      {
+        p_user_id: user.id,
+        p_limit: limit,
+        p_offset: offset,
+      }
+    )
 
     if (queryError) {
-      logger.error('Error querying archived interactions', { error: queryError.message })
+      logger.error('Error querying archived sessions via RPC', {
+        error: queryError.message,
+      })
       return {
         success: false,
         error: 'Failed to fetch archived chat sessions',
       }
     }
 
-    if (!archivedInteractions || archivedInteractions.length === 0) {
-      logger.info('[getArchivedChatSessions] No archived interactions found')
-      return {
-        success: true,
-        data: [],
-      }
-    }
-
-    // Group by session_id and create summaries (similar to getSessionsByUserId)
-    const sessionMap = new Map<string, SessionSummary>()
-
-    for (const interaction of archivedInteractions) {
-      const existingSession = sessionMap.get(interaction.session_id)
-
-      if (!existingSession) {
-        const title =
-          (interaction.metadata as Record<string, unknown>)?.session_title as
-            | string
-            | undefined
-
-        sessionMap.set(interaction.session_id, {
-          session_id: interaction.session_id,
-          title: title || null,
-          last_message: interaction.query,
-          last_message_at: interaction.created_at,
-          message_count: 1,
-          escalated: interaction.escalated_to_ticket,
-        })
-      } else {
-        existingSession.message_count++
-        if (new Date(interaction.created_at) > new Date(existingSession.last_message_at)) {
-          existingSession.last_message = interaction.query
-          existingSession.last_message_at = interaction.created_at
-        }
-        if (interaction.escalated_to_ticket) {
-          existingSession.escalated = true
-        }
-      }
-    }
-
-    const archivedSessions = Array.from(sessionMap.values())
-      .sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
-      .slice(params?.offset || 0, (params?.offset || 0) + (params?.limit || 50))
+    const archivedSessions: SessionSummary[] = (data ?? []).map(
+      (row: {
+        session_id: string
+        title: string | null
+        last_message: string
+        last_message_at: string
+        message_count: number
+        escalated: boolean
+      }) => ({
+        session_id: row.session_id,
+        title: row.title,
+        last_message: row.last_message,
+        last_message_at: row.last_message_at,
+        message_count: row.message_count,
+        escalated: row.escalated,
+      })
+    )
 
     logger.info('[getArchivedChatSessions] Returning archived sessions:', {
       count: archivedSessions.length,
-      sessionIds: archivedSessions.map(s => s.session_id),
+      sessionIds: archivedSessions.map((s) => s.session_id),
     })
 
     return {
@@ -243,7 +214,7 @@ export async function getArchivedChatSessions(params?: {
     }
   } catch (error) {
     logger.error('Error fetching archived chat sessions', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     })
     return {
       success: false,
