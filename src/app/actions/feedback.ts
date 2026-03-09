@@ -221,16 +221,21 @@ export interface FeedbackAnalyticsResult {
   success: boolean
   feedback?: FeedbackWithDetails[]
   summary?: FeedbackSummary | null
+  totalCount?: number
+  page?: number
+  pageSize?: number
   error?: string
 }
 
 /**
  * Fetch feedback analytics for admin settings.
- * - super_admin: Full feedback list + summary (bypasses RLS via service client)
+ * - super_admin: Paginated feedback list + accurate summary via RPC (bypasses RLS via service client)
  * - admin: Aggregate summary only via get_satisfaction_aggregate RPC (no individual feedback)
  */
 export async function getFeedbackAnalytics(
-  ratingFilter?: string
+  ratingFilter?: string,
+  page: number = 1,
+  pageSize: number = 50
 ): Promise<FeedbackAnalyticsResult> {
   try {
     const supabase = await createClient()
@@ -255,6 +260,22 @@ export async function getFeedbackAnalytics(
 
     if (role === 'super_admin') {
       const serviceSupabase = createServiceClient()
+
+      // Use get_satisfaction_aggregate for accurate summary regardless of page
+      const { data: aggregate, error: aggError } = await serviceSupabase.rpc(
+        'get_satisfaction_aggregate',
+        {
+          start_date: new Date(0).toISOString(),
+          end_date: new Date().toISOString(),
+        }
+      )
+
+      if (aggError) {
+        logger.error('Error fetching satisfaction aggregate', { error: aggError.message })
+      }
+
+      // Paginated feedback list
+      const offset = (page - 1) * pageSize
       let query = serviceSupabase
         .from('ticket_feedback')
         .select(
@@ -262,25 +283,49 @@ export async function getFeedbackAnalytics(
           *,
           ticket:tickets(id, title, category, status, created_at),
           user:users(id, full_name, email)
-        `
+        `,
+          { count: 'exact' }
         )
         .order('created_at', { ascending: false })
-        .limit(100)
+        .range(offset, offset + pageSize - 1)
 
       if (ratingFilter && ratingFilter !== 'all') {
         query = query.eq('rating', parseInt(ratingFilter))
       }
 
-      const { data: feedback, error } = await query
+      const { data: feedback, error, count } = await query
 
       if (error) {
         logger.error('Error fetching feedback', { error: error.message })
         return { success: false, error: error.message }
       }
 
-      const allFeedback = feedback || []
-      const summary = computeSummaryFromFeedback(allFeedback)
-      return { success: true, feedback: allFeedback as FeedbackWithDetails[], summary }
+      const dist = aggregate?.distribution || {}
+      const total = aggregate?.totalResponses || 0
+      const ratingDistribution = [1, 2, 3, 4, 5].map((rating) => {
+        const c = Number(dist[String(rating)] ?? 0)
+        return {
+          rating,
+          count: c,
+          percentage: total > 0 ? Math.round((c / total) * 100) : 0,
+        }
+      })
+
+      const summary: FeedbackSummary = {
+        totalFeedback: total,
+        averageRating: Number(aggregate?.overallScore ?? 0),
+        ratingDistribution,
+        recentTrend: computeRecentTrend(feedback || []),
+      }
+
+      return {
+        success: true,
+        feedback: (feedback || []) as FeedbackWithDetails[],
+        summary,
+        totalCount: count ?? 0,
+        page,
+        pageSize,
+      }
     }
 
     // admin: use get_satisfaction_aggregate RPC
@@ -324,34 +369,18 @@ export async function getFeedbackAnalytics(
   }
 }
 
-function computeSummaryFromFeedback(
-  allFeedback: { rating: number; created_at: string }[]
-): FeedbackSummary {
-  if (!allFeedback.length) {
-    return {
-      totalFeedback: 0,
-      averageRating: 0,
-      ratingDistribution: [1, 2, 3, 4, 5].map((r) => ({ rating: r, count: 0, percentage: 0 })),
-      recentTrend: [],
-    }
-  }
-
-  const totalRating = allFeedback.reduce((sum, f) => sum + f.rating, 0)
-  const avgRating = totalRating / allFeedback.length
-  const distribution = [1, 2, 3, 4, 5].map((rating) => {
-    const count = allFeedback.filter((f) => f.rating === rating).length
-    return {
-      rating,
-      count,
-      percentage: Math.round((count / allFeedback.length) * 100),
-    }
-  })
+function computeRecentTrend(
+  feedback: { rating: number; created_at: string }[]
+): FeedbackSummary['recentTrend'] {
+  if (!feedback.length) return []
 
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  const recentFeedback = allFeedback.filter(
+
+  const recentFeedback = feedback.filter(
     (f) => new Date(f.created_at) >= thirtyDaysAgo
   )
+
   const byDate = recentFeedback.reduce(
     (acc, f) => {
       const date = f.created_at.split('T')[0]
@@ -362,18 +391,12 @@ function computeSummaryFromFeedback(
     },
     {} as Record<string, { total: number; count: number }>
   )
-  const recentTrend = Object.entries(byDate)
+
+  return Object.entries(byDate)
     .map(([date, { total, count }]) => ({
       date,
       avgRating: Math.round((total / count) * 10) / 10,
       count,
     }))
     .sort((a, b) => a.date.localeCompare(b.date))
-
-  return {
-    totalFeedback: allFeedback.length,
-    averageRating: Math.round(avgRating * 10) / 10,
-    ratingDistribution: distribution,
-    recentTrend,
-  }
 }
