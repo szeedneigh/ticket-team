@@ -64,8 +64,6 @@ export const getUser = cache(async (): Promise<User | null> => {
  * Require authentication
  * Redirects to sign-in page if not authenticated
  *
- * E2E Test Bypass: Only works in development/test with secret token
- *
  * @returns The authenticated user
  */
 export async function requireAuth(): Promise<User> {
