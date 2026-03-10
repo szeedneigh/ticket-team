@@ -70,10 +70,8 @@ export const test = base.extend<AuthFixtures>({
  * Test with pre-configured authentication
  *
  * Use this for tests that require authentication.
- * The page will automatically have auth cookies/localStorage set.
- *
- * In E2E mode, this also sets the X-E2E-Test-Auth header to bypass
- * middleware authentication checks.
+ * The page will automatically have auth cookies/localStorage set
+ * from the storage state saved by global-setup.ts.
  *
  * @example
  * import { authenticatedTest, expect } from '../fixtures/auth'
@@ -84,17 +82,7 @@ export const test = base.extend<AuthFixtures>({
  * })
  */
 export const authenticatedTest = base.extend({
-  // Use storage state for all pages in this test
   storageState: hasStorageState() ? STORAGE_STATE : undefined,
-
-  // Add E2E test auth bypass header for all requests
-  page: async ({ page }, use) => {
-    await page.setExtraHTTPHeaders({
-      'X-E2E-Test-Auth': 'bypass'
-    })
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    await use(page)
-  }
 })
 
 export { expect } from '@playwright/test'
