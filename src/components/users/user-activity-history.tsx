@@ -22,6 +22,7 @@ import {
   Lock,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -165,9 +166,12 @@ export function UserActivityHistory({
       <TabsContent value="activities" className="mt-4">
         <ScrollArea className="h-[400px]">
           {ticketActivities.length === 0 ? (
-            <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-              No recent activities
-            </div>
+            <Empty className="border-0 py-8">
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><Activity className="size-5" /></EmptyMedia>
+                <EmptyTitle>No recent activities</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
           ) : (
             <div className="space-y-3 pr-4">
               {ticketActivities.map((activity) => (
@@ -209,9 +213,12 @@ export function UserActivityHistory({
       <TabsContent value="comments" className="mt-4">
         <ScrollArea className="h-[400px]">
           {comments.length === 0 ? (
-            <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-              No comments made
-            </div>
+            <Empty className="border-0 py-8">
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><MessageSquare className="size-5" /></EmptyMedia>
+                <EmptyTitle>No comments made</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
           ) : (
             <div className="space-y-3 pr-4">
               {comments.map((comment) => (
@@ -256,9 +263,12 @@ export function UserActivityHistory({
       <TabsContent value="tickets" className="mt-4">
         <ScrollArea className="h-[400px]">
           {tickets.length === 0 ? (
-            <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-              No tickets found
-            </div>
+            <Empty className="border-0 py-8">
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><Ticket className="size-5" /></EmptyMedia>
+                <EmptyTitle>No tickets found</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
           ) : (
             <div className="space-y-3 pr-4">
               {tickets.map((ticket) => (
@@ -309,9 +319,12 @@ export function UserActivityHistory({
       <TabsContent value="articles" className="mt-4">
         <ScrollArea className="h-[400px]">
           {kbArticles.length === 0 ? (
-            <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-              No articles found
-            </div>
+            <Empty className="border-0 py-8">
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><BookOpen className="size-5" /></EmptyMedia>
+                <EmptyTitle>No articles found</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
           ) : (
             <div className="space-y-3 pr-4">
               {kbArticles.map((article) => (
