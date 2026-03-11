@@ -48,8 +48,21 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
     const validatedData = profileUpdateSchema.parse(rawData)
 
     const supabase = await createClient()
-    
-    // Update user profile
+
+    // Validate department against departments table if provided
+    if (validatedData.department) {
+      const { data: validDept } = await supabase
+        .from('departments')
+        .select('name')
+        .eq('name', validatedData.department)
+        .eq('is_active', true)
+        .maybeSingle()
+
+      if (!validDept) {
+        return { success: false, error: 'Invalid department. Please select a valid department.' }
+      }
+    }
+
     const { error } = await supabase
       .from('users')
       .update({
