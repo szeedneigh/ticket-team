@@ -268,10 +268,10 @@ export default function TicketTemplatesPage() {
   }
 
   const handleUseTemplate = (template: TicketTemplate) => {
-    // Navigate to new ticket page with template data
     const params = new URLSearchParams({
       template: template.id,
       title: template.title_template,
+      description: template.description_template,
       category: template.category,
       priority: template.priority,
     })
