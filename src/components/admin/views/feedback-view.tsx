@@ -9,6 +9,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { RefreshCw, Download, TrendingUp, MessageSquare } from 'lucide-react'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { getSatisfactionEmoji } from '@/lib/constants/satisfaction-emojis'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -286,15 +287,17 @@ export function FeedbackView({ initialData }: { initialData?: unknown }) {
               <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : feedback.length === 0 ? (
-            <div className="flex h-32 flex-col items-center justify-center text-muted-foreground text-center px-4">
-              <MessageSquare className="h-8 w-8 mb-2" />
-              <p>No individual feedback to display</p>
-              <p className="text-sm">
-                {summary && summary.totalFeedback > 0
-                  ? 'Individual feedback details are visible to super admins only. Aggregate metrics are shown above.'
-                  : 'Feedback will appear here after tickets are resolved.'}
-              </p>
-            </div>
+            <Empty className="border-0">
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><MessageSquare className="size-5" /></EmptyMedia>
+                <EmptyTitle>No individual feedback to display</EmptyTitle>
+                <EmptyDescription>
+                  {summary && summary.totalFeedback > 0
+                    ? 'Individual feedback details are visible to super admins only. Aggregate metrics are shown above.'
+                    : 'Feedback will appear here after tickets are resolved.'}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : (
             <Table>
               <TableHeader>
