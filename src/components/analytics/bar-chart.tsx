@@ -7,7 +7,9 @@
 
 'use client'
 
+import { BarChart3 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import {
   BarChart as RechartsBarChart,
   Bar,
@@ -105,12 +107,12 @@ export function BarChart({
             <div className="h-32 w-32 animate-pulse rounded-xl bg-muted/50" />
           </div>
         ) : data.length === 0 ? (
-          <div
-            className="flex items-center justify-center text-muted-foreground"
-            style={{ height: `${height}px` }}
-          >
-            No data available
-          </div>
+          <Empty className="border-0" style={{ minHeight: `${height}px` }}>
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><BarChart3 className="size-5" /></EmptyMedia>
+              <EmptyTitle className="text-sm font-normal text-muted-foreground">No data available</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <ResponsiveContainer width="100%" height={height}>
             <RechartsBarChart
