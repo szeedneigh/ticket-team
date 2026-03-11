@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { Loader2, Send, X } from 'lucide-react'
+import { Loader2, Send, X, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,18 +42,28 @@ import { SUCCESS_MESSAGES } from '@/lib/constants'
  * - Toast notifications
  */
 
+export interface TemplateDefaults {
+  title: string
+  description: string
+  category: string
+  priority: TicketPriority
+  templateId?: string
+}
+
 interface TicketFormProps {
   categories: (Category & { subcategories: Category[] })[]
   attachmentConfig?: AttachmentConfig
+  templateDefaults?: TemplateDefaults
   onCancel?: () => void
 }
 
-export function TicketForm({ categories, attachmentConfig, onCancel }: TicketFormProps) {
+export function TicketForm({ categories, attachmentConfig, templateDefaults, onCancel }: TicketFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [files, setFiles] = useState<File[]>([])
   const [subcategories, setSubcategories] = useState<Category[]>([])
+  const [showTemplateBanner, setShowTemplateBanner] = useState(!!templateDefaults)
 
   const {
     register,
@@ -65,11 +75,11 @@ export function TicketForm({ categories, attachmentConfig, onCancel }: TicketFor
   } = useForm<CreateTicketInput>({
     resolver: zodResolver(createTicketSchema),
     defaultValues: {
-      title: '',
-      description: '',
-      category: '',
+      title: templateDefaults?.title || '',
+      description: templateDefaults?.description || '',
+      category: templateDefaults?.category || '',
       subcategory: null,
-      priority: 'medium',
+      priority: templateDefaults?.priority || 'medium',
     },
   })
 
@@ -173,6 +183,25 @@ export function TicketForm({ categories, attachmentConfig, onCancel }: TicketFor
       </CardHeader>
 
       <CardContent>
+        {showTemplateBanner && templateDefaults && (
+          <div className="mb-6 flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-950/40">
+            <FileText className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+            <p className="flex-1 text-sm text-blue-800 dark:text-blue-300">
+              Pre-filled from a ticket template. Edit the fields as needed.
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0 text-blue-600 hover:text-blue-800 dark:text-blue-400"
+              onClick={() => setShowTemplateBanner(false)}
+            >
+              <X className="h-3.5 w-3.5" />
+              <span className="sr-only">Dismiss</span>
+            </Button>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Title Field */}
           <div className="space-y-2">
