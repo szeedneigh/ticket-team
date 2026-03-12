@@ -36,8 +36,7 @@
     "check-env": "node scripts/check-env.js",
     "health": "tsx scripts/check-build-health.ts",
     "check-bundle-security": "tsx scripts/check-client-bundle-security.ts",
-    "postbuild": "npm run check-bundle-security",
-    "prepare": "husky"
+    "postbuild": "npm run check-bundle-security"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -126,7 +125,6 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.7",
     "happy-dom": "^20.0.10",
-    "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
     "shadcn": "^3.5.0",
     "tailwindcss": "^4.1.16",
