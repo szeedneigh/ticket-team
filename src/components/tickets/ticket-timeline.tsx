@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import {
   MessageCircle,
@@ -9,9 +12,12 @@ import {
   RotateCcw,
   Paperclip,
   AlertCircle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import type { TicketActivityWithUser, TicketCommentWithUser } from '@/lib/types/tickets'
 import {
@@ -31,7 +37,10 @@ import {
  * - Shows "Internal Note" badge for staff-only comments
  * - Formatted timestamps
  * - User avatars and names
+ * - Collapsed by default to latest 3 updates with "Show more" to expand
  */
+
+const TIMELINE_INITIAL_VISIBLE = 3
 
 interface TicketTimelineProps {
   activities: TicketActivityWithUser[]
@@ -48,7 +57,9 @@ export function TicketTimeline({
   comments,
   isStaff = false,
 }: TicketTimelineProps) {
-  // Combine and sort activities and comments by timestamp
+  const [expanded, setExpanded] = useState(false)
+
+  // Combine and sort activities and comments by timestamp (newest first)
   const timelineItems: TimelineItem[] = [
     ...activities.map((activity) => ({ type: 'activity' as const, data: activity })),
     ...comments.map((comment) => ({ type: 'comment' as const, data: comment })),
@@ -57,6 +68,12 @@ export function TicketTimeline({
     const bTime = new Date(b.data.created_at).getTime()
     return bTime - aTime // Newest first
   })
+
+  const visibleItems = expanded
+    ? timelineItems
+    : timelineItems.slice(0, TIMELINE_INITIAL_VISIBLE)
+  const hasMore = timelineItems.length > TIMELINE_INITIAL_VISIBLE
+  const hiddenCount = timelineItems.length - TIMELINE_INITIAL_VISIBLE
 
   if (timelineItems.length === 0) {
     return (
@@ -71,14 +88,36 @@ export function TicketTimeline({
 
   return (
     <div className="space-y-4">
-      {timelineItems.map((item, index) => (
+      {visibleItems.map((item, index) => (
         <TimelineItemComponent
           key={`${item.type}-${item.data.id}`}
           item={item}
-          isLast={index === timelineItems.length - 1}
+          isLast={index === visibleItems.length - 1}
           isStaff={isStaff}
         />
       ))}
+      {hasMore && (
+        <div className="pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={() => setExpanded((e) => !e)}
+          >
+            {expanded ? (
+              <>
+                <ChevronUp className="h-4 w-4 mr-1" />
+                Show less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4 mr-1" />
+                Show {hiddenCount} more update{hiddenCount !== 1 ? 's' : ''}
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

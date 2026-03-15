@@ -56,7 +56,21 @@ export async function updateUserDepartment(
       }
     }
 
-    // Update user's department
+    // Validate department against departments table
+    const { data: validDept } = await supabase
+      .from('departments')
+      .select('name')
+      .eq('name', department)
+      .eq('is_active', true)
+      .maybeSingle()
+
+    if (!validDept) {
+      return {
+        success: false,
+        error: 'Invalid department. Please select a valid department.',
+      }
+    }
+
     const { error: updateError } = await supabase
       .from('users')
       .update({

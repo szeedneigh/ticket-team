@@ -1,3 +1,8 @@
+---
+description: 
+alwaysApply: true
+---
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -34,7 +39,7 @@ npm run clean:cache      # Clean webpack cache (fixes build issues)
 ```
 
 ### Testing
-Tests are not yet implemented. When adding tests, follow patterns in `.cursor/rules/testing-quality.mdc`.
+The project includes both unit tests (Vitest) and end-to-end tests (Playwright) for core flows (auth, tickets, knowledge base, AI chat, and key services). When adding or updating tests, follow patterns in `.cursor/rules/testing-quality.mdc` and keep coverage focused on critical business paths and security-sensitive logic.
 
 ### Security & Build Validation
 ```bash
@@ -441,6 +446,7 @@ GEMINI_API_KEY=                   # SERVER-ONLY
 | Type errors | Wrong import path | Use `@/` alias, match exact paths |
 | AI wrong response | Poor retrieval | Tune similarity threshold (0.7 default), improve KB content |
 | Development server crashes | File system race condition | Use `npm run dev:safe` (cleans cache + verifies DB) |
+| "Cannot read properties of undefined (reading 'apply')" (KB save, chat escalation, production) | Server Action encryption key mismatch | Set `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` in Vercel - see `docs/07-troubleshooting/kb-article-save-server-action-fix.md` |
 
 ## Development Workflow
 
@@ -480,6 +486,10 @@ GEMINI_API_KEY=                   # SERVER-ONLY
 
 **GitHub Copilot Instructions:**
 `.github/copilot-instructions.md` contains critical patterns and architecture notes (similar to this file but more detailed).
+
+**Color tokens:**
+- Use `@/lib/constants/colors` for charts, analytics, and semantic UI (satisfaction ratings, priority, status, brand, chart palette). Do not hardcode hex in new code.
+- CSS variables in `src/app/globals.css` (`--status-*`, `--chart-*`, `--brand-*`) mirror these for theme-aware styling; keep them in sync when changing semantics.
 
 ## AI Integration Specifics
 

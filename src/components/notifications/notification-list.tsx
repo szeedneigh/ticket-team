@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -256,14 +257,18 @@ export const NotificationList = memo(function NotificationList({
         </div>
       ) : filteredNotifications.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Bell className="h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mt-4 text-lg font-medium">No notifications</h3>
-            <p className="text-sm text-muted-foreground">
-              {filter === 'unread'
-                ? "You're all caught up!"
-                : 'Notifications will appear here'}
-            </p>
+          <CardContent className="py-6">
+            <Empty className="border-0">
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><Bell className="size-5" /></EmptyMedia>
+                <EmptyTitle>No notifications</EmptyTitle>
+                <EmptyDescription>
+                  {filter === 'unread'
+                    ? "You're all caught up!"
+                    : 'Notifications will appear here'}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           </CardContent>
         </Card>
       ) : (

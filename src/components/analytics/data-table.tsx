@@ -17,7 +17,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { ArrowUpIcon, ArrowDownIcon, ArrowUpDownIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import { ArrowUpIcon, ArrowDownIcon, ArrowUpDownIcon, ChevronLeftIcon, ChevronRightIcon, TableIcon } from 'lucide-react'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { cn } from '@/lib/utils'
 
 export interface DataTableColumn {
@@ -175,11 +176,13 @@ export const DataTable = memo(function DataTable({
                 <TableBody>
                   {paginationInfo.paginatedData.length === 0 ? (
                     <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="h-32 text-center text-muted-foreground"
-                      >
-                        {emptyMessage}
+                      <TableCell colSpan={columns.length} className="h-32">
+                        <Empty className="border-0 p-4">
+                          <EmptyHeader>
+                            <EmptyMedia variant="icon"><TableIcon className="size-5" /></EmptyMedia>
+                            <EmptyTitle className="text-sm font-normal text-muted-foreground">{emptyMessage}</EmptyTitle>
+                          </EmptyHeader>
+                        </Empty>
                       </TableCell>
                     </TableRow>
                   ) : (

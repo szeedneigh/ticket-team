@@ -12,6 +12,7 @@ import {
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 
@@ -162,12 +163,15 @@ export function HelpCenterClient({ className }: HelpCenterClientProps) {
         </h2>
         
         {filteredTopics.length === 0 ? (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              No results found for &quot;{searchQuery}&quot;. Try different keywords or browse our guides below.
-            </AlertDescription>
-          </Alert>
+          <Empty className="border-0 py-8">
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><Search className="size-5" /></EmptyMedia>
+              <EmptyTitle>No results found</EmptyTitle>
+              <EmptyDescription>
+                No results found for &quot;{searchQuery}&quot;. Try different keywords or browse our guides below.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : searchQuery ? (
           // Show grouped results when searching
           <div className="space-y-6">

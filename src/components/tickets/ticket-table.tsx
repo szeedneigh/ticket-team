@@ -13,6 +13,7 @@
 import Link from 'next/link'
 import { format, isToday, isYesterday, differenceInDays } from 'date-fns'
 import { Ticket as TicketIcon } from 'lucide-react'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -48,18 +49,15 @@ export function TicketTable({ tickets, fromQueue = false }: TicketTableProps) {
     [tickets]
   )
 
-  // Enhanced empty state
   if (sortedTickets.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center bg-muted/20 rounded-2xl border border-dashed border-muted-foreground/20">
-        <div className="rounded-full bg-muted/50 p-6 mb-4 ring-1 ring-white/10">
-          <TicketIcon className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
-        </div>
-        <h3 className="text-xl font-semibold mb-2">No tickets found</h3>
-        <p className="text-sm text-muted-foreground max-w-sm">
-          Try adjusting your filters or create a new ticket to get started
-        </p>
-      </div>
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon"><TicketIcon className="size-5" /></EmptyMedia>
+          <EmptyTitle>No tickets found</EmptyTitle>
+          <EmptyDescription>Try adjusting your filters or create a new ticket to get started</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   }
 

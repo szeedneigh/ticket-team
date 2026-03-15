@@ -10,6 +10,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Sparkles, Eye, ThumbsUp, ExternalLink } from 'lucide-react'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -72,27 +73,29 @@ export function SemanticSearchResults({ query, results, isLoading }: SemanticSea
 
   if (!query) {
     return (
-      <div className="text-center py-12">
-        <Sparkles className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">AI-Powered Search</h3>
-        <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Search by meaning, not just keywords. Ask questions naturally and find relevant articles even if they don&apos;t contain your exact words.
-        </p>
-      </div>
+      <Empty className="border-0">
+        <EmptyHeader>
+          <EmptyMedia variant="icon"><Sparkles className="size-5" /></EmptyMedia>
+          <EmptyTitle>AI-Powered Search</EmptyTitle>
+          <EmptyDescription>
+            Search by meaning, not just keywords. Ask questions naturally and find relevant articles even if they don&apos;t contain your exact words.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   }
 
   if (results.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-          <Sparkles className="h-6 w-6 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-semibold mb-2">No Results Found</h3>
-        <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          We couldn&apos;t find any articles matching &ldquo;<strong>{query}</strong>&rdquo;. Try rephrasing your question or using different keywords.
-        </p>
-      </div>
+      <Empty className="border-0">
+        <EmptyHeader>
+          <EmptyMedia variant="icon"><Sparkles className="size-5" /></EmptyMedia>
+          <EmptyTitle>No Results Found</EmptyTitle>
+          <EmptyDescription>
+            We couldn&apos;t find any articles matching &ldquo;<strong>{query}</strong>&rdquo;. Try rephrasing your question or using different keywords.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   }
 

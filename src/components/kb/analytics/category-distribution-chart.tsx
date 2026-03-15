@@ -15,7 +15,9 @@ import {
   Legend,
   Tooltip
 } from 'recharts'
+import { PieChartIcon } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { KB_CATEGORY_COLORS } from '@/lib/constants/colors'
 
 interface CategoryData {
@@ -83,12 +85,15 @@ export function CategoryDistributionChart({ data }: CategoryDistributionChartPro
       <Card>
         <CardHeader>
           <CardTitle>Category Distribution</CardTitle>
-          <CardDescription>No data available</CardDescription>
+          <CardDescription>Article distribution across categories</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
-            No articles to display
-          </div>
+          <Empty className="border-0" style={{ minHeight: '300px' }}>
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><PieChartIcon className="size-5" /></EmptyMedia>
+              <EmptyTitle className="text-sm font-normal text-muted-foreground">No articles to display</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
         </CardContent>
       </Card>
     )

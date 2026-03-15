@@ -17,7 +17,9 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts'
+import { BarChart3 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { BRAND } from '@/lib/constants/colors'
 
 interface TopArticle {
@@ -67,12 +69,15 @@ export function TopArticlesChart({ data, limit = 10 }: TopArticlesChartProps) {
       <Card>
         <CardHeader>
           <CardTitle>Top Articles</CardTitle>
-          <CardDescription>No data available</CardDescription>
+          <CardDescription>Most viewed articles</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
-            No articles to display
-          </div>
+          <Empty className="border-0" style={{ minHeight: '350px' }}>
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><BarChart3 className="size-5" /></EmptyMedia>
+              <EmptyTitle className="text-sm font-normal text-muted-foreground">No articles to display</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
         </CardContent>
       </Card>
     )
