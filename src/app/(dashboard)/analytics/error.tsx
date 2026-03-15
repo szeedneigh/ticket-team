@@ -1,0 +1,81 @@
+'use client'
+
+import { useEffect } from 'react'
+import * as Sentry from '@sentry/nextjs'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { BarChart3, RefreshCw, Home } from 'lucide-react'
+import Link from 'next/link'
+
+interface ErrorBoundaryProps {
+  error: Error & { digest?: string }
+  reset: () => void
+}
+
+export default function AnalyticsError({ error, reset }: ErrorBoundaryProps) {
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Analytics error:', error)
+    }
+    Sentry.captureException(error, {
+      tags: { feature: 'analytics' },
+    })
+  }, [error])
+
+  return (
+    <div className="min-h-full flex items-center justify-center p-4 bg-gray-50">
+      <Card className="p-8 bg-white border shadow-lg rounded-[20px] max-w-md w-full text-center">
+        <div className="space-y-6">
+          <div className="flex justify-center">
+            <div className="p-4 bg-red-100 rounded-full">
+              <BarChart3 className="h-8 w-8 text-red-500" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold text-[#003B73]">
+              Analytics failed to load
+            </h1>
+            <p className="text-gray-600">
+              There was a problem loading the analytics data. This could be
+              caused by a temporary issue with the data source.
+            </p>
+            {process.env.NODE_ENV === 'development' && (
+              <details className="text-left mt-4 p-3 bg-gray-50 rounded-lg">
+                <summary className="cursor-pointer text-sm font-medium text-gray-700">
+                  Error Details
+                </summary>
+                <pre className="mt-2 text-xs text-red-600 overflow-auto">
+                  {error.message}
+                </pre>
+              </details>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={reset}
+              className="flex-1 bg-[#0693D2] hover:bg-[#0693D2]/90"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+            <Button asChild variant="outline" className="flex-1">
+              <Link href="/dashboard">
+                <Home className="h-4 w-4 mr-2" />
+                Go to Dashboard
+              </Link>
+            </Button>
+          </div>
+
+          <div className="text-sm text-gray-500">
+            <p>
+              If this problem persists, the analytics data may be temporarily
+              unavailable. Please try again later.
+            </p>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+}

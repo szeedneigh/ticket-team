@@ -5,6 +5,7 @@ import {
   useContext,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from 'react'
 import { getCategories } from '@/app/actions/categories'
@@ -46,26 +47,32 @@ const SETTINGS_SUB_FETCHERS: Record<string, () => Promise<unknown>> = {
 
 export function TabPrefetchProvider({ children }: { children: ReactNode }) {
   const [cache, setCache] = useState<TabPrefetchCache>({})
+  // Refs for synchronous reads to avoid side effects inside state updaters
+  const cacheRef = useRef(cache)
+  cacheRef.current = cache
+  const fetchingRef = useRef<Set<string>>(new Set())
 
   const prefetch = useCallback((tabId: string): Promise<void> => {
     const fetcher = TOP_LEVEL_FETCHERS[tabId] ?? SETTINGS_SUB_FETCHERS[tabId]
     if (!fetcher) return Promise.resolve()
-    // Use setTimeout(0) to defer to a new macrotask - queueMicrotask still runs
-    // within the same event loop tick and can trigger "Cannot update component
-    // while rendering another" errors in React Strict Mode or concurrent rendering.
+    // Defer to a new macrotask so this never runs synchronously during render.
+    // fetcher() (a Server Action) must NOT be called inside a setCache updater —
+    // updaters must be pure, and Server Actions interact with the Router state,
+    // which triggers "Cannot update Router while rendering TabPrefetchProvider".
     return new Promise<void>((resolve) => {
       setTimeout(() => {
-        setCache((prev) => {
-          if (prev[tabId]) {
+        if (cacheRef.current[tabId] || fetchingRef.current.has(tabId)) {
+          resolve()
+          return
+        }
+        fetchingRef.current.add(tabId)
+        fetcher()
+          .then((data) => setCache((c) => ({ ...c, [tabId]: data })))
+          .catch(() => {})
+          .finally(() => {
+            fetchingRef.current.delete(tabId)
             resolve()
-            return prev
-          }
-          fetcher()
-            .then((data) => setCache((c) => ({ ...c, [tabId]: data })))
-            .catch(() => {})
-            .finally(() => resolve())
-          return prev
-        })
+          })
       }, 0)
     })
   }, [])

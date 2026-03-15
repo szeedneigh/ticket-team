@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { createComment } from '@/app/actions/comments'
 import { COMMENT_MAX_LENGTH } from '@/lib/validations/comments'
+import { CannedResponsePicker } from './canned-response-picker'
 
 /**
  * Comment Box Component
@@ -207,6 +208,16 @@ export function CommentBox({ ticketId, isStaff }: CommentBoxProps) {
               className="sr-only"
             />
           </Label>
+
+          {/* Canned Response Picker (Staff Only) */}
+          {isStaff && (
+            <CannedResponsePicker
+              onSelect={(text) => {
+                setContent((prev) => (prev.trim() ? `${prev}\n\n${text}` : text))
+              }}
+              disabled={isPending}
+            />
+          )}
         </div>
 
         {/* Right: Submit Button */}

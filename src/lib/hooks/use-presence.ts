@@ -80,42 +80,39 @@ export function usePresence({
         .eq('id', userId)
 
       if (error) {
-        // Only log as warning if it's not an auth issue
-        const errorMessage = error.message || 'Unknown error'
-        const errorCode = error.code || 'UNKNOWN'
-        
-        if (error.code === 'PGRST301' || errorMessage.includes('JWT')) {
+        const errorMessage = error.message || ''
+        const errorCode = error.code || ''
+
+        const isSilentError =
+          errorCode === 'PGRST301' ||
+          errorCode === '42501' ||
+          errorMessage.includes('JWT') ||
+          errorMessage.includes('session')
+
+        if (isSilentError) {
           if (debug) {
             logger.debug('Auth session not ready yet, will retry on next heartbeat')
           }
-        } else {
-          // Only log if we have meaningful error information
-          const hasErrorInfo = errorMessage !== 'Unknown error' || errorCode !== 'UNKNOWN' || error.details || error.hint
-          
-          if (hasErrorInfo) {
-            logger.error('Failed to update online status', {
-              error: errorMessage,
-              code: errorCode,
-              userId,
-              isOnline,
-              ...(error.details && { details: error.details }),
-              ...(error.hint && { hint: error.hint })
-            })
-          } else if (debug) {
-            // In debug mode, log even empty errors for troubleshooting
-            logger.debug('Status update failed with empty error object', { userId, isOnline })
-          }
+        } else if (errorMessage || errorCode || error.details || error.hint) {
+          logger.warn('Failed to update online status', {
+            code: errorCode || 'UNKNOWN',
+            ...(errorMessage && { error: errorMessage }),
+            ...(error.details && { details: error.details }),
+            ...(error.hint && { hint: error.hint })
+          })
+        } else if (debug) {
+          logger.debug('Status update failed with empty error object', { userId, isOnline })
         }
       } else if (debug) {
         logger.debug(`User ${userId} is now ${isOnline ? 'online' : 'offline'}`)
       }
     } catch (error) {
-      logger.error('Error updating presence', {
-        error: error instanceof Error ? error.message : String(error),
-        errorType: error?.constructor?.name || typeof error,
-        userId,
-        stack: error instanceof Error ? error.stack : undefined
-      })
+      if (debug) {
+        logger.debug('Error updating presence', {
+          error: error instanceof Error ? error.message : String(error),
+          userId,
+        })
+      }
     }
   }
 
@@ -154,41 +151,39 @@ export function usePresence({
         .eq('id', userId)
 
       if (error) {
-        // Only log as warning if it's not an auth issue
-        const errorMessage = error.message || 'Unknown error'
-        const errorCode = error.code || 'UNKNOWN'
-        
-        if (error.code === 'PGRST301' || errorMessage.includes('JWT')) {
+        const errorMessage = error.message || ''
+        const errorCode = error.code || ''
+
+        const isSilentError =
+          errorCode === 'PGRST301' ||
+          errorCode === '42501' ||
+          errorMessage.includes('JWT') ||
+          errorMessage.includes('session')
+
+        if (isSilentError) {
           if (debug) {
             logger.debug('Auth session not ready for heartbeat, will retry')
           }
-        } else {
-          // Only log if we have meaningful error information
-          const hasErrorInfo = errorMessage !== 'Unknown error' || errorCode !== 'UNKNOWN' || error.details || error.hint
-          
-          if (hasErrorInfo) {
-            logger.error('Heartbeat failed', {
-              error: errorMessage,
-              code: errorCode,
-              userId,
-              ...(error.details && { details: error.details }),
-              ...(error.hint && { hint: error.hint })
-            })
-          } else if (debug) {
-            // In debug mode, log even empty errors for troubleshooting
-            logger.debug('Heartbeat failed with empty error object', { userId })
-          }
+        } else if (errorMessage || errorCode || error.details || error.hint) {
+          logger.warn('Heartbeat failed', {
+            code: errorCode || 'UNKNOWN',
+            ...(errorMessage && { error: errorMessage }),
+            ...(error.details && { details: error.details }),
+            ...(error.hint && { hint: error.hint })
+          })
+        } else if (debug) {
+          logger.debug('Heartbeat failed with empty error object', { userId })
         }
       } else if (debug) {
         logger.debug(`Heartbeat sent for user ${userId}`)
       }
     } catch (error) {
-      logger.error('Heartbeat error', {
-        error: error instanceof Error ? error.message : String(error),
-        errorType: error?.constructor?.name || typeof error,
-        userId,
-        stack: error instanceof Error ? error.stack : undefined
-      })
+      if (debug) {
+        logger.debug('Heartbeat error', {
+          error: error instanceof Error ? error.message : String(error),
+          userId,
+        })
+      }
     }
   }
 

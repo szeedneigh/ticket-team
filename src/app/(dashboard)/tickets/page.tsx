@@ -20,7 +20,9 @@ import { getTicketsPaged } from '@/lib/tickets/queries'
 import type { TicketFilters as TTicketFilters, TimePeriod } from '@/lib/types/tickets'
 import type { TicketStatus } from '@/lib/types/database'
 import { PAGINATION } from '@/lib/constants'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Plus } from 'lucide-react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 
 export const metadata = {
   title: 'My Tickets | Ticket Team',
@@ -130,6 +132,14 @@ export default async function TicketsPage({ searchParams }: PageProps) {
                 <Sparkles className="h-4 w-4 text-[#2cafdd]" />
               </p>
             </div>
+            
+            {/* Create New Ticket Button */}
+            <Button asChild variant="gradient" className="rounded-full px-6 shadow-lg shadow-[#2cafdd]/20 hover:shadow-[#2cafdd]/40 transition-shadow">
+              <Link href="/tickets/new" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create New Ticket
+              </Link>
+            </Button>
           </div>
 
           {/* Controls Section - Integrated into Hero */}

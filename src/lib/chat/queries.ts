@@ -37,8 +37,8 @@ export interface SessionSummary {
 /**
  * Get all chat sessions for a user with summary information
  *
- * Sessions are grouped by session_id from ai_interactions table.
- * Returns sessions sorted by most recent activity.
+ * Uses DB-level RPC for efficient grouping and pagination instead of
+ * fetching all rows and slicing in memory.
  *
  * @param params - Query parameters
  * @returns Array of session summaries
@@ -50,73 +50,65 @@ export async function getSessionsByUserId(
 
   const supabase = await createClient()
 
-  // Get unique sessions with aggregated data
-  let query = supabase
-    .from('ai_interactions')
-    .select('session_id, query, created_at, escalated_to_ticket, metadata')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+  if (includeArchived) {
+    // When including archived, fall back to querying both RPCs and merging
+    const [activeResult, archivedResult] = await Promise.all([
+      supabase.rpc('get_active_chat_sessions', {
+        p_user_id: userId,
+        p_limit: limit + offset,
+        p_offset: 0,
+      }),
+      supabase.rpc('get_archived_chat_sessions', {
+        p_user_id: userId,
+        p_limit: limit + offset,
+        p_offset: 0,
+      }),
+    ])
 
-  // Filter archived unless explicitly requested
-  if (!includeArchived) {
-    query = query.is('archived_at', null)
+    if (activeResult.error) {
+      throw new Error(`Failed to fetch active sessions: ${activeResult.error.message}`)
+    }
+    if (archivedResult.error) {
+      throw new Error(`Failed to fetch archived sessions: ${archivedResult.error.message}`)
+    }
+
+    const all = [...(activeResult.data ?? []), ...(archivedResult.data ?? [])]
+    return mapRpcRows(all)
+      .sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
+      .slice(offset, offset + limit)
   }
 
-  const { data, error } = await query
+  const { data, error } = await supabase.rpc('get_active_chat_sessions', {
+    p_user_id: userId,
+    p_limit: limit,
+    p_offset: offset,
+  })
 
   if (error) {
-    console.error('Error fetching sessions:', error)
     throw new Error(`Failed to fetch chat sessions: ${error.message}`)
   }
 
-  if (!data || data.length === 0) {
-    return []
-  }
+  return mapRpcRows(data ?? [])
+}
 
-  // Group by session_id and create summaries
-  const sessionMap = new Map<string, SessionSummary>()
-
-  for (const interaction of data) {
-    const existingSession = sessionMap.get(interaction.session_id)
-
-    if (!existingSession) {
-      // First message in session - use query as last message
-      const title =
-        (interaction.metadata as Record<string, unknown>)?.session_title as
-          | string
-          | undefined
-
-      sessionMap.set(interaction.session_id, {
-        session_id: interaction.session_id,
-        title: title || null,
-        last_message: interaction.query,
-        last_message_at: interaction.created_at,
-        message_count: 1,
-        escalated: interaction.escalated_to_ticket,
-      })
-    } else {
-      // Update existing session
-      existingSession.message_count++
-
-      // Update last message if this interaction is more recent
-      if (new Date(interaction.created_at) > new Date(existingSession.last_message_at)) {
-        existingSession.last_message = interaction.query
-        existingSession.last_message_at = interaction.created_at
-      }
-
-      // Update escalation status
-      if (interaction.escalated_to_ticket) {
-        existingSession.escalated = true
-      }
-    }
-  }
-
-  // Convert map to array and sort by last_message_at
-  const sessions = Array.from(sessionMap.values())
-    .sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
-    .slice(offset, offset + limit)
-
-  return sessions
+function mapRpcRows(
+  rows: Array<{
+    session_id: string
+    title: string | null
+    last_message: string
+    last_message_at: string
+    message_count: number
+    escalated: boolean
+  }>
+): SessionSummary[] {
+  return rows.map((row) => ({
+    session_id: row.session_id,
+    title: row.title,
+    last_message: row.last_message,
+    last_message_at: row.last_message_at,
+    message_count: row.message_count,
+    escalated: row.escalated,
+  }))
 }
 
 /**

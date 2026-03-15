@@ -84,7 +84,7 @@ export function TicketDetail({
 }: TicketDetailProps) {
   const router = useRouter()
   const isSubmitter = ticket.user_id === currentUserId
-  const canViewComments = ticket.user_id === currentUserId || ticket.assigned_to === currentUserId
+  const canViewComments = ticket.user_id === currentUserId || ticket.assigned_to === currentUserId || isStaff
   const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false)
   const [feedbackAlreadySubmitted, setFeedbackAlreadySubmitted] = useState(hasExistingFeedback)
   const [resolutionConfirmed, setResolutionConfirmed] = useState(false)

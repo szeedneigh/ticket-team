@@ -83,7 +83,7 @@ const navItems: NavItem[] = [
     title: 'All Tickets',
     href: '/admin/tickets',
     icon: Ticket,
-    roles: ['admin', 'super_admin']
+    roles: ['staff', 'admin', 'super_admin']
   },
   {
     title: 'User Management',
