@@ -102,7 +102,8 @@ export async function getAttachmentConfig(): Promise<AttachmentConfig> {
       ],
     }
   }
-  const extensions = config.allowed_attachment_types
+  const typesRaw = config.allowed_attachment_types
+  const extensions = (typeof typesRaw === 'string' ? typesRaw : '')
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean)
