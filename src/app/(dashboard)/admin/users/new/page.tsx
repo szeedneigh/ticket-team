@@ -15,10 +15,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { UserForm } from '@/components/users'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@/lib/types/users'
+import { getDepartments } from '@/lib/departments/actions'
+import type { Department } from '@/lib/departments/actions'
 
 export default function NewUserPage() {
   const router = useRouter()
   const [currentUserRole, setCurrentUserRole] = useState<'admin' | 'super_admin'>('admin')
+  const [departments, setDepartments] = useState<Department[]>([])
+
+  useEffect(() => {
+    void getDepartments().then((r) => {
+      if (r.success && r.data) setDepartments(r.data)
+    })
+  }, [])
 
   // Fetch current user's role
   useEffect(() => {
@@ -86,6 +95,7 @@ export default function NewUserPage() {
           <UserForm
             mode="create"
             currentUserRole={currentUserRole}
+            departments={departments}
             onSuccess={handleSuccess}
             onCancel={handleCancel}
           />
