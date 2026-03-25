@@ -12,6 +12,7 @@
  import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format, isToday, isYesterday, differenceInDays } from 'date-fns'
+import { getDueDateUrgency, dueDateUrgencyClass } from '@/lib/tickets/due-date'
 import { Ticket as TicketIcon } from 'lucide-react'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { Button } from '@/components/ui/button'
@@ -102,7 +103,19 @@ export function TicketTable({ tickets, fromQueue = false }: TicketTableProps) {
                     <span className="w-2 h-2 rounded-full bg-[#2cafdd]/50" />
                     {ticket.category}
                   </span>
-                  <span>{formattedDate}</span>
+                  <span className="flex flex-col items-end gap-0.5">
+                    {ticket.due_date &&
+                    ['open', 'in_progress', 'on_hold'].includes(ticket.status) && (
+                      <span
+                        className={`text-xs ${dueDateUrgencyClass(
+                          getDueDateUrgency(ticket.due_date, ticket.status)
+                        )}`}
+                      >
+                        Due {format(new Date(ticket.due_date), 'MMM d')}
+                      </span>
+                    )}
+                    <span>{formattedDate}</span>
+                  </span>
                 </div>
               </Link>
             </motion.div>
@@ -121,6 +134,7 @@ export function TicketTable({ tickets, fromQueue = false }: TicketTableProps) {
               <TableHead className="font-semibold w-[140px] h-14 text-muted-foreground">Department</TableHead>
               <TableHead className="font-semibold w-[140px] h-14 text-muted-foreground">Category</TableHead>
               <TableHead className="font-semibold w-[140px] h-14 text-muted-foreground">Status</TableHead>
+              <TableHead className="font-semibold w-[100px] h-14 text-muted-foreground">Due</TableHead>
               <TableHead className="font-semibold w-[120px] h-14 text-right pr-6 text-muted-foreground">Date</TableHead>
             </TableRow>
           </TableHeader>
@@ -169,6 +183,20 @@ export function TicketTable({ tickets, fromQueue = false }: TicketTableProps) {
                   </TableCell>
                   <TableCell className="py-5">
                     <StatusCell status={ticket.status} />
+                  </TableCell>
+                  <TableCell className="py-5">
+                    {ticket.due_date &&
+                    ['open', 'in_progress', 'on_hold'].includes(ticket.status) ? (
+                      <span
+                        className={`text-sm ${dueDateUrgencyClass(
+                          getDueDateUrgency(ticket.due_date, ticket.status)
+                        )}`}
+                      >
+                        {format(new Date(ticket.due_date), 'MMM d')}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-right pr-6 py-5">
                     <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">{formattedDate}</span>
