@@ -1,6 +1,10 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+/** Directory containing this config (app root). Used when multiple lockfiles confuse Turbopack. */
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 import bundleAnalyzer from '@next/bundle-analyzer';
 
@@ -10,6 +14,11 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  // When e.g. ~/package-lock.json exists, Next may pick the wrong root and break CSS @import resolution.
+  turbopack: {
+    root: projectRoot,
+  },
+
   // Enable React strict mode
   reactStrictMode: true,
 
