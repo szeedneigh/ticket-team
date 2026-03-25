@@ -238,7 +238,11 @@ export const ArticleDataTable = memo(function ArticleDataTable({ data, title, de
                     {formatDate(article.published_at)}
                   </TableCell>
                   <TableCell>
-                    <Link href={`/kb/${article.id}`}>
+                    <Link
+                      href={`/kb/${article.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         <ExternalLink className="h-4 w-4" />
                       </Button>
@@ -260,6 +264,8 @@ export const ArticleDataTable = memo(function ArticleDataTable({ data, title, de
                   <div className="space-y-2">
                     <Link
                       href={`/kb/${article.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="font-medium hover:text-primary line-clamp-2"
                     >
                       {article.title}
