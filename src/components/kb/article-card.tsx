@@ -59,7 +59,12 @@ export const ArticleCard = memo(function ArticleCard({ article, className }: Art
     : formatRelativeTime(article.created_at)
 
   return (
-    <Link href={`/kb/${article.id}`} className="block h-full group/card">
+    <Link
+      href={`/article/${article.id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block h-full group/card"
+    >
       <article
         className={cn(
           'relative p-6 rounded-2xl h-full flex flex-col gap-4',
