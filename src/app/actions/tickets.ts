@@ -17,6 +17,7 @@ import {
   isValidFileTypeForConfig,
 } from '@/lib/validations/tickets'
 import { getAttachmentConfig, getSystemConfig } from '@/lib/settings/actions'
+import { getSLAThresholds } from '@/lib/settings/sla'
 import { uploadTicketAttachment } from '@/lib/tickets/storage'
 import { pickAssigneeForTicket } from '@/lib/tickets/assignment'
 import { ACTIVITY_TYPES } from '@/lib/constants/activity-types'
@@ -362,12 +363,14 @@ export async function createTicket(
  * @param ticketId - The ticket ID to update
  * @param newStatus - The new status
  * @param resolutionNotes - Optional resolution notes (required when resolving if system config requires it)
+ * @param closingNotes - Optional notes when marking closed (stored in ticket metadata)
  * @returns Response indicating success or error
  */
 export async function updateTicketStatus(
   ticketId: string,
   newStatus: TicketStatus,
-  resolutionNotes?: string
+  resolutionNotes?: string,
+  closingNotes?: string
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient()
@@ -402,7 +405,7 @@ export async function updateTicketStatus(
     // 2. Get current ticket
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
-      .select('id, status')
+      .select('id, status, metadata, resolution_notes')
       .eq('id', ticketId)
       .single()
 
@@ -432,7 +435,7 @@ export async function updateTicketStatus(
     }
 
     // 3. Update ticket status
-    const updateData: Record<string, string | null> = {
+    const updateData: Record<string, unknown> = {
       status: newStatus,
       updated_at: new Date().toISOString(),
     }
@@ -443,6 +446,17 @@ export async function updateTicketStatus(
       updateData.resolution_notes = resolutionNotes?.trim() || null
     } else if (newStatus === 'closed' && ticket.status !== 'closed') {
       updateData.closed_at = new Date().toISOString()
+      const existingMeta =
+        ticket.metadata &&
+        typeof ticket.metadata === 'object' &&
+        !Array.isArray(ticket.metadata)
+          ? (ticket.metadata as Record<string, unknown>)
+          : {}
+      const trimmedClosing = closingNotes?.trim()
+      updateData.metadata = {
+        ...existingMeta,
+        ...(trimmedClosing ? { closing_notes: trimmedClosing } : {}),
+      }
     }
 
     const { error: updateError } = await supabase
@@ -980,6 +994,113 @@ export async function updateTicketPriority(
       success: false,
       error: ERROR_MESSAGES.GENERIC,
     }
+  }
+}
+
+// ============================================================================
+// Update ticket due date (staff manual override or reset to SLA)
+// ============================================================================
+
+/**
+ * Set a manual due date, or reset to the SLA-computed deadline from created_at + priority.
+ */
+export async function updateTicketDueDate(
+  ticketId: string,
+  mode: 'manual' | 'reset',
+  dueDateIso?: string
+): Promise<ServerActionResponse> {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return { success: false, error: ERROR_MESSAGES.UNAUTHORIZED }
+    }
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!userData || !['staff', 'admin', 'super_admin'].includes(userData.role)) {
+      return { success: false, error: ERROR_MESSAGES.UNAUTHORIZED }
+    }
+
+    const { data: row, error: fetchError } = await supabase
+      .from('tickets')
+      .select('id, status, created_at, priority')
+      .eq('id', ticketId)
+      .single()
+
+    if (fetchError || !row) {
+      return { success: false, error: ERROR_MESSAGES.TICKET_NOT_FOUND }
+    }
+
+    if (['resolved', 'closed', 'canceled'].includes(row.status)) {
+      return { success: false, error: 'Due date can only be set for active tickets.' }
+    }
+
+    if (mode === 'manual') {
+      if (!dueDateIso) {
+        return { success: false, error: 'Due date is required.' }
+      }
+      const parsed = new Date(dueDateIso)
+      if (Number.isNaN(parsed.getTime())) {
+        return { success: false, error: 'Invalid due date.' }
+      }
+
+      const { error: updateError } = await supabase
+        .from('tickets')
+        .update({
+          due_date: parsed.toISOString(),
+          due_date_manual: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', ticketId)
+
+      if (updateError) {
+        logger.error('updateTicketDueDate error', { error: updateError.message, ticketId })
+        return { success: false, error: 'Failed to update due date' }
+      }
+    } else {
+      const config = await getSystemConfig()
+      const thresholds = getSLAThresholds(config)
+      const hours =
+        thresholds[row.priority as keyof typeof thresholds] ?? config?.sla_resolution_hours ?? 72
+      const created = new Date(row.created_at).getTime()
+      const due = new Date(created + hours * 3600 * 1000)
+
+      const { error: updateError } = await supabase
+        .from('tickets')
+        .update({
+          due_date: due.toISOString(),
+          due_date_manual: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', ticketId)
+
+      if (updateError) {
+        logger.error('updateTicketDueDate reset error', { error: updateError.message, ticketId })
+        return { success: false, error: 'Failed to reset due date' }
+      }
+    }
+
+    revalidatePath(`/tickets/${ticketId}`)
+    revalidatePath('/tickets')
+    revalidatePath('/dashboard')
+
+    return { success: true }
+  } catch (error) {
+    logger.error('Unexpected error in updateTicketDueDate', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      ticketId,
+    })
+    return { success: false, error: ERROR_MESSAGES.GENERIC }
   }
 }
 
