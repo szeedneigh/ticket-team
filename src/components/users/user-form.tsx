@@ -36,11 +36,15 @@ import { getRoleDescription } from './role-badge'
 import type { User } from '@/lib/types/users'
 import type { UserRole } from '@/lib/types/database'
 import type { z } from 'zod'
+import type { Department } from '@/lib/departments/actions'
+import { DepartmentSelect } from '@/components/departments/department-select'
 
 interface UserFormProps {
   mode: 'create' | 'edit'
   user?: User
   currentUserRole: 'admin' | 'super_admin'
+  /** Rows from `departments` table for the department dropdown */
+  departments: Department[]
   onSuccess?: (user?: User) => void
   onCancel?: () => void
 }
@@ -53,6 +57,7 @@ export function UserForm({
   mode,
   user,
   currentUserRole,
+  departments,
   onSuccess,
   onCancel,
 }: UserFormProps) {
@@ -287,9 +292,11 @@ export function UserForm({
                 <FormItem>
                   <FormLabel>Department</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="IT Department"
-                      {...field}
+                    <DepartmentSelect
+                      departments={departments}
+                      value={field.value || ''}
+                      onValueChange={field.onChange}
+                      placeholder="Select department"
                       className="bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20"
                     />
                   </FormControl>

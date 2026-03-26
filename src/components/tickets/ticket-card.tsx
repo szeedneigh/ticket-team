@@ -13,6 +13,7 @@ import { StatusBadge } from './status-badge'
 import { PriorityBadge } from './priority-badge'
 import type { TicketWithUser } from '@/lib/types/tickets'
 import { cn } from '@/lib/utils'
+import { getDueDateUrgency } from '@/lib/tickets/due-date'
 
 interface TicketCardProps {
   ticket: TicketWithUser
@@ -70,6 +71,11 @@ function truncateDescription(description: string, maxLength: number = 150): stri
 }
 
 export function TicketCard({ ticket, className }: TicketCardProps) {
+  const dueUrgency = getDueDateUrgency(ticket.due_date, ticket.status)
+  const showOverdue =
+    dueUrgency === 'overdue' &&
+    ['open', 'in_progress', 'on_hold'].includes(ticket.status)
+
   return (
     <Link href={`/tickets/${ticket.id}`} className="block">
       <Card
@@ -85,6 +91,11 @@ export function TicketCard({ ticket, className }: TicketCardProps) {
               {ticket.title}
             </CardTitle>
             <div className="flex items-center gap-2 flex-shrink-0">
+              {showOverdue && (
+                <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-semibold text-destructive border border-destructive/30">
+                  Overdue
+                </span>
+              )}
               <StatusBadge status={ticket.status} />
               <PriorityBadge priority={ticket.priority} />
             </div>

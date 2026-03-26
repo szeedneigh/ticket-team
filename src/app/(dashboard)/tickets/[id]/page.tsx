@@ -8,7 +8,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { createClient } from '@/lib/supabase/server'
 import { getTicketWithRelations } from '@/lib/tickets/queries'
 import { getStaffUsers } from '@/lib/users/queries'
-import { hasFeedback } from '@/app/actions/feedback'
+import { hasAnyFeedbackOnTicket, hasFeedback } from '@/app/actions/feedback'
 import { TicketDetail } from '@/components/tickets/ticket-detail'
 import { isStaffOrAbove } from '@/lib/types/database'
 import { isValidUUID } from '@/lib/utils'
@@ -125,6 +125,11 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
       ? await hasFeedback(params.id)
       : false
 
+  const submitterHasFeedback =
+    userIsStaff && ticket.status === 'resolved'
+      ? await hasAnyFeedbackOnTicket(params.id)
+      : false
+
   // Transform attachments to match expected type
   type SupabaseAttachment = {
     id: string
@@ -207,6 +212,7 @@ export default async function TicketDetailPage({ params: paramsPromise }: PagePr
           currentUserId={user.id}
           isStaff={userIsStaff}
           hasExistingFeedback={hasExistingFeedback}
+          submitterHasFeedback={submitterHasFeedback}
         />
       </div>
     </div>

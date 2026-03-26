@@ -16,6 +16,8 @@ import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { getAllUsers, getDepartments } from '@/lib/users/queries'
 import { bulkUpdateUsers } from '@/app/actions/users'
+import { getDepartments as fetchDepartmentsTable } from '@/lib/departments/actions'
+import type { Department } from '@/lib/departments/actions'
 import { UserTable, UserFilters, UserForm } from '@/components/users'
 import { UsersViewSkeleton } from '@/components/admin/users-view-skeleton'
 import type { User } from '@/lib/types/users'
@@ -38,6 +40,7 @@ export function UsersView() {
   const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [currentUserRole, setCurrentUserRole] = useState<'admin' | 'super_admin'>('admin')
+  const [departmentFormOptions, setDepartmentFormOptions] = useState<Department[]>([])
   
   // Stats state
   const [stats, setStats] = useState({
@@ -51,6 +54,9 @@ export function UsersView() {
     checkCurrentUser()
     fetchDepartments()
     fetchStats()
+    void fetchDepartmentsTable().then((r) => {
+      if (r.success && r.data) setDepartmentFormOptions(r.data)
+    })
   }, [])
 
   useEffect(() => {
@@ -465,6 +471,7 @@ export function UsersView() {
             mode="edit"
             user={selectedUser}
             currentUserRole={currentUserRole}
+            departments={departmentFormOptions}
             onSuccess={handleFormSuccess}
             onCancel={() => setIsFormOpen(false)}
           />

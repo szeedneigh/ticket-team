@@ -41,7 +41,9 @@ const RelatedArticleItem = memo(function RelatedArticleItem({ article }: Related
 
   return (
     <Link
-      href={`/kb/${article.id}`}
+      href={`/article/${article.id}`}
+      target="_blank"
+      rel="noopener noreferrer"
       className="group relative block p-5 rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/80 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
     >
       {/* Hover Accent */}

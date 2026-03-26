@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { formatDistanceToNow } from 'date-fns'
+import { format, formatDistanceToNow } from 'date-fns'
 import { Paperclip, Download, XCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,6 +31,7 @@ import { getAttachmentDownloadUrl, cancelTicketBySubmitter } from '@/app/actions
 import { SUCCESS_MESSAGES } from '@/lib/constants'
 import { hasFeedback } from '@/app/actions/feedback'
 import type { TicketWithUser, TicketCommentWithUser, TicketActivityWithUser } from '@/lib/types/tickets'
+import { getDueDateUrgency, dueDateUrgencyClass } from '@/lib/tickets/due-date'
 import type { User as UserType } from '@/lib/types/users'
 
 /**
@@ -70,6 +71,8 @@ interface TicketDetailProps {
   isStaff: boolean
   /** When true, feedback prompt will never show (e.g. already rated). Passed from server for resolved tickets. */
   hasExistingFeedback?: boolean
+  /** Staff-only: whether submitter left feedback (for close-ticket notice). */
+  submitterHasFeedback?: boolean
 }
 
 export function TicketDetail({
@@ -81,6 +84,7 @@ export function TicketDetail({
   currentUserId,
   isStaff,
   hasExistingFeedback = false,
+  submitterHasFeedback = false,
 }: TicketDetailProps) {
   const router = useRouter()
   const isSubmitter = ticket.user_id === currentUserId
@@ -306,6 +310,22 @@ export function TicketDetail({
                   {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
                 </p>
               </div>
+
+              {['open', 'in_progress', 'on_hold'].includes(ticket.status) && ticket.due_date ? (
+                <div className="rounded-lg bg-muted/20 p-3 border border-border/30 hover:border-border/50 transition-colors col-span-2 md:col-span-4">
+                  <p className="text-xs text-muted-foreground mb-1">Due (SLA)</p>
+                  <p
+                    className={`text-sm font-medium ${dueDateUrgencyClass(
+                      getDueDateUrgency(ticket.due_date, ticket.status)
+                    )}`}
+                  >
+                    {format(new Date(ticket.due_date), 'MMM d, yyyy h:mm a')}
+                    {ticket.due_date_manual ? (
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">(manual)</span>
+                    ) : null}
+                  </p>
+                </div>
+              ) : null}
             </div>
 
             {/* Attachments */}
@@ -413,6 +433,7 @@ export function TicketDetail({
           currentUserId={currentUserId}
           isStaff={isStaff}
           isSubmitter={isSubmitter}
+          submitterHasFeedback={submitterHasFeedback}
         />
       </div>
 

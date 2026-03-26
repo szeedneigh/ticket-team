@@ -32,6 +32,8 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { getUserById, getComprehensiveUserActivity, getUserStatistics } from '@/lib/users/queries'
 import type { User } from '@/lib/types/users'
+import { getDepartments } from '@/lib/departments/actions'
+import type { Department } from '@/lib/departments/actions'
 
 export default function UserDetailPage() {
   const router = useRouter()
@@ -45,6 +47,7 @@ export default function UserDetailPage() {
   const [currentUserRole, setCurrentUserRole] = useState<'admin' | 'super_admin'>('admin')
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
   const [showRestoreDialog, setShowRestoreDialog] = useState(false)
+  const [departments, setDepartments] = useState<Department[]>([])
 
   const [activityData, setActivityData] = useState<{
     ticketActivities: Array<{
@@ -116,6 +119,12 @@ export default function UserDetailPage() {
     }
 
     fetchCurrentUserRole()
+  }, [])
+
+  useEffect(() => {
+    void getDepartments().then((r) => {
+      if (r.success && r.data) setDepartments(r.data)
+    })
   }, [])
 
   // Fetch user data
@@ -300,6 +309,7 @@ export default function UserDetailPage() {
                   mode="edit"
                   user={user}
                   currentUserRole={currentUserRole}
+                  departments={departments}
                   onSuccess={handleUpdateSuccess}
                   onCancel={() => setIsEditing(false)}
                 />
