@@ -12,12 +12,45 @@
 import { useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { shouldClearSupabaseSession } from '@/lib/auth/supabase-session-errors'
 import { toast } from 'sonner'
 
 export function AuthSessionMonitor({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const hasShownErrorRef = useRef(false)
+
+  // One-time check: stale refresh token in cookies causes AuthApiError spam until cleared
+  useEffect(() => {
+    const supabase = createClient()
+    let cancelled = false
+
+    void supabase.auth.getUser().then(({ error }) => {
+      if (cancelled || !error || !shouldClearSupabaseSession(error)) return
+
+      const onAuthPage = pathname?.startsWith('/auth') ?? false
+      void supabase.auth.signOut().then(() => {
+        if (cancelled) return
+        if (typeof window !== 'undefined') {
+          Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith('sb-')) localStorage.removeItem(key)
+          })
+        }
+        if (!onAuthPage) {
+          toast.error('Session expired', {
+            description: 'Please sign in again to continue',
+          })
+          router.push(`/auth/sign-in?redirectedFrom=${encodeURIComponent(pathname ?? '/')}`)
+        }
+      })
+    })
+
+    return () => {
+      cancelled = true
+    }
+    // Only on mount — pathname is captured once for redirect target
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional one-time stale-session sweep
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
