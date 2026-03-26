@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, RotateCcw, User, Tag, CheckCircle, BookOpen } from 'lucide-react'
+import { format } from 'date-fns'
+import { Loader2, RotateCcw, User, Tag, CheckCircle, BookOpen, CalendarClock } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -33,6 +34,8 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import type { TicketWithUser } from '@/lib/types/tickets'
@@ -44,7 +47,9 @@ import {
   assignTicket,
   updateTicketPriority,
   reopenTicket,
+  updateTicketDueDate,
 } from '@/app/actions/tickets'
+import { getDueDateUrgency, dueDateUrgencyClass } from '@/lib/tickets/due-date'
 import { SUCCESS_MESSAGES } from '@/lib/constants'
 
 /**
@@ -65,6 +70,8 @@ interface TicketActionsProps {
   currentUserId: string
   isStaff: boolean
   isSubmitter: boolean
+  /** Staff-only: whether the submitter has submitted satisfaction feedback (for close flow notice) */
+  submitterHasFeedback?: boolean
 }
 
 export function TicketActions({
@@ -73,6 +80,7 @@ export function TicketActions({
   currentUserId,
   isStaff,
   isSubmitter,
+  submitterHasFeedback = false,
 }: TicketActionsProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -87,6 +95,13 @@ export function TicketActions({
   const [confirmAssignDialogOpen, setConfirmAssignDialogOpen] = useState(false)
   const [pendingAssignee, setPendingAssignee] = useState<string | null>(null)
 
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false)
+  const [closeNotes, setCloseNotes] = useState('')
+  const [closeConfirmed, setCloseConfirmed] = useState(false)
+
+  const [dueDateDialogOpen, setDueDateDialogOpen] = useState(false)
+  const [dueDateInput, setDueDateInput] = useState('')
+
   // ============================================================================
   // Status Change Handler
   // ============================================================================
@@ -100,9 +115,91 @@ export function TicketActions({
       return
     }
 
+    if (newStatus === 'closed') {
+      setCloseNotes('')
+      setCloseConfirmed(false)
+      setCloseDialogOpen(true)
+      return
+    }
+
     setPendingStatus(newStatus)
     setConfirmStatusDialogOpen(true)
   }
+
+  const confirmClose = () => {
+    if (!closeConfirmed) {
+      toast.error('Please confirm that the issue has been verified as resolved')
+      return
+    }
+
+    startTransition(async () => {
+      const result = await updateTicketStatus(
+        ticket.id,
+        'closed',
+        undefined,
+        closeNotes.trim() || undefined
+      )
+
+      if (result.success) {
+        toast.success(SUCCESS_MESSAGES.TICKET_CLOSED)
+        setCloseDialogOpen(false)
+        setCloseNotes('')
+        setCloseConfirmed(false)
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to close ticket')
+      }
+    })
+  }
+
+  const openDueDateDialog = () => {
+    const pad = (n: number) => n.toString().padStart(2, '0')
+    const base = ticket.due_date ? new Date(ticket.due_date) : new Date(Date.now() + 24 * 3600 * 1000)
+    setDueDateInput(
+      `${base.getFullYear()}-${pad(base.getMonth() + 1)}-${pad(base.getDate())}T${pad(base.getHours())}:${pad(base.getMinutes())}`
+    )
+    setDueDateDialogOpen(true)
+  }
+
+  const saveManualDueDate = () => {
+    if (!dueDateInput) {
+      toast.error('Please choose a due date')
+      return
+    }
+    startTransition(async () => {
+      const result = await updateTicketDueDate(
+        ticket.id,
+        'manual',
+        new Date(dueDateInput).toISOString()
+      )
+      if (result.success) {
+        toast.success('Due date updated')
+        setDueDateDialogOpen(false)
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to update due date')
+      }
+    })
+  }
+
+  const resetDueDateToSla = () => {
+    startTransition(async () => {
+      const result = await updateTicketDueDate(ticket.id, 'reset')
+      if (result.success) {
+        toast.success('Due date reset to SLA')
+        setDueDateDialogOpen(false)
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to reset due date')
+      }
+    })
+  }
+
+  const activeForDueDate =
+    ticket.status === 'open' ||
+    ticket.status === 'in_progress' ||
+    ticket.status === 'on_hold'
+  const dueUrgency = getDueDateUrgency(ticket.due_date, ticket.status)
 
   const confirmStatusChange = () => {
     if (!pendingStatus) return
@@ -343,6 +440,53 @@ export function TicketActions({
             </div>
           )}
 
+          {/* Due date (Staff, active tickets) */}
+          {isStaff && activeForDueDate && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4" />
+                  Due date
+                </Label>
+                <div className="rounded-lg border border-border/50 bg-muted/20 p-3 text-sm">
+                  {ticket.due_date ? (
+                    <p className={dueDateUrgencyClass(dueUrgency)}>
+                      {format(new Date(ticket.due_date), 'MMM d, yyyy h:mm a')}
+                      {ticket.due_date_manual ? (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          (manual)
+                        </span>
+                      ) : null}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground">Not set</p>
+                  )}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={openDueDateDialog}
+                      disabled={isPending}
+                    >
+                      Adjust
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetDueDateToSla}
+                      disabled={isPending}
+                    >
+                      Reset to SLA
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Create KB Article (Staff, resolved/closed only) */}
           {canCreateKB && (
             <>
@@ -426,6 +570,117 @@ export function TicketActions({
                   Resolve Ticket
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Close ticket (dedicated confirmation) */}
+      <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Close ticket</DialogTitle>
+            <DialogDescription>
+              Closing marks this ticket as fully completed and verified. This should be used when the
+              resolution has been confirmed.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {ticket.status === 'resolved' && !submitterHasFeedback && (
+              <p className="text-sm text-amber-700 dark:text-amber-300 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                The submitter has not yet submitted satisfaction feedback for this resolved ticket.
+              </p>
+            )}
+
+            {ticket.resolution_notes ? (
+              <div className="rounded-md border border-border/50 bg-muted/30 p-3 text-sm">
+                <p className="text-xs font-medium text-muted-foreground mb-1">Resolution notes</p>
+                <p className="whitespace-pre-wrap">{ticket.resolution_notes}</p>
+              </div>
+            ) : null}
+
+            <div className="space-y-2">
+              <Label htmlFor="closing-notes">Closing notes (optional)</Label>
+              <Textarea
+                id="closing-notes"
+                placeholder="Any final notes for the record..."
+                value={closeNotes}
+                onChange={(e) => setCloseNotes(e.target.value)}
+                rows={3}
+                disabled={isPending}
+              />
+            </div>
+
+            <div className="flex items-start gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+              <Checkbox
+                id="close-confirmed"
+                checked={closeConfirmed}
+                onCheckedChange={(v) => setCloseConfirmed(v === true)}
+                disabled={isPending}
+              />
+              <Label htmlFor="close-confirmed" className="text-sm font-normal leading-snug cursor-pointer">
+                I confirm this issue has been verified as resolved. Closing is final for this ticket
+                workflow.
+              </Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCloseDialogOpen(false)
+                setCloseNotes('')
+                setCloseConfirmed(false)
+              }}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button variant="gradient" onClick={confirmClose} disabled={isPending || !closeConfirmed}>
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Closing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Close ticket
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Adjust due date */}
+      <Dialog open={dueDateDialogOpen} onOpenChange={setDueDateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set due date</DialogTitle>
+            <DialogDescription>
+              Choose when this ticket should be resolved by. Manual dates override SLA until priority
+              changes or you reset to SLA.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="due-datetime">Due</Label>
+            <Input
+              id="due-datetime"
+              type="datetime-local"
+              value={dueDateInput}
+              onChange={(e) => setDueDateInput(e.target.value)}
+              disabled={isPending}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDueDateDialogOpen(false)} disabled={isPending}>
+              Cancel
+            </Button>
+            <Button variant="gradient" onClick={saveManualDueDate} disabled={isPending}>
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>

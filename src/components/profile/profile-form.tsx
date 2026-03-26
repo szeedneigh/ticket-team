@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { useState, useTransition, useEffect } from 'react'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,9 @@ import { Loader2, Save, X, Edit3 } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateProfile } from '@/app/actions/profile'
 import type { User } from '@/lib/types/users'
+import { getDepartments } from '@/lib/departments/actions'
+import type { Department } from '@/lib/departments/actions'
+import { DepartmentSelect } from '@/components/departments/department-select'
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters'),
@@ -34,9 +37,17 @@ interface ProfileFormProps {
 export function ProfileForm({ user, onCancel, onSuccess, defaultEditing = false }: ProfileFormProps) {
   const [isEditing, setIsEditing] = useState(defaultEditing)
   const [isPending, startTransition] = useTransition()
+  const [departments, setDepartments] = useState<Department[]>([])
+
+  useEffect(() => {
+    void getDepartments().then((r) => {
+      if (r.success && r.data) setDepartments(r.data)
+    })
+  }, [])
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isDirty },
     reset,
@@ -169,12 +180,20 @@ export function ProfileForm({ user, onCancel, onSuccess, defaultEditing = false 
 
           <div className="space-y-2">
             <Label htmlFor="department">Department</Label>
-            <Input
-              id="department"
-              {...register('department')}
-              disabled={!isEditing}
-              className={!isEditing ? 'bg-gray-50' : ''}
-              placeholder="e.g., IT Department, Academic Affairs"
+            <Controller
+              name="department"
+              control={control}
+              render={({ field }) => (
+                <DepartmentSelect
+                  id="department"
+                  departments={departments}
+                  value={field.value || ''}
+                  onValueChange={field.onChange}
+                  disabled={!isEditing}
+                  className={!isEditing ? 'bg-gray-50' : ''}
+                  placeholder="Select a department"
+                />
+              )}
             />
             {errors.department && (
               <p className="text-sm text-red-500">{errors.department.message}</p>

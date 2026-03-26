@@ -213,6 +213,55 @@ export async function hasFeedback(ticketId: string): Promise<boolean> {
   }
 }
 
+/**
+ * Whether any feedback row exists for this ticket (staff/admin/super_admin only).
+ * Uses service client because RLS restricts feedback reads to super_admin.
+ */
+export async function hasAnyFeedbackOnTicket(ticketId: string): Promise<boolean> {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return false
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (
+      !userData ||
+      !['staff', 'admin', 'super_admin'].includes(userData.role)
+    ) {
+      return false
+    }
+
+    const service = createServiceClient()
+    const { count, error } = await service
+      .from('ticket_feedback')
+      .select('*', { count: 'exact', head: true })
+      .eq('ticket_id', ticketId)
+
+    if (error) {
+      logger.error('hasAnyFeedbackOnTicket error', {
+        error: error.message,
+        ticketId,
+      })
+      return false
+    }
+
+    return (count ?? 0) > 0
+  } catch (error) {
+    logger.error('hasAnyFeedbackOnTicket unexpected', {
+      error: error instanceof Error ? error.message : 'Unknown',
+      ticketId,
+    })
+    return false
+  }
+}
+
 // ============================================================================
 // Admin Feedback Analytics (RLS-aware: super_admin sees all, admin sees aggregate)
 // ============================================================================

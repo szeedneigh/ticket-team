@@ -293,8 +293,8 @@ export async function getTicketById(
     .from('tickets')
     .select(`
       *,
-      user:users!tickets_user_id_fkey(id, full_name, email, avatar_url),
-      assigned_user:users!tickets_assigned_to_fkey(id, full_name, email, avatar_url)
+      user:users!tickets_user_id_fkey(id, full_name, email, avatar_url, department),
+      assigned_user:users!tickets_assigned_to_fkey(id, full_name, email, avatar_url, department)
     `)
     .eq('id', ticketId)
     .single()

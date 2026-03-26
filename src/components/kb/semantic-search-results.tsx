@@ -162,7 +162,11 @@ export function SemanticSearchResults({ query, results, isLoading }: SemanticSea
                   </Badge>
                 </div>
                 <CardTitle className="line-clamp-2 group-hover:text-[#0693D2] transition-colors">
-                  <Link href={`/kb/${article.id}`}>
+                  <Link
+                    href={`/article/${article.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     {article.title}
                   </Link>
                 </CardTitle>
@@ -234,7 +238,11 @@ export function SemanticSearchResults({ query, results, isLoading }: SemanticSea
                       )}
                     </div>
                     <Button asChild variant="ghost" size="sm" className="h-7">
-                      <Link href={`/kb/${article.id}`}>
+                      <Link
+                        href={`/article/${article.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         View
                         <ExternalLink className="h-3 w-3 ml-1" />
                       </Link>

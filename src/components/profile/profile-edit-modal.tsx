@@ -1,7 +1,7 @@
 "use client"
 
-import { useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect, useState, useTransition } from 'react'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -21,10 +21,14 @@ import { toast } from 'sonner'
 import { updateProfile } from '@/app/actions/profile'
 import type { User } from '@/lib/types/users'
 import { useRouter } from 'next/navigation'
+import { getDepartments } from '@/lib/departments/actions'
+import type { Department } from '@/lib/departments/actions'
+import { DepartmentSelect } from '@/components/departments/department-select'
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters'),
   position: z.string().optional(),
+  department: z.string().optional(),
 })
 
 type ProfileFormData = z.infer<typeof profileSchema>
@@ -38,9 +42,17 @@ interface ProfileEditModalProps {
 export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalProps) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const [departments, setDepartments] = useState<Department[]>([])
+
+  useEffect(() => {
+    void getDepartments().then((r) => {
+      if (r.success && r.data) setDepartments(r.data)
+    })
+  }, [])
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isDirty },
     reset,
@@ -49,8 +61,19 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
     defaultValues: {
       full_name: user.full_name || '',
       position: user.position || '',
+      department: user.department || '',
     }
   })
+
+  useEffect(() => {
+    if (open) {
+      reset({
+        full_name: user.full_name || '',
+        position: user.position || '',
+        department: user.department || '',
+      })
+    }
+  }, [open, user, reset])
 
   const onSubmit = async (data: ProfileFormData) => {
     startTransition(async () => {
@@ -58,6 +81,7 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
         const formData = new FormData()
         formData.append('full_name', data.full_name)
         if (data.position) formData.append('position', data.position)
+        if (data.department) formData.append('department', data.department)
 
         const result = await updateProfile(formData)
 
@@ -88,7 +112,7 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleCancel}>
+    <Dialog open={open} onOpenChange={(next) => { if (!next) handleCancel() }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
@@ -164,14 +188,21 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
 
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                <Input
-                  id="department"
-                  value={user.department || 'Not set'}
-                  disabled
-                  className="bg-muted"
+                <Controller
+                  name="department"
+                  control={control}
+                  render={({ field }) => (
+                    <DepartmentSelect
+                      id="department"
+                      departments={departments}
+                      value={field.value || ''}
+                      onValueChange={field.onChange}
+                      placeholder="Select department"
+                    />
+                  )}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Department is set during onboarding and cannot be changed. Contact IT Support if you need to update it.
+                  Choose your organizational unit. Must match an active department in the system.
                 </p>
               </div>
             </div>

@@ -29,6 +29,10 @@ export interface Ticket {
   updated_at: string
   resolved_at: string | null
   closed_at: string | null
+  /** SLA-based target resolution time (from created_at + priority SLA), unless due_date_manual */
+  due_date?: string | null
+  /** When true, due_date was set by staff and is not auto-recalculated on minor updates */
+  due_date_manual?: boolean
 }
 
 // Ticket with related user data
