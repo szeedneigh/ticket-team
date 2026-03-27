@@ -26,6 +26,8 @@ const MIN_QUERY_LENGTH = 15
 const DEBOUNCE_MS = 400
 const SEARCH_THRESHOLD = 0.6
 const SEARCH_LIMIT = 5
+/** Reuse successful responses for the same query to reduce embedding API calls. */
+const RESULT_CACHE_MAX = 32
 
 interface KBArticleResult {
   id: string
@@ -36,6 +38,25 @@ interface KBArticleResult {
   subcategory: string | null
   tags: string[]
   similarity: number
+}
+
+function cacheKey(query: string): string {
+  return query.trim().toLowerCase()
+}
+
+function getCached(
+  map: Map<string, KBArticleResult[]>,
+  key: string
+): KBArticleResult[] | undefined {
+  return map.get(key)
+}
+
+function setCached(map: Map<string, KBArticleResult[]>, key: string, results: KBArticleResult[]) {
+  if (map.size >= RESULT_CACHE_MAX) {
+    const first = map.keys().next().value as string | undefined
+    if (first !== undefined) map.delete(first)
+  }
+  map.set(key, results)
 }
 
 interface TicketFormKBSuggestionsProps {
@@ -60,8 +81,11 @@ export function TicketFormKBSuggestions({ query }: TicketFormKBSuggestionsProps)
   const [results, setResults] = useState<KBArticleResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [retryToken, setRetryToken] = useState(0)
   const [selectedArticle, setSelectedArticle] = useState<KBArticleResult | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const resultCacheRef = useRef<Map<string, KBArticleResult[]>>(new Map())
 
   const trimmedQuery = query.trim()
   const debouncedQuery = useDebounce(trimmedQuery, DEBOUNCE_MS)
@@ -72,8 +96,19 @@ export function TicketFormKBSuggestions({ query }: TicketFormKBSuggestionsProps)
     const controller = new AbortController()
     abortRef.current = controller
 
+    const key = cacheKey(searchQuery)
+    const cached = getCached(resultCacheRef.current, key)
+    if (cached) {
+      setResults(cached)
+      setError(false)
+      setErrorMessage(null)
+      setIsSearching(false)
+      return
+    }
+
     setIsSearching(true)
     setError(false)
+    setErrorMessage(null)
 
     try {
       const response = await fetch('/api/kb/semantic-search', {
@@ -87,19 +122,33 @@ export function TicketFormKBSuggestions({ query }: TicketFormKBSuggestionsProps)
         signal: controller.signal,
       })
 
-      if (!response.ok) {
-        throw new Error('Semantic search failed')
+      const data = (await response.json().catch(() => ({}))) as {
+        results?: unknown
+        error?: string
+        code?: string
       }
 
-      const data = await response.json()
+      if (!response.ok) {
+        setError(true)
+        setResults([])
+        setErrorMessage(
+          typeof data?.error === 'string' && data.error.length > 0
+            ? data.error
+            : 'Suggestions temporarily unavailable'
+        )
+        return
+      }
+
       const articles: KBArticleResult[] = Array.isArray(data?.results) ? data.results : []
       setResults(articles)
+      setCached(resultCacheRef.current, key, articles)
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         return
       }
       setError(true)
       setResults([])
+      setErrorMessage('Suggestions temporarily unavailable')
     } finally {
       setIsSearching(false)
       abortRef.current = null
@@ -110,10 +159,11 @@ export function TicketFormKBSuggestions({ query }: TicketFormKBSuggestionsProps)
     if (!shouldSearch) {
       setResults([])
       setError(false)
+      setErrorMessage(null)
       return
     }
     performSearch(debouncedQuery)
-  }, [debouncedQuery, shouldSearch, performSearch])
+  }, [debouncedQuery, shouldSearch, performSearch, retryToken])
 
   // Don't render until user has typed enough
   if (!shouldSearch && !isSearching) {
@@ -137,11 +187,28 @@ export function TicketFormKBSuggestions({ query }: TicketFormKBSuggestionsProps)
     )
   }
 
-  // Error state - subtle message
+  // Error state — show server message when available + retry
   if (error) {
     return (
-      <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-        <p className="text-xs text-muted-foreground">Suggestions temporarily unavailable</p>
+      <div className="rounded-xl border border-border/50 bg-muted/20 p-3 space-y-2">
+        <p className="text-xs text-muted-foreground">
+          {errorMessage ?? 'Suggestions temporarily unavailable'}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => {
+              const key = cacheKey(debouncedQuery)
+              resultCacheRef.current.delete(key)
+              setRetryToken((t) => t + 1)
+            }}
+          >
+            Try again
+          </Button>
+        </div>
       </div>
     )
   }
