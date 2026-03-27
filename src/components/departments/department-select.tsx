@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 import type { Department } from '@/lib/departments/actions'
 
 export interface DepartmentSelectProps {
@@ -47,7 +48,11 @@ export function DepartmentSelect({
       onValueChange={(v) => onValueChange(v === sentinel ? '' : v)}
       disabled={disabled}
     >
-      <SelectTrigger id={id} aria-invalid={ariaInvalid} className={className}>
+      <SelectTrigger
+        id={id}
+        aria-invalid={ariaInvalid}
+        className={cn('w-full min-w-0', className)}
+      >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
