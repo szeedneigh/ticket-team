@@ -27,7 +27,6 @@ import { DepartmentSelect } from '@/components/departments/department-select'
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters'),
-  position: z.string().optional(),
   department: z.string().optional(),
 })
 
@@ -60,7 +59,6 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
     resolver: zodResolver(profileSchema),
     defaultValues: {
       full_name: user.full_name || '',
-      position: user.position || '',
       department: user.department || '',
     }
   })
@@ -69,7 +67,6 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
     if (open) {
       reset({
         full_name: user.full_name || '',
-        position: user.position || '',
         department: user.department || '',
       })
     }
@@ -80,7 +77,6 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
       try {
         const formData = new FormData()
         formData.append('full_name', data.full_name)
-        if (data.position) formData.append('position', data.position)
         if (data.department) formData.append('department', data.department)
 
         const result = await updateProfile(formData)
@@ -171,18 +167,6 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
                 />
                 {errors.full_name && (
                   <p className="text-sm text-destructive">{errors.full_name.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="position">Position</Label>
-                <Input
-                  id="position"
-                  {...register('position')}
-                  placeholder="e.g., Software Engineer"
-                />
-                {errors.position && (
-                  <p className="text-sm text-destructive">{errors.position.message}</p>
                 )}
               </div>
 
