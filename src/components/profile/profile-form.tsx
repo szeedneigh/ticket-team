@@ -19,7 +19,6 @@ import { DepartmentSelect } from '@/components/departments/department-select'
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters'),
-  position: z.string().optional(),
   department: z.string().optional(),
   phone: z.string().optional(),
 })
@@ -55,7 +54,6 @@ export function ProfileForm({ user, onCancel, onSuccess, defaultEditing = false 
     resolver: zodResolver(profileSchema),
     defaultValues: {
       full_name: user.full_name || '',
-      position: user.position || '',
       department: user.department || '',
       phone: user.phone || '',
     }
@@ -66,7 +64,6 @@ export function ProfileForm({ user, onCancel, onSuccess, defaultEditing = false 
       try {
         const formData = new FormData()
         formData.append('full_name', data.full_name)
-        if (data.position) formData.append('position', data.position)
         if (data.department) formData.append('department', data.department)
         if (data.phone) formData.append('phone', data.phone)
 
@@ -161,20 +158,6 @@ export function ProfileForm({ user, onCancel, onSuccess, defaultEditing = false 
             />
             {errors.full_name && (
               <p className="text-sm text-red-500">{errors.full_name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="position">Position</Label>
-            <Input
-              id="position"
-              {...register('position')}
-              disabled={!isEditing}
-              className={!isEditing ? 'bg-gray-50' : ''}
-              placeholder="e.g., Teacher, Staff, Student"
-            />
-            {errors.position && (
-              <p className="text-sm text-red-500">{errors.position.message}</p>
             )}
           </div>
 

@@ -19,7 +19,6 @@ import type { ActionResult } from '@/lib/types/api'
 // Profile update schema
 const profileUpdateSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters'),
-  position: z.string().optional(),
   department: z.string().optional(),
   phone: z.string().optional(),
 })
@@ -40,7 +39,6 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
     // Extract and validate form data
     const rawData = {
       full_name: formData.get('full_name') as string,
-      position: formData.get('position') as string || undefined,
       department: formData.get('department') as string || undefined,
       phone: formData.get('phone') as string || undefined,
     }
@@ -67,7 +65,6 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
       .from('users')
       .update({
         full_name: validatedData.full_name,
-        position: validatedData.position,
         department: validatedData.department,
         phone: validatedData.phone,
         updated_at: new Date().toISOString(),

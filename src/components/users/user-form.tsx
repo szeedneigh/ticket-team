@@ -73,7 +73,6 @@ export function UserForm({
         ? {
             full_name: user.full_name,
             department: user.department || '',
-            position: user.position || '',
           }
         : {
             full_name: '',
@@ -81,7 +80,6 @@ export function UserForm({
             password: '',
             role: 'employee' as UserRole,
             department: '',
-            position: '',
           },
   })
 
@@ -283,47 +281,25 @@ export function UserForm({
             />
           )}
 
-          <div className="grid gap-6 sm:grid-cols-2">
-            {/* Department */}
-            <FormField
-              control={form.control}
-              name="department"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Department</FormLabel>
-                  <FormControl>
-                    <DepartmentSelect
-                      departments={departments}
-                      value={field.value || ''}
-                      onValueChange={field.onChange}
-                      placeholder="Select department"
-                      className="bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Position */}
-            <FormField
-              control={form.control}
-              name="position"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Position</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="System Administrator"
-                      {...field}
-                      className="bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="department"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Department</FormLabel>
+                <FormControl>
+                  <DepartmentSelect
+                    departments={departments}
+                    value={field.value || ''}
+                    onValueChange={field.onChange}
+                    placeholder="Select department"
+                    className="bg-background/50 backdrop-blur-sm border-primary/10 focus-visible:ring-primary/20"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         {/* Form Actions */}
