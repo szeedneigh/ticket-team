@@ -8,11 +8,188 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
 import type {
   AIInteraction,
   ChatMessage,
   ChatSessionWithMessages,
 } from '@/lib/types/ai'
+
+type InteractionSummaryRow = {
+  session_id: string
+  query: string
+  created_at: string
+  metadata: unknown
+  escalated_to_ticket: boolean
+  archived_at?: string | null
+}
+
+/**
+ * Build session summaries from raw ai_interactions rows (used when RPCs are unavailable).
+ */
+function aggregateSessionsFromRows(
+  rows: InteractionSummaryRow[],
+  limit: number,
+  offset: number
+): SessionSummary[] {
+  const sorted = [...rows].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
+
+  const bySession = new Map<
+    string,
+    {
+      session_id: string
+      title: string | null
+      last_message: string
+      last_message_at: string
+      message_count: number
+      escalated: boolean
+    }
+  >()
+
+  for (const row of sorted) {
+    const meta = (row.metadata ?? {}) as Record<string, unknown>
+    const titleFromMeta =
+      typeof meta.session_title === 'string' ? meta.session_title : null
+
+    const agg = bySession.get(row.session_id)
+    if (!agg) {
+      bySession.set(row.session_id, {
+        session_id: row.session_id,
+        title: titleFromMeta,
+        last_message: row.query,
+        last_message_at: row.created_at,
+        message_count: 1,
+        escalated: row.escalated_to_ticket,
+      })
+    } else {
+      agg.message_count++
+      agg.last_message = row.query
+      agg.last_message_at = row.created_at
+      agg.escalated = agg.escalated || row.escalated_to_ticket
+      if (!agg.title && titleFromMeta) {
+        agg.title = titleFromMeta
+      }
+    }
+  }
+
+  const all = Array.from(bySession.values()).sort(
+    (a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
+  )
+  return all.slice(offset, offset + limit)
+}
+
+async function fetchInteractionRowsPaged(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  archived: 'active' | 'archived'
+): Promise<InteractionSummaryRow[]> {
+  const pageSize = 1000
+  const maxRows = 20000
+  const rows: InteractionSummaryRow[] = []
+  let from = 0
+
+  const baseColumns =
+    'session_id, query, created_at, metadata, escalated_to_ticket, archived_at'
+
+  while (from < maxRows) {
+    let q = supabase
+      .from('ai_interactions')
+      .select(baseColumns)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+      .range(from, from + pageSize - 1)
+
+    if (archived === 'active') {
+      q = q.is('archived_at', null)
+    } else if (archived === 'archived') {
+      q = q.not('archived_at', 'is', null)
+    }
+
+    const { data, error } = await q
+
+    if (error) {
+      if (error.message?.includes('archived_at') || error.code === '42703') {
+        return fetchInteractionRowsPagedLegacy(supabase, userId, archived)
+      }
+      throw error
+    }
+
+    const batch = data ?? []
+    rows.push(...(batch as InteractionSummaryRow[]))
+    if (batch.length < pageSize) {
+      break
+    }
+    from += pageSize
+  }
+
+  return rows
+}
+
+/** When archived_at column is missing (very old DBs), list all interactions as active. */
+async function fetchInteractionRowsPagedLegacy(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  archived: 'active' | 'archived'
+): Promise<InteractionSummaryRow[]> {
+  if (archived === 'archived') {
+    return []
+  }
+
+  const pageSize = 1000
+  const maxRows = 20000
+  const rows: InteractionSummaryRow[] = []
+  let from = 0
+
+  const baseColumns = 'session_id, query, created_at, metadata, escalated_to_ticket'
+
+  while (from < maxRows) {
+    const { data, error } = await supabase
+      .from('ai_interactions')
+      .select(baseColumns)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+      .range(from, from + pageSize - 1)
+
+    if (error) {
+      throw error
+    }
+
+    const batch = data ?? []
+    rows.push(...(batch as InteractionSummaryRow[]))
+    if (batch.length < pageSize) {
+      break
+    }
+    from += pageSize
+  }
+
+  return rows
+}
+
+async function getSessionsByUserIdFallback(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  params: GetSessionsParams
+): Promise<SessionSummary[]> {
+  const { userId, limit = 50, offset = 0, includeArchived = false } = params
+
+  if (includeArchived) {
+    const [activeRows, archivedRows] = await Promise.all([
+      fetchInteractionRowsPaged(supabase, userId, 'active'),
+      fetchInteractionRowsPaged(supabase, userId, 'archived'),
+    ])
+    const active = aggregateSessionsFromRows(activeRows, limit + offset, 0)
+    const archived = aggregateSessionsFromRows(archivedRows, limit + offset, 0)
+    const merged = [...active, ...archived].sort(
+      (a, b) =>
+        new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
+    )
+    return merged.slice(offset, offset + limit)
+  }
+
+  const rows = await fetchInteractionRowsPaged(supabase, userId, 'active')
+  return aggregateSessionsFromRows(rows, limit, offset)
+}
 
 // ============================================================================
 // Session Queries
@@ -50,45 +227,87 @@ export async function getSessionsByUserId(
 
   const supabase = await createClient()
 
-  if (includeArchived) {
-    // When including archived, fall back to querying both RPCs and merging
-    const [activeResult, archivedResult] = await Promise.all([
-      supabase.rpc('get_active_chat_sessions', {
-        p_user_id: userId,
-        p_limit: limit + offset,
-        p_offset: 0,
-      }),
-      supabase.rpc('get_archived_chat_sessions', {
-        p_user_id: userId,
-        p_limit: limit + offset,
-        p_offset: 0,
-      }),
-    ])
+  try {
+    if (includeArchived) {
+      const [activeResult, archivedResult] = await Promise.all([
+        supabase.rpc('get_active_chat_sessions', {
+          p_user_id: userId,
+          p_limit: limit + offset,
+          p_offset: 0,
+        }),
+        supabase.rpc('get_archived_chat_sessions', {
+          p_user_id: userId,
+          p_limit: limit + offset,
+          p_offset: 0,
+        }),
+      ])
 
-    if (activeResult.error) {
-      throw new Error(`Failed to fetch active sessions: ${activeResult.error.message}`)
+      if (activeResult.error || archivedResult.error) {
+        throw new Error(
+          activeResult.error?.message ||
+            archivedResult.error?.message ||
+            'RPC failed'
+        )
+      }
+
+      const all = [...(activeResult.data ?? []), ...(archivedResult.data ?? [])]
+      return mapRpcRows(all)
+        .sort(
+          (a, b) =>
+            new Date(b.last_message_at).getTime() -
+            new Date(a.last_message_at).getTime()
+        )
+        .slice(offset, offset + limit)
     }
-    if (archivedResult.error) {
-      throw new Error(`Failed to fetch archived sessions: ${archivedResult.error.message}`)
+
+    const { data, error } = await supabase.rpc('get_active_chat_sessions', {
+      p_user_id: userId,
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) {
+      throw new Error(error.message)
     }
 
-    const all = [...(activeResult.data ?? []), ...(archivedResult.data ?? [])]
-    return mapRpcRows(all)
-      .sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
-      .slice(offset, offset + limit)
+    return mapRpcRows(data ?? [])
+  } catch (rpcErr) {
+    logger.warn('Chat session RPC failed; using ai_interactions table fallback', {
+      error: rpcErr instanceof Error ? rpcErr.message : String(rpcErr),
+    })
+    return getSessionsByUserIdFallback(supabase, params)
   }
+}
 
-  const { data, error } = await supabase.rpc('get_active_chat_sessions', {
-    p_user_id: userId,
-    p_limit: limit,
-    p_offset: offset,
-  })
+/**
+ * Archived sessions only (for settings/history UI). Uses RPC with table fallback.
+ */
+export async function getArchivedSessionSummaries(
+  userId: string,
+  limit: number,
+  offset: number
+): Promise<SessionSummary[]> {
+  const supabase = await createClient()
 
-  if (error) {
-    throw new Error(`Failed to fetch chat sessions: ${error.message}`)
+  try {
+    const { data, error } = await supabase.rpc('get_archived_chat_sessions', {
+      p_user_id: userId,
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return mapRpcRows(data ?? [])
+  } catch (rpcErr) {
+    logger.warn('Archived chat sessions RPC failed; using table fallback', {
+      error: rpcErr instanceof Error ? rpcErr.message : String(rpcErr),
+    })
+    const rows = await fetchInteractionRowsPaged(supabase, userId, 'archived')
+    return aggregateSessionsFromRows(rows, limit, offset)
   }
-
-  return mapRpcRows(data ?? [])
 }
 
 function mapRpcRows(
