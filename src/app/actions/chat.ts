@@ -22,6 +22,7 @@ import {
   linkInteractionToTicket,
   getSessionsByUserId,
   getSessionWithMessages,
+  getArchivedSessionSummaries,
   type SessionSummary,
 } from '@/lib/chat/queries'
 import {
@@ -166,41 +167,10 @@ export async function getArchivedChatSessions(params?: {
     const limit = params?.limit ?? 50
     const offset = params?.offset ?? 0
 
-    const { data, error: queryError } = await supabase.rpc(
-      'get_archived_chat_sessions',
-      {
-        p_user_id: user.id,
-        p_limit: limit,
-        p_offset: offset,
-      }
-    )
-
-    if (queryError) {
-      logger.error('Error querying archived sessions via RPC', {
-        error: queryError.message,
-      })
-      return {
-        success: false,
-        error: 'Failed to fetch archived chat sessions',
-      }
-    }
-
-    const archivedSessions: SessionSummary[] = (data ?? []).map(
-      (row: {
-        session_id: string
-        title: string | null
-        last_message: string
-        last_message_at: string
-        message_count: number
-        escalated: boolean
-      }) => ({
-        session_id: row.session_id,
-        title: row.title,
-        last_message: row.last_message,
-        last_message_at: row.last_message_at,
-        message_count: row.message_count,
-        escalated: row.escalated,
-      })
+    const archivedSessions = await getArchivedSessionSummaries(
+      user.id,
+      limit,
+      offset
     )
 
     logger.info('[getArchivedChatSessions] Returning archived sessions:', {
