@@ -53,7 +53,6 @@ export const createUserSchema = z.object({
     .regex(/^[a-zA-Z\s.'-]+$/, 'Full name can only contain letters, spaces, and basic punctuation'),
   role: userRoleSchema.default('employee'),
   department: z.string().max(100, 'Department must not exceed 100 characters').optional(),
-  position: z.string().max(100, 'Position must not exceed 100 characters').optional(),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
@@ -80,7 +79,6 @@ export const updateUserSchema = z.object({
     .regex(/^[a-zA-Z\s.'-]+$/, 'Full name can only contain letters, spaces, and basic punctuation')
     .optional(),
   department: z.string().max(100, 'Department must not exceed 100 characters').optional(),
-  position: z.string().max(100, 'Position must not exceed 100 characters').optional(),
   avatar_url: z.string().url('Invalid avatar URL').optional(),
 })
 
