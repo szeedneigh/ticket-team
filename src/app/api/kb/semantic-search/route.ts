@@ -13,7 +13,64 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuth } from '@/lib/auth/session'
-import { generateEmbedding } from '@/lib/ai/client'
+import { generateEmbedding, isQuotaExhaustedError } from '@/lib/ai/client'
+
+/** Machine-readable codes for clients (no secrets in responses). */
+export type SemanticSearchErrorCode =
+  | 'UNAUTHORIZED'
+  | 'EMBEDDING_CONFIG'
+  | 'EMBEDDING_QUOTA'
+  | 'EMBEDDING_UNAVAILABLE'
+  | 'DATABASE_RPC'
+  | 'UNKNOWN'
+
+function embeddingErrorResponse(error: unknown): NextResponse {
+  const message = error instanceof Error ? error.message : String(error)
+  const lower = message.toLowerCase()
+
+  if (lower.includes('gemini_api_key') || lower.includes('not configured')) {
+    console.error('[semantic-search] Embedding config:', message)
+    return NextResponse.json(
+      {
+        error: 'Article suggestions are not configured on the server. Contact your administrator.',
+        code: 'EMBEDDING_CONFIG' satisfies SemanticSearchErrorCode,
+      },
+      { status: 503 }
+    )
+  }
+
+  if (isQuotaExhaustedError(error)) {
+    console.error('[semantic-search] Embedding quota/rate limit:', message)
+    return NextResponse.json(
+      {
+        error:
+          'Suggestions are temporarily unavailable due to high demand. Please try again in a few minutes.',
+        code: 'EMBEDDING_QUOTA' satisfies SemanticSearchErrorCode,
+      },
+      { status: 503 }
+    )
+  }
+
+  if (lower.includes('network') || lower.includes('enotfound') || lower.includes('econn')) {
+    console.error('[semantic-search] Embedding network:', message)
+    return NextResponse.json(
+      {
+        error: 'Could not reach the AI service. Check your connection and try again.',
+        code: 'EMBEDDING_UNAVAILABLE' satisfies SemanticSearchErrorCode,
+      },
+      { status: 503 }
+    )
+  }
+
+  console.error('[semantic-search] Embedding failed:', message)
+  return NextResponse.json(
+    {
+      error: 'Could not prepare article suggestions. Please try again.',
+      code: 'EMBEDDING_UNAVAILABLE' satisfies SemanticSearchErrorCode,
+    },
+    { status: 503 }
+  )
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,21 +110,37 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Generate embedding for the search query using Gemini
-    const queryEmbedding = await generateEmbedding(query, {
-      taskType: 'RETRIEVAL_QUERY'
-    })
+    let queryEmbedding: number[]
+    try {
+      queryEmbedding = await generateEmbedding(query, {
+        taskType: 'RETRIEVAL_QUERY',
+      })
+    } catch (embedError) {
+      return embeddingErrorResponse(embedError)
+    }
 
     // 4. Perform semantic search via pgvector
     const supabase = await createClient()
     const { data, error } = await supabase.rpc('match_kb_articles', {
       query_embedding: queryEmbedding,
       match_threshold: threshold,
-      match_count: limit
+      match_count: limit,
     })
 
     if (error) {
-      console.error('Semantic search database error:', error)
-      throw error
+      console.error('[semantic-search] match_kb_articles RPC failed', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      })
+      return NextResponse.json(
+        {
+          error: 'Could not search the knowledge base. Please try again later.',
+          code: 'DATABASE_RPC' satisfies SemanticSearchErrorCode,
+        },
+        { status: 500 }
+      )
     }
 
     // 5. Map database fields to frontend expected format
@@ -118,20 +191,26 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Semantic search error:', error)
+    console.error('[semantic-search] Unexpected error:', error)
 
-    // Differentiate between different error types
     if (error instanceof Error) {
-      if (error.message.includes('Unauthorized') || error.message.includes('auth')) {
+      const msg = error.message.toLowerCase()
+      if (msg.includes('unauthorized') || msg.includes('auth')) {
         return NextResponse.json(
-          { error: 'Authentication required' },
+          {
+            error: 'Authentication required',
+            code: 'UNAUTHORIZED' satisfies SemanticSearchErrorCode,
+          },
           { status: 401 }
         )
       }
     }
 
     return NextResponse.json(
-      { error: 'Semantic search failed. Please try again later.' },
+      {
+        error: 'Semantic search failed. Please try again later.',
+        code: 'UNKNOWN' satisfies SemanticSearchErrorCode,
+      },
       { status: 500 }
     )
   }
