@@ -346,24 +346,26 @@ export function TicketDetail({
           </CardContent>
         </Card>
 
-        {/* Timeline */}
-        <Card className="relative overflow-hidden bg-background/60 backdrop-blur-md border-white/10 shadow-xl">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#2cafdd]/50 via-[#1f3463]/50 to-[#2cafdd]/50" />
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#2cafdd] animate-pulse" />
-              Activity Timeline
-            </CardTitle>
-            <CardDescription>Track all changes and updates to this ticket</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TicketTimeline
-              activities={activities}
-              comments={comments}
-              isStaff={isStaff}
-            />
-          </CardContent>
-        </Card>
+        {/* Timeline — staff+ only (employees see Comments without internal audit trail) */}
+        {isStaff && (
+          <Card className="relative overflow-hidden bg-background/60 backdrop-blur-md border-white/10 shadow-xl">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#2cafdd]/50 via-[#1f3463]/50 to-[#2cafdd]/50" />
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[#2cafdd] animate-pulse" />
+                Activity Timeline
+              </CardTitle>
+              <CardDescription>Track all changes and updates to this ticket</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TicketTimeline
+                activities={activities}
+                comments={comments}
+                isStaff={isStaff}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Comments Section */}
         <Card className="relative overflow-hidden bg-background/60 backdrop-blur-md border-white/10 shadow-xl">
