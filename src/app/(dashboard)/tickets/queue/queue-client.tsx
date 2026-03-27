@@ -82,7 +82,7 @@ export function QueuePageClient({
                 </p>
               </div>
               <Button asChild variant="gradient" className="rounded-full px-6">
-                <Link href="/admin/tickets">
+                <Link href="/tickets/all">
                   View All Tickets 
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -295,7 +295,7 @@ export function QueuePageClient({
                         There are no unassigned tickets matching your criteria. Great job keeping the queue moving.
                       </p>
                       <Button variant="outline" className="mt-6" asChild>
-                        <Link href="/admin/tickets">View All Tickets</Link>
+                        <Link href="/tickets/all">View All Tickets</Link>
                       </Button>
                     </div>
                 )}

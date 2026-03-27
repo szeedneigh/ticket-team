@@ -126,7 +126,10 @@ export function UserFilters({
               handleFilterChange()
             }}
           >
-            <SelectTrigger id="department-filter" className="w-[160px] h-10 bg-background/50 backdrop-blur-sm border-primary/10">
+            <SelectTrigger
+              id="department-filter"
+              className="h-10 min-w-0 w-[200px] bg-background/50 backdrop-blur-sm border-primary/10"
+            >
               <SelectValue placeholder="Department" />
             </SelectTrigger>
             <SelectContent>
