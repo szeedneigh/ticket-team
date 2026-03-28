@@ -11,9 +11,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireAuth } from '@/lib/auth/session'
+import { getUser } from '@/lib/auth/session'
+import { createServiceClient } from '@/lib/supabase/service'
 import { generateEmbedding, isQuotaExhaustedError } from '@/lib/ai/client'
+
+/** Must match `knowledge_articles.embedding` and `match_kb_articles` (vector(768)). */
+const EMBEDDING_DIMENSION = 768
 
 /** Machine-readable codes for clients (no secrets in responses). */
 export type SemanticSearchErrorCode =
@@ -21,6 +24,7 @@ export type SemanticSearchErrorCode =
   | 'EMBEDDING_CONFIG'
   | 'EMBEDDING_QUOTA'
   | 'EMBEDDING_UNAVAILABLE'
+  | 'EMBEDDING_DIMENSION_MISMATCH'
   | 'DATABASE_RPC'
   | 'UNKNOWN'
 
@@ -74,12 +78,34 @@ function embeddingErrorResponse(error: unknown): NextResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Authenticate - only authenticated users can search
-    await requireAuth()
+    // 1. Authenticate (JSON 401; avoid requireAuth/redirect — its throw is caught below as 500)
+    if (!(await getUser())) {
+      return NextResponse.json(
+        {
+          error: 'Authentication required',
+          code: 'UNAUTHORIZED' satisfies SemanticSearchErrorCode,
+        },
+        { status: 401 }
+      )
+    }
 
     // 2. Parse and validate request body
-    const body = await request.json()
-    const { query, threshold = 0.7, limit = 10 } = body
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Request body must be valid JSON' }, { status: 400 })
+    }
+
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Request body must be a JSON object' }, { status: 400 })
+    }
+
+    const { query, threshold = 0.7, limit = 10 } = body as {
+      query?: unknown
+      threshold?: unknown
+      limit?: unknown
+    }
 
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
       return NextResponse.json(
@@ -119,8 +145,25 @@ export async function POST(request: NextRequest) {
       return embeddingErrorResponse(embedError)
     }
 
-    // 4. Perform semantic search via pgvector
-    const supabase = await createClient()
+    if (queryEmbedding.length !== EMBEDDING_DIMENSION) {
+      console.error('[semantic-search] Wrong embedding length', {
+        expected: EMBEDDING_DIMENSION,
+        actual: queryEmbedding.length,
+      })
+      return NextResponse.json(
+        {
+          error:
+            'Search is misconfigured (embedding size does not match the database). Contact your administrator.',
+          code: 'EMBEDDING_DIMENSION_MISMATCH' satisfies SemanticSearchErrorCode,
+        },
+        { status: 503 }
+      )
+    }
+
+    // 4. Semantic search via pgvector — service role so EXECUTE on match_kb_articles is reliable
+    // (authenticated role often lacks GRANT on this RPC). User is already verified above; SQL still
+    // restricts to published rows only.
+    const supabase = createServiceClient()
     const { data, error } = await supabase.rpc('match_kb_articles', {
       query_embedding: queryEmbedding,
       match_threshold: threshold,
@@ -128,12 +171,29 @@ export async function POST(request: NextRequest) {
     })
 
     if (error) {
+      const msg = (error.message || '').toLowerCase()
       console.error('[semantic-search] match_kb_articles RPC failed', {
         message: error.message,
         code: error.code,
         details: error.details,
         hint: error.hint,
       })
+
+      if (
+        msg.includes('dimension') ||
+        msg.includes('different vector dimensions') ||
+        msg.includes('expected') && msg.includes('768')
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'Knowledge base vectors do not match the embedding model. Ensure the database uses 768-dimensional embeddings.',
+            code: 'EMBEDDING_DIMENSION_MISMATCH' satisfies SemanticSearchErrorCode,
+          },
+          { status: 503 }
+        )
+      }
+
       return NextResponse.json(
         {
           error: 'Could not search the knowledge base. Please try again later.',
