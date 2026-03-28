@@ -22,9 +22,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-const MIN_QUERY_LENGTH = 15
+/** Min combined title+description length before calling semantic search (keep ≤ description min so suggestions appear while typing). */
+export const MIN_KB_QUERY_LENGTH = 10
 const DEBOUNCE_MS = 400
-const SEARCH_THRESHOLD = 0.6
+/** Slightly below KB browse (0.7) to surface more matches on short ticket blurbs. */
+const SEARCH_THRESHOLD = 0.55
 const SEARCH_LIMIT = 5
 /** Reuse successful responses for the same query to reduce embedding API calls. */
 const RESULT_CACHE_MAX = 32
@@ -89,7 +91,7 @@ export function TicketFormKBSuggestions({ query }: TicketFormKBSuggestionsProps)
 
   const trimmedQuery = query.trim()
   const debouncedQuery = useDebounce(trimmedQuery, DEBOUNCE_MS)
-  const shouldSearch = debouncedQuery.length >= MIN_QUERY_LENGTH
+  const shouldSearch = debouncedQuery.length >= MIN_KB_QUERY_LENGTH
 
   const performSearch = useCallback(async (searchQuery: string) => {
     abortRef.current?.abort()
@@ -157,6 +159,8 @@ export function TicketFormKBSuggestions({ query }: TicketFormKBSuggestionsProps)
 
   useEffect(() => {
     if (!shouldSearch) {
+      abortRef.current?.abort()
+      setIsSearching(false)
       setResults([])
       setError(false)
       setErrorMessage(null)
@@ -213,9 +217,16 @@ export function TicketFormKBSuggestions({ query }: TicketFormKBSuggestionsProps)
     )
   }
 
-  // No results - don't show section
+  // Successful search but nothing in KB above threshold — show feedback so this does not look broken
   if (results.length === 0) {
-    return null
+    return (
+      <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
+        <p className="text-xs text-muted-foreground">
+          No knowledge base articles matched this yet. Add a few more words in the title or description for better
+          matches.
+        </p>
+      </div>
+    )
   }
 
   const truncate = (text: string, maxLen: number) =>
