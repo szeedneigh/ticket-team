@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FileUpload } from './file-upload'
-import { TicketFormKBSuggestions } from './ticket-form-kb-suggestions'
+import { TicketFormKBSuggestions, MIN_KB_QUERY_LENGTH } from './ticket-form-kb-suggestions'
 import { createTicketSchema, type CreateTicketInput } from '@/lib/validations/tickets'
 import type { AttachmentConfig } from '@/lib/validations/tickets'
 import { createTicket } from '@/app/actions/tickets'
@@ -221,6 +221,11 @@ export function TicketForm({ categories, attachmentConfig, templateDefaults, onC
             )}
           </div>
 
+          {/* KB suggestions use title + description; placed here so they appear while typing the title */}
+          {kbSearchQuery.length >= MIN_KB_QUERY_LENGTH && (
+            <TicketFormKBSuggestions query={kbSearchQuery} />
+          )}
+
           {/* Description Field */}
           <div className="space-y-2">
             <Label htmlFor="description">
@@ -241,9 +246,6 @@ export function TicketForm({ categories, attachmentConfig, templateDefaults, onC
             <p className="text-xs text-muted-foreground">
               Be as specific as possible to help us resolve your issue quickly
             </p>
-            {kbSearchQuery.length >= 15 && (
-              <TicketFormKBSuggestions query={kbSearchQuery} />
-            )}
           </div>
 
           {/* Category Field */}
